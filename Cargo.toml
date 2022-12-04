@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "client", # Standalone client
+    "server", # Standalone server
+    "engine", # Just for ECS, message buf, protocol, etc.
+    "plugin", # Plugin only needs to import from client and engine. Server is just a binary
+]
