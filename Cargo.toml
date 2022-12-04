@@ -5,4 +5,5 @@ members = [
     "engine",
     "plugin",
     "common",
+    "engine_interface",
 ]

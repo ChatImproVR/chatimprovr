@@ -8,3 +8,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 cimvr_common = { path = "../common" }
+cimvr_engine_interface = { path = "../engine_interface" }

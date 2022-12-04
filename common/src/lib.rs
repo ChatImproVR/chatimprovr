@@ -1,14 +1,8 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+pub use nalgebra;
+use nalgebra::{Isometry3, Point3, Vector3};
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+pub struct Transform {
+    pub position: Point3<f32>,
+    pub rotation: Isometry3<f32>,
+    pub scale: Vector3<f32>,
 }

@@ -1,0 +1,13 @@
+[package]
+name = "cimvr_engine_interface"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["wasm-plugin"]
+wasm-plugin = []
+
+[dependencies]
+bincode = "1.3.3"
+serde = "1"
+once_cell = "1.16.0"
