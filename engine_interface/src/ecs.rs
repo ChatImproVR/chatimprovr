@@ -21,4 +21,3 @@ pub struct ComponentId {
 pub trait Component: Serialize + DeserializeOwned + Copy {
     const ID: ComponentId;
 }
-

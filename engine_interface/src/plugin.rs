@@ -6,7 +6,40 @@ use crate::ecs::{Component, EntityId, Query, QueryResult};
 
 pub type Callback<UserState> = fn(&mut UserState, &mut EngineIo);
 
-/// Contains the query result, and any received messages. 
+/// Basically main() for plugins; allows a struct implementing AppState to be the state and entry
+/// point for the given plugin
+#[macro_export]
+macro_rules! make_app_state {
+    ($AppState:ident) => {
+        static CTX: Lazy<Mutex<Context<$AppState>>> = Lazy::new(|| Mutex::new(Context::new()));
+
+        /// Reserve internal memory for external writes
+        #[no_mangle]
+        fn reserve(bytes: u32) -> *mut u8 {
+            // TODO: What if we fail?
+            CTX.lock().unwrap().reserve(bytes)
+        }
+
+        /// Run internal code, returning pointer to the output buffer
+        #[no_mangle]
+        fn dispatch() -> *mut u8 {
+            CTX.lock().unwrap().dispatch()
+        }
+
+        /// Externally inspectable engine version
+        #[no_mangle]
+        fn engine_version() -> u32 {
+            0
+        }
+    };
+}
+
+/// Application state, defines a constructor with common engine interface in it
+pub trait AppState: Sized {
+    fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self;
+}
+
+/// Contains the query result, and any received messages.
 /// Also contains the commands to be sent to the engine, and lists the modified entities and
 /// components therein
 pub struct EngineIo {
@@ -14,12 +47,15 @@ pub struct EngineIo {
     commands: Vec<EngineCommand>,
 }
 
-enum EngineCommand {
-    Delete(EntityId),
-}
-
+/// Scheduling of systems
+/// Not a part of EngineIo, in order to prevent developers from attempting to add systems from
+/// other systems (!)
 pub struct EngineSchedule<U> {
     systems: Vec<(Query, Callback<U>)>,
+}
+
+enum EngineCommand {
+    Delete(EntityId),
 }
 
 pub struct Context<U> {
@@ -30,7 +66,7 @@ pub struct Context<U> {
 
 impl<U> EngineSchedule<U> {
     pub fn new() -> Self {
-        Self { 
+        Self {
             systems: Vec::new(),
         }
     }
@@ -40,13 +76,12 @@ impl<U> EngineSchedule<U> {
     }
 }
 
-
-impl<U> Context<U> {
-    pub fn new(ctor: fn(&mut EngineIo, &mut EngineSchedule<U>) -> U) -> Self {
+impl<U: AppState> Context<U> {
+    pub fn new() -> Self {
         let mut io = EngineIo::new();
         let mut sched = EngineSchedule::new();
         Self {
-            user: ctor(&mut io, &mut sched),
+            user: U::new(&mut io, &mut sched),
             sched,
             io,
         }
@@ -66,7 +101,7 @@ impl<U> Context<U> {
 
 impl EngineIo {
     pub fn new() -> Self {
-        Self { 
+        Self {
             buf: Vec::new(),
             commands: Vec::new(),
         }

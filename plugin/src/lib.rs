@@ -4,7 +4,7 @@ use cimvr_common::{
     nalgebra::{self, Isometry3, Point3, Vector3},
     Transform,
 };
-use cimvr_engine_interface::prelude::*;
+use cimvr_engine_interface::{make_app_state, prelude::*};
 
 // Need a rand syscall because it's necessary in order to operate the ECS
 
@@ -12,21 +12,9 @@ struct State {
     head: EntityId,
 }
 
-static CTX: Lazy<Mutex<Context<State>>> = Lazy::new(|| Mutex::new(Context::new(State::new)));
+make_app_state!(State);
 
-// TODO: Put these behind a macro!
-
-#[no_mangle]
-fn reserve(bytes: u32) -> *mut u8 {
-    CTX.lock().unwrap().reserve(bytes)
-}
-
-#[no_mangle]
-fn dispatch() -> *mut u8 {
-    CTX.lock().unwrap().dispatch()
-}
-
-impl State {
+impl AppState for State {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
         let head = io.create_entity();
 
@@ -43,7 +31,9 @@ impl State {
 
         Self { head }
     }
+}
 
+impl State {
     fn system(&mut self, io: &mut EngineIo) {
         todo!()
     }
