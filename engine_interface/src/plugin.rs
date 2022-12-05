@@ -1,13 +1,14 @@
 use std::sync::{Mutex, MutexGuard};
 
 pub use once_cell::sync::Lazy;
+use serde::{Serialize, Deserialize};
 
 use crate::ecs::{Component, EntityId, Query, QueryResult};
 
 pub type Callback<UserState> = fn(&mut UserState, &mut EngineIo);
 
 /// Basically main() for plugins; allows a struct implementing AppState to be the state and entry
-/// point for the given plugin
+/// point for the plugin
 #[macro_export]
 macro_rules! make_app_state {
     ($AppState:ident) => {
@@ -44,7 +45,6 @@ pub trait AppState: Sized {
 /// components therein
 pub struct EngineIo {
     buf: Vec<u8>,
-    commands: Vec<EngineCommand>,
 }
 
 /// Scheduling of systems
@@ -52,10 +52,6 @@ pub struct EngineIo {
 /// other systems (!)
 pub struct EngineSchedule<U> {
     systems: Vec<(Query, Callback<U>)>,
-}
-
-enum EngineCommand {
-    Delete(EntityId),
 }
 
 pub struct Context<U> {
@@ -103,7 +99,6 @@ impl EngineIo {
     pub fn new() -> Self {
         Self {
             buf: Vec::new(),
-            commands: Vec::new(),
         }
     }
 
