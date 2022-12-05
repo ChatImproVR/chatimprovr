@@ -12,3 +12,11 @@ pub mod prelude {
 
     pub use super::ecs::*;
 }
+
+/// Message channels
+pub mod channels;
+
+pub enum Locality {
+    Local,
+    Remote,
+}

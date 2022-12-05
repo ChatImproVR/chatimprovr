@@ -12,24 +12,25 @@ struct State {
     head: EntityId,
 }
 
-static CTX: Lazy<Context<State>> = Lazy::new(|| Context::new(State::new));
+static CTX: Lazy<Mutex<Context<State>>> = Lazy::new(|| Mutex::new(Context::new(State::new)));
 
 // TODO: Put these behind a macro!
 
 #[no_mangle]
 fn reserve(bytes: u32) -> *mut u8 {
-    CTX.reserve(bytes)
+    CTX.lock().unwrap().reserve(bytes)
 }
 
 #[no_mangle]
 fn dispatch() -> *mut u8 {
-    CTX.dispatch()
+    CTX.lock().unwrap().dispatch()
 }
 
 impl State {
-    fn new(ctx: &mut EngineIo) -> Self {
-        let head = ctx.create_entity();
-        ctx.add_component(
+    fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
+        let head = io.create_entity();
+
+        io.add_component(
             head,
             Transform {
                 position: Point3::origin(),
@@ -38,12 +39,12 @@ impl State {
             },
         );
 
-        ctx.add_system(Self::system);
+        schedule.add_system(Query, Self::system);
 
         Self { head }
     }
 
-    fn system(&mut self, query: &QueryResult) {
+    fn system(&mut self, io: &mut EngineIo) {
         todo!()
     }
 }

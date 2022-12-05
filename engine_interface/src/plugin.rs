@@ -2,54 +2,76 @@ use std::sync::{Mutex, MutexGuard};
 
 pub use once_cell::sync::Lazy;
 
-use crate::ecs::{Component, EntityId};
+use crate::ecs::{Component, EntityId, Query, QueryResult};
 
-pub type Callback<UserState> = fn(&mut UserState, &mut EngineIo, &mut QueryResult);
+pub type Callback<UserState> = fn(&mut UserState, &mut EngineIo);
 
+/// Contains the query result, and any received messages. 
+/// Also contains the commands to be sent to the engine, and lists the modified entities and
+/// components therein
 pub struct EngineIo {
     buf: Vec<u8>,
-    //commands: Vec<Command>,
+    commands: Vec<EngineCommand>,
 }
 
-pub struct QueryResult<'a> {
-    io: &'a EngineIo,
-    // query indexing stuff idk
-    // impl iterator yea
+enum EngineCommand {
+    Delete(EntityId),
+}
+
+pub struct EngineSchedule<U> {
+    systems: Vec<(Query, Callback<U>)>,
 }
 
 pub struct Context<U> {
     user: U,
-    callbacks: Vec<Callback<U>>,
     io: EngineIo,
-    //_phantom: PhantomData<UserState>,
+    sched: EngineSchedule<U>,
 }
 
-impl EngineIo {
+impl<U> EngineSchedule<U> {
     pub fn new() -> Self {
-        Self { buf: Vec::new() }
+        Self { 
+            systems: Vec::new(),
+        }
+    }
+
+    pub fn add_system(&mut self, query: Query, cb: Callback<U>) {
+        self.systems.push((query, cb));
     }
 }
 
+
 impl<U> Context<U> {
-    pub fn new(ctor: fn(&mut EngineIo) -> U) -> Self {
+    pub fn new(ctor: fn(&mut EngineIo, &mut EngineSchedule<U>) -> U) -> Self {
         let mut io = EngineIo::new();
+        let mut sched = EngineSchedule::new();
         Self {
-            user: ctor(&mut io),
-            callbacks: vec![],
+            user: ctor(&mut io, &mut sched),
+            sched,
             io,
         }
     }
 
-    pub fn reserve(&self, bytes: u32) -> *mut u8 {
-        self.io.reserve(bytes)
+    pub fn reserve(&mut self, bytes: u32) -> *mut u8 {
+        self.io.reserve(bytes);
+        self.io.buf_ptr()
     }
 
-    pub fn dispatch(&self) -> *mut u8 {
-        todo!()
+    pub fn dispatch(&mut self) -> *mut u8 {
+        // TODO: Read from own io buf, Dispatch
+
+        self.io.buf_ptr()
     }
 }
 
 impl EngineIo {
+    pub fn new() -> Self {
+        Self { 
+            buf: Vec::new(),
+            commands: Vec::new(),
+        }
+    }
+
     pub fn add_component<C: Component>(&self, entity: EntityId, data: C) {
         todo!()
     }
@@ -62,8 +84,14 @@ impl EngineIo {
         todo!()
     }
 
-    pub fn reserve(&self, bytes: u32) -> *mut u8 {
-        todo!()
+    /// Reserves the given number of bytes for overwriting by the server
+    pub fn reserve(&mut self, bytes: u32) {
+        self.buf.clear();
+        self.buf.resize(bytes as usize, 0);
+    }
+
+    pub fn buf_ptr(&mut self) -> *mut u8 {
+        self.buf.as_mut_ptr()
     }
     //fn add_system(&mut self, system, callback: fn());
 }
