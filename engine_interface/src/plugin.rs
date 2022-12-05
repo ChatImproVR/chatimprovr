@@ -1,10 +1,21 @@
 use std::sync::{Mutex, MutexGuard};
 
 pub use once_cell::sync::Lazy;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-use crate::ecs::{Component, EntityId, Query, QueryResult};
+use crate::{
+    ecs::{Component, EntityId},
+    serial::SystemDescriptor,
+};
 
+/// Full plugin context, contains user state and engine IO buffers
+pub struct Context<U> {
+    user: U,
+    io: EngineIo,
+    sched: EngineSchedule<U>,
+}
+
+/// System callable by the engine  
 pub type Callback<UserState> = fn(&mut UserState, &mut EngineIo);
 
 /// Basically main() for plugins; allows a struct implementing AppState to be the state and entry
@@ -51,24 +62,21 @@ pub struct EngineIo {
 /// Not a part of EngineIo, in order to prevent developers from attempting to add systems from
 /// other systems (!)
 pub struct EngineSchedule<U> {
-    systems: Vec<(Query, Callback<U>)>,
-}
-
-pub struct Context<U> {
-    user: U,
-    io: EngineIo,
-    sched: EngineSchedule<U>,
+    systems: Vec<SystemDescriptor>,
+    callbacks: Vec<Callback<U>>,
 }
 
 impl<U> EngineSchedule<U> {
     pub fn new() -> Self {
         Self {
             systems: Vec::new(),
+            callbacks: Vec::new(),
         }
     }
 
-    pub fn add_system(&mut self, query: Query, cb: Callback<U>) {
-        self.systems.push((query, cb));
+    pub fn add_system(&mut self, desc: SystemDescriptor, cb: Callback<U>) {
+        self.systems.push(desc);
+        self.callbacks.push(cb);
     }
 }
 
@@ -97,9 +105,7 @@ impl<U: AppState> Context<U> {
 
 impl EngineIo {
     pub fn new() -> Self {
-        Self {
-            buf: Vec::new(),
-        }
+        Self { buf: Vec::new() }
     }
 
     pub fn add_component<C: Component>(&self, entity: EntityId, data: C) {

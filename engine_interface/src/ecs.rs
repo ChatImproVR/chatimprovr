@@ -1,8 +1,13 @@
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-pub struct Query;
-
-pub struct QueryResult;
+/// A single requirement in a query
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct QueryTerm {
+    /// Component ID queried
+    pub component: ComponentId,
+    /// Access level granted to this component
+    pub access: Access,
+}
 
 /// Universally-unique Entity ID
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -17,13 +22,26 @@ pub struct ComponentId {
     pub size: u16,
 }
 
+/// Access level for the given component
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Access {
+    /// Read only. Writes will be discarded!
+    Read,
+    /// Read and write access
+    Write,
+}
+
 /// Trait describing an ECS component
+// Copy bound here is to discourage variable-sized types!
 pub trait Component: Serialize + DeserializeOwned + Copy {
+    /// Unique ID of this component
     const ID: ComponentId;
 }
 
 /// Single command to be sent to engine
-#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
-pub(crate) enum EngineCommand {
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub enum EngineCommand {
     Delete(EntityId),
+    // For now we're betting that the user doesn't add that many entities at once...
+    AddComponent(EntityId, Vec<(ComponentId, Vec<u8>)>),
 }

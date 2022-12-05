@@ -1,43 +1,45 @@
+//! Types used for communication with the engine
 use crate::plugin::EngineSchedule;
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-struct SerialSlice {
-    /// Offset in bytes
-    offset: usize,
-    /// Length in bytes
-    len: usize,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct EngineIntrinsics {
+    /// Random 64-bit number provided by the host
+    pub random: u64,
 }
 
+/// Data transferred from Host to Plugin
 #[derive(Clone, Debug, Serialize, Deserialize)]
-struct MessageHeader {
-    /// Channel ID
-    channel: ChannelId,
-    /// Return-address of message author
-    author: AuthorId,
-    /// Offset in buffer
-    slice: SerialSlice,
+pub struct ReceiveBuf {
+    /// Entity IDs aligned with components
+    pub entities: Vec<EntityId>,
+    /// Component data, in the same order as the query
+    pub components: Vec<Vec<u8>>,
+    /// Message buffers, in the same order as the subscribed channels
+    pub messages: Vec<Vec<Message>>,
+    /// Engine intrinsics
+    pub intrinsics: EngineIntrinsics,
 }
 
-/// Data received by plugin
+/// Data transferred from Plugin to Host
 #[derive(Clone, Debug, Serialize, Deserialize)]
-struct PluginReceive {
-    /// Location of ECS data. Location of actual data MUST NOT CHANGE!
-    ecs: SerialSlice,
-    /// Sanity check info on ECS data stride. Should match up!
-    ecs_data_stride: usize,
-    /// Indexing information for messages
-    messages: Vec<SerialSlice>,
-}
-
-/// Data sent by plugin
-#[derive(Clone, Debug, Serialize, Deserialize)]
-struct PluginSend {
+pub struct SendBuf {
     /// Commands to be sent to server
-    commands: Vec<EngineCommand>,
-    /// Indexing information for messages
-    messages: Vec<SerialSlice>,
+    pub commands: Vec<EngineCommand>,
+    /// Messages to be sent to other plugins
+    pub messages: Vec<Message>,
+    /// Schedule setup on init. Must be empty except for first use!
+    pub sched: Vec<SystemDescriptor>,
+}
+
+/// A description of a system within this plugin
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SystemDescriptor {
+    /// Channels this plugin subscribes to
+    pub subscriptions: Vec<ChannelId>,
+    /// ECS query info
+    pub query: Vec<QueryTerm>,
 }
 
 /*
@@ -47,5 +49,13 @@ impl SerialData {
 }
 
 fn iter_serial<U>(serial: &SerialData, sched: &EngineSchedule<U>, io: &mut EngineIo) {
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+struct SerialSlice {
+    /// Offset in bytes
+    offset: usize,
+    /// Length in bytes
+    len: usize,
 }
 */
