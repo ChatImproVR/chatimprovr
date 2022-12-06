@@ -27,7 +27,7 @@ pub mod prelude {
     pub use super::channels::*;
     pub use super::ecs::*;
     pub use super::stdout::*;
-    pub use crate::{printk, printlnk};
+    //pub use crate::{print, println};
 
     #[cfg(feature = "wasm-plugin")]
     pub use super::plugin::*;

@@ -4,7 +4,7 @@ use cimvr_common::{
     nalgebra::{self, Isometry3, Point3, Vector3},
     Transform,
 };
-use cimvr_engine_interface::{make_app_state, prelude::*, serial::SystemDescriptor, Locality, dbgk};
+use cimvr_engine_interface::{make_app_state, prelude::*, serial::SystemDescriptor, Locality, print, println, dbg};
 
 // Need a rand syscall because it's necessary in order to operate the ECS
 
@@ -16,8 +16,8 @@ make_app_state!(State);
 
 impl AppState for State {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
-        printk!("FUCK\n");
-        dbgk!(Transform {
+        print!("FUCK\n");
+        dbg!(Transform {
             position: Point3::origin(),
             rotation: Isometry3::identity(),
             scale: Vector3::zeros(),
