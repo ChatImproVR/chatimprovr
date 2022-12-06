@@ -10,11 +10,11 @@ pub struct QueryTerm {
 }
 
 /// Universally-unique Entity ID
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct EntityId(pub u128);
 
 /// Component ID
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ComponentId {
     /// Universally-unique id
     pub id: u128,

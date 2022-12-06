@@ -1,7 +1,6 @@
 //! Types used for communication with the engine
 use std::io::{Read, Write};
 
-use crate::plugin::EngineSchedule;
 use crate::prelude::*;
 use bincode::Options;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};

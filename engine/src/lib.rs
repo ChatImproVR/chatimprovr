@@ -8,6 +8,8 @@ use wasmtime::{
     AsContextMut, Caller, Extern, Func, ImportType, Instance, Memory, Module, Store, TypedFunc,
 };
 
+pub mod ecs;
+
 pub struct Engine {
     wt: wasmtime::Engine,
     module: Module,
