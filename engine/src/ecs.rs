@@ -47,6 +47,23 @@ impl Ecs {
         entities
     }
 
+    /// Import an entity ID from elsewhere
+    pub fn import_entity(&mut self, id: EntityId) {
+        self.entities.insert(id);
+    }
+
+    /// Remove an existing entity
+    pub fn remove_entity(&mut self, id: EntityId) {
+        for component in self.map.values_mut() {
+            component.remove(&id);
+        }
+
+        let did_remove = self.entities.remove(&id);
+        if !did_remove {
+            eprintln!("Warning: Attempted to remove non-existant entity {:#?}", id);
+        }
+    }
+
     /// Create a new entity
     pub fn create_entity(&mut self) -> EntityId {
         // TODO: While entity id is not in entities loop...
@@ -137,6 +154,7 @@ impl Ecs {
             .sum::<usize>()
     }
 
+    /*
     /// Return a new world containing the queried entities and all appropriate components,
     /// removing them from our own world
     pub fn divide(&mut self, query: &[QueryTerm]) -> Self {
@@ -163,6 +181,7 @@ impl Ecs {
             entities,
         }
     }
+    */
 }
 
 #[cfg(test)]
