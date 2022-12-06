@@ -5,12 +5,6 @@ use crate::prelude::*;
 use bincode::Options;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct EngineIntrinsics {
-    /// Random 64-bit number provided by the host
-    pub random: u64,
-}
-
 // (TODO: Make this just a header containing references to a dense buffer
 /// Plugin-local ECS data
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -30,8 +24,6 @@ pub struct ReceiveBuf {
     pub ecs: EcsData,
     /// Message buffers, in the same order as the subscribed channels
     pub messages: Vec<Vec<Message>>,
-    /// Engine intrinsics
-    pub intrinsics: EngineIntrinsics,
 }
 
 /// Data transferred from Plugin to Host

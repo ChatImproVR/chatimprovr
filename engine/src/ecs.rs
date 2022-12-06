@@ -8,7 +8,7 @@ type ComponentData = Vec<u8>;
 type EcsMap = HashMap<ComponentId, HashMap<EntityId, ComponentData>>;
 
 /// Rather poor ECS implementation for prototyping
-struct Ecs {
+pub struct Ecs {
     map: EcsMap,
     entities: HashSet<EntityId>,
 }
