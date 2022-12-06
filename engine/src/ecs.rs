@@ -194,4 +194,48 @@ mod tests {
             println!("{:X}", val);
         }
     }
+
+    #[test]
+    fn test_ecs_intermediate() {
+        let mut ecs = Ecs::new();
+
+        let comp_a = ComponentId {
+            id: 0xDEADBEEF,
+            size: 8,
+        };
+
+        let comp_b = ComponentId {
+            id: 0xB00FCAFE,
+            size: 8,
+        };
+
+        for i in 0..100u64 {
+            let e = ecs.create_entity();
+            if i < 50 {
+                ecs.add_component(e, comp_b, &i.to_le_bytes());
+            }
+            ecs.add_component(e, comp_a, &0x1337_3621_0420_6969_u64.to_le_bytes());
+        }
+
+        let entities = ecs.query(&[
+            QueryTerm {
+                component: comp_a,
+                access: Access::Read,
+            },
+            QueryTerm {
+                component: comp_b,
+                access: Access::Read,
+            },
+        ]);
+
+        let mut showed_up = vec![false; 50];
+        for ent in entities {
+            let buf = ecs.get(ent, comp_b);
+            let val = u64::from_le_bytes(buf.try_into().unwrap());
+            showed_up[val as usize] = true;
+        }
+
+        dbg!(&showed_up);
+        assert!(showed_up.iter().all(|&v| v), "But it was my birthday!!");
+    }
 }
