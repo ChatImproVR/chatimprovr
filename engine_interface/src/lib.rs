@@ -4,6 +4,9 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "wasm-plugin")]
 pub mod plugin;
 
+/// Printing functions for plugins
+pub mod print;
+
 /// ECS interfacing types
 pub mod ecs;
 
@@ -21,9 +24,11 @@ pub enum Locality {
 
 /// Convenience imports for the lazy
 pub mod prelude {
-    #[cfg(feature = "wasm-plugin")]
-    pub use super::plugin::*;
-
     pub use super::channels::*;
     pub use super::ecs::*;
+    pub use super::print::*;
+    pub use super::printkkk;
+
+    #[cfg(feature = "wasm-plugin")]
+    pub use super::plugin::*;
 }

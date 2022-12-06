@@ -8,3 +8,9 @@ Crates:
 * `plugin`: An example plugin
 
 Plugins are required to import the `engine_interface` crate, and often import the `common` crate
+
+# Preparation
+Make sure you have the `wasm32-unknown-unknown` target installed;
+```sh
+rustup target add wasm32-unknown-unknown
+```

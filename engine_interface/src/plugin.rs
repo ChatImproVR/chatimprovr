@@ -27,21 +27,15 @@ macro_rules! make_app_state {
 
         /// Reserve internal memory for external writes
         #[no_mangle]
-        fn reserve(bytes: u32) -> *mut u8 {
+        fn _reserve(bytes: u32) -> *mut u8 {
             // TODO: What if we fail?
             CTX.lock().unwrap().reserve(bytes)
         }
 
         /// Run internal code, returning pointer to the output buffer
         #[no_mangle]
-        fn dispatch() -> *mut u8 {
+        fn _dispatch() -> *mut u8 {
             CTX.lock().unwrap().dispatch()
-        }
-
-        /// Externally inspectable engine version
-        #[no_mangle]
-        fn engine_version() -> u32 {
-            0
         }
     };
 }

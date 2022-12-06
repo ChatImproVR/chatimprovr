@@ -18,6 +18,8 @@ impl AppState for State {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
         let head = io.create_entity();
 
+        printkkk!("FUCK\n");
+
         io.add_component(
             head,
             Transform {

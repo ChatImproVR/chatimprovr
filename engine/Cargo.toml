@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 cimvr_engine_interface = { path = "../engine_interface" }
+wasmtime = "3.0.1"
+anyhow = "1"
