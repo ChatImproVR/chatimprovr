@@ -16,6 +16,9 @@ pub mod serial;
 /// Message channels
 pub mod channels;
 
+/// PCG algorithm for generating random universally-unique entity IDs
+pub(crate) mod pcg;
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Locality {
     Local,

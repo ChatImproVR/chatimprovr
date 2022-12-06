@@ -5,14 +5,20 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     ecs::{Component, EntityId},
-    prelude::setup_panic,
-    serial::SystemDescriptor,
+    pcg::Pcg,
+    prelude::{setup_panic, EngineCommand},
+    serial::{serialize, EcsData, SystemDescriptor},
 };
 
 /// Full plugin context, contains user state and engine IO buffers
 pub struct Context<U> {
+    /// User-defined state
     user: U,
+    /// Ecs state, commands
     io: EngineIo,
+    /// Buffer for communication with host
+    buf: Vec<u8>,
+    /// Callbacks for systems and their associated subscription parameters
     sched: EngineSchedule<U>,
 }
 
@@ -50,7 +56,9 @@ pub trait AppState: Sized {
 /// Also contains the commands to be sent to the engine, and lists the modified entities and
 /// components therein
 pub struct EngineIo {
-    buf: Vec<u8>,
+    pub(crate) pcg: Pcg,
+    pub(crate) ecs: EcsData,
+    pub(crate) commands: Vec<EngineCommand>,
 }
 
 /// Scheduling of systems
@@ -86,46 +94,48 @@ impl<U: AppState> Context<U> {
             user: U::new(&mut io, &mut sched),
             sched,
             io,
+            buf: vec![],
         }
-    }
-
-    pub fn reserve(&mut self, bytes: u32) -> *mut u8 {
-        self.io.reserve(bytes);
-        self.io.buf_ptr()
     }
 
     pub fn dispatch(&mut self) -> *mut u8 {
         // TODO: Read from own io buf, Dispatch
 
-        self.io.buf_ptr()
+        self.buf.as_mut_ptr()
+    }
+
+    /// Reserves the given number of bytes for overwriting by the server
+    pub fn reserve(&mut self, bytes: u32) -> *mut u8 {
+        self.buf.clear();
+        self.buf.resize(bytes as usize, 0);
+        self.buf.as_mut_ptr()
     }
 }
 
 impl EngineIo {
     pub fn new() -> Self {
-        Self { buf: Vec::new() }
+        Self {
+            ecs: EcsData::default(),
+            commands: vec![],
+            pcg: Pcg::new(),
+        }
     }
 
-    pub fn add_component<C: Component>(&self, entity: EntityId, data: C) {
-        todo!()
+    pub fn add_component<C: Component>(&mut self, entity: EntityId, data: &C) {
+        let data = serialize(data).expect("Failed to serialize component data");
+        self.commands
+            .push(EngineCommand::AddComponent(entity, C::ID, data));
     }
 
-    pub fn create_entity(&self) -> EntityId {
-        todo!()
+    pub fn create_entity(&mut self) -> EntityId {
+        let id = EntityId(self.pcg.gen_u128());
+        self.commands.push(EngineCommand::Create(id));
+        id
     }
 
-    pub fn remove_entity(&self, entity: EntityId) {
-        todo!()
+    pub fn remove_entity(&mut self, id: EntityId) {
+        self.commands.push(EngineCommand::Delete(id));
     }
 
-    /// Reserves the given number of bytes for overwriting by the server
-    pub fn reserve(&mut self, bytes: u32) {
-        self.buf.clear();
-        self.buf.resize(bytes as usize, 0);
-    }
-
-    pub fn buf_ptr(&mut self) -> *mut u8 {
-        self.buf.as_mut_ptr()
-    }
     //fn add_system(&mut self, system, callback: fn());
 }

@@ -12,15 +12,23 @@ pub struct EngineIntrinsics {
     pub random: u64,
 }
 
+// (TODO: Make this just a header containing references to a dense buffer
+/// Plugin-local ECS data
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct EcsData {
+    /// Entity IDs aligned with components
+    pub entities: Vec<EntityId>,
+    /// Component data SoA, with components in the same order as the query terms
+    pub components: Vec<Vec<u8>>,
+}
+
 /// Data transferred from Host to Plugin
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ReceiveBuf {
     /// Which system to execute
     pub system: usize,
-    /// Entity IDs aligned with components
-    pub entities: Vec<EntityId>,
-    /// Component data, with components in the same order as the query terms
-    pub components: Vec<Vec<u8>>,
+    /// ECS data
+    pub ecs: EcsData,
     /// Message buffers, in the same order as the subscribed channels
     pub messages: Vec<Vec<Message>>,
     /// Engine intrinsics
@@ -36,6 +44,8 @@ pub struct SendBuf {
     pub messages: Vec<Message>,
     /// Schedule setup on init. Must be empty except for first use!
     pub sched: Vec<SystemDescriptor>,
+    /// ECS data
+    pub ecs: EcsData,
 }
 
 /// A description of a system within this plugin
@@ -52,7 +62,11 @@ fn bincode_opts() -> impl Options {
     bincode::DefaultOptions::new()
 }
 
-pub fn serialize<W: Write, T: Serialize>(w: W, val: &T) -> bincode::Result<()> {
+pub fn serialize<T: Serialize>(val: &T) -> bincode::Result<Vec<u8>> {
+    bincode_opts().serialize(val)
+}
+
+pub fn serialize_into<W: Write, T: Serialize>(w: W, val: &T) -> bincode::Result<()> {
     bincode_opts().serialize_into(w, val)
 }
 

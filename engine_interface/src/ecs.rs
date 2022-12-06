@@ -41,7 +41,8 @@ pub trait Component: Serialize + DeserializeOwned + Copy {
 /// Single command to be sent to engine
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum EngineCommand {
+    Create(EntityId),
     Delete(EntityId),
     // For now we're betting that the user doesn't add that many entities at once...
-    AddComponent(EntityId, Vec<(ComponentId, Vec<u8>)>),
+    AddComponent(EntityId, ComponentId, Vec<u8>),
 }

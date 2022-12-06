@@ -1,14 +1,18 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
 use cimvr_engine_interface::serial::{
-    serialize, serialized_size, EngineIntrinsics, ReceiveBuf, SendBuf,
+    serialize_into, serialized_size, EcsData, EngineIntrinsics, ReceiveBuf, SendBuf,
 };
+use rand::prelude::*;
 use std::path::Path;
-use wasmtime::{AsContextMut, Caller, Func, Instance, Memory, Module, Store, TypedFunc};
+use wasmtime::{
+    AsContextMut, Caller, Extern, Func, ImportType, Instance, Memory, Module, Store, TypedFunc,
+};
 
 pub struct Engine {
     wt: wasmtime::Engine,
     module: Module,
     print_fn: Func,
+    random_fn: Func,
     mem: Memory,
     store: Store<()>,
     instance: Instance,
@@ -36,7 +40,23 @@ impl Engine {
             },
         );
 
-        let instance = Instance::new(&mut store, &module, &[print_fn.into()])?;
+        // Basic printing functionality
+        let random_fn = Func::wrap(&mut store, || rand::thread_rng().gen::<u64>());
+
+        let mut imports: Vec<Extern> = vec![];
+        for imp in module.imports() {
+            match (imp.name(), imp.ty()) {
+                ("_print", wasmtime::ExternType::Func(_)) => {
+                    imports.push(print_fn.into());
+                }
+                ("_random", wasmtime::ExternType::Func(_)) => {
+                    imports.push(random_fn.into());
+                }
+                _ => bail!("Unhandled import {:#?}", imp),
+            }
+        }
+
+        let instance = Instance::new(&mut store, &module, &imports)?;
 
         let mem = instance.get_memory(&mut store, "memory").unwrap();
 
@@ -44,6 +64,7 @@ impl Engine {
         let reserve_fn = instance.get_typed_func::<u32, u32, _>(&mut store, "_reserve")?;
 
         Ok(Self {
+            random_fn,
             mem,
             wt,
             module,
@@ -58,8 +79,10 @@ impl Engine {
     pub fn dispatch(&mut self) -> Result<()> {
         let recv_buf = ReceiveBuf {
             system: 0,
-            entities: vec![],
-            components: vec![],
+            ecs: EcsData {
+                entities: vec![],
+                components: vec![],
+            },
             messages: vec![],
             intrinsics: EngineIntrinsics { random: 0 },
         };
@@ -69,7 +92,7 @@ impl Engine {
         let ptr = self.reserve_fn.call(&mut self.store, size as u32)?;
         let mem = self.mem.data_mut(&mut self.store);
         let slice = std::io::Cursor::new(&mut mem[ptr as usize..][..size]);
-        serialize(slice, &recv_buf)?;
+        serialize_into(slice, &recv_buf)?;
 
         // Call the plugin!
         self.dispatch_fn.call(&mut self.store, ())?;

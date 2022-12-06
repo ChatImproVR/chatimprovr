@@ -11,10 +11,8 @@ use cimvr_engine_interface::{
     dbg, make_app_state, prelude::*, print, println, serial::SystemDescriptor, Locality,
 };
 
-// Need a rand syscall because it's necessary in order to operate the ECS
-
 struct State {
-    //head: EntityId,
+    head: EntityId,
 }
 
 make_app_state!(State);
@@ -23,50 +21,37 @@ impl AppState for State {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
         let mut h: HashSet<u32> = (0..100).collect();
 
-        std::time::SystemTime::now();
-        //panic!("FUCK");
+        let head = io.create_entity();
 
-        /*
-        dbg!(Transform {
-            position: Point3::origin(),
-            rotation: Isometry3::identity(),
-            scale: Vector3::zeros(),
-        });
-        */
+        io.add_component(
+            head,
+            &Transform {
+                position: Point3::origin(),
+                rotation: Isometry3::identity(),
+                scale: Vector3::zeros(),
+            },
+        );
 
-        /*
-            let head = io.create_entity();
+        schedule.add_system(
+            SystemDescriptor {
+                subscriptions: vec![ChannelId {
+                    id: 0xDEADBEEF,
+                    locality: Locality::Local,
+                }],
+                query: vec![QueryTerm {
+                    component: Transform::ID,
+                    access: Access::Write,
+                }],
+            },
+            Self::system,
+        );
 
-            io.add_component(
-                head,
-                Transform {
-                    position: Point3::origin(),
-                    rotation: Isometry3::identity(),
-                    scale: Vector3::zeros(),
-                },
-            );
-
-            schedule.add_system(
-                SystemDescriptor {
-                    subscriptions: vec![ChannelId {
-                        id: 0xDEADBEEF,
-                        locality: Locality::Local,
-                    }],
-                    query: vec![QueryTerm {
-                        component: Transform::ID,
-                        access: Access::Write,
-                    }],
-                },
-                Self::system,
-            );
-        */
-
-        Self { /*head*/ }
+        Self { head }
     }
 }
 
 impl State {
     fn system(&mut self, io: &mut EngineIo) {
-        todo!()
+        println!("System runs!");
     }
 }

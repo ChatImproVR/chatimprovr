@@ -9,3 +9,4 @@ edition = "2021"
 cimvr_engine_interface = { path = "../engine_interface" }
 wasmtime = "3.0.1"
 anyhow = "1"
+rand = "0.8"
