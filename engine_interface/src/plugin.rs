@@ -7,7 +7,7 @@ use crate::{
     ecs::{Component, EntityId},
     pcg::Pcg,
     prelude::{setup_panic, EngineCommand},
-    serial::{serialize, EcsData, SystemDescriptor},
+    serial::{deserialize, serialize, EcsData, SystemDescriptor},
 };
 
 /// Full plugin context, contains user state and engine IO buffers
@@ -55,7 +55,9 @@ pub trait AppState: Sized {
 /// Contains the query result, and any received messages.
 /// Also contains the commands to be sent to the engine, and lists the modified entities and
 /// components therein
+#[derive(Serialize, Deserialize)]
 pub struct EngineIo {
+    #[serde(skip)]
     pub(crate) pcg: Pcg,
     pub(crate) ecs: EcsData,
     pub(crate) commands: Vec<EngineCommand>,
@@ -105,6 +107,10 @@ impl<U: AppState> Context<U> {
         let user = self
             .user
             .get_or_insert_with(|| U::new(&mut self.io, &mut self.sched));
+
+        // Deserialize state from server
+        self.io =
+            deserialize(std::io::Cursor::new(&self.buf)).expect("Failed to decode host message");
 
         self.buf.as_mut_ptr()
     }

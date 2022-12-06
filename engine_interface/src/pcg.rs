@@ -3,6 +3,7 @@ extern "C" {
 }
 
 /// https://en.wikipedia.org/wiki/Permuted_congruential_generator
+#[derive(Default)]
 pub struct Pcg {
     state: u64,
     multiplier: u64,

@@ -19,8 +19,6 @@ make_app_state!(State);
 
 impl AppState for State {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
-        let mut h: HashSet<u32> = (0..100).collect();
-
         let head = io.create_entity();
 
         io.add_component(
