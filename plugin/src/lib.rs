@@ -46,6 +46,10 @@ impl AppState for State {
             Self::system,
         );
 
+        for _ in 0..10 {
+            dbg!(io.random());
+        }
+
         Self { head }
     }
 }

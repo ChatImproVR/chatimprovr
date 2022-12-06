@@ -13,7 +13,7 @@ use crate::{
 /// Full plugin context, contains user state and engine IO buffers
 pub struct Context<U> {
     /// User-defined state
-    user: U,
+    user: Option<U>,
     /// Ecs state, commands
     io: EngineIo,
     /// Buffer for communication with host
@@ -84,22 +84,27 @@ impl<U> EngineSchedule<U> {
 }
 
 impl<U: AppState> Context<U> {
+    /// Creates context, but don't set up usercode yet since we're not in _dispatch(),
+    /// and that means that the engine would never see our output.
+    /// Called from _reserve() oddly enough, because this structure manages memory.
     pub fn new() -> Self {
         setup_panic();
 
-        let mut io = EngineIo::new();
-        let mut sched = EngineSchedule::new();
-
         Self {
-            user: U::new(&mut io, &mut sched),
-            sched,
-            io,
+            user: None,
+            io: EngineIo::new(),
+            sched: EngineSchedule::new(),
             buf: vec![],
         }
     }
 
+    /// Entry point for user code
     pub fn dispatch(&mut self) -> *mut u8 {
-        // TODO: Read from own io buf, Dispatch
+        // Initialize user code if not already present
+        // We do this BEFORE EngineIo is actually filled, so that it doesn't have any query data
+        let user = self
+            .user
+            .get_or_insert_with(|| U::new(&mut self.io, &mut self.sched));
 
         self.buf.as_mut_ptr()
     }
@@ -137,5 +142,7 @@ impl EngineIo {
         self.commands.push(EngineCommand::Delete(id));
     }
 
-    //fn add_system(&mut self, system, callback: fn());
+    pub fn random(&mut self) -> u32 {
+        self.pcg.gen_u32()
+    }
 }
