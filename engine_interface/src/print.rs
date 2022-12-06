@@ -11,6 +11,7 @@ pub fn _print_str(s: &str) {
 #[macro_export]
 macro_rules! printkkk {
     ($($arg:tt)*) => {{
+        // TODO: Yes I am aware this is slow. It is also EASY
         _print_str(&format_args!($($arg)*).to_string());
     }};
 }

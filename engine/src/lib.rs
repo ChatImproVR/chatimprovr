@@ -1,10 +1,11 @@
 use std::path::Path;
 use anyhow::Result;
-use wasmtime::{Module, Instance, Store, Func, Caller};
+use wasmtime::{Module, Instance, Store, Func, Caller, AsContextMut};
 
 pub struct Engine {
     wt: wasmtime::Engine,
     module: Module,
+    print_fn: Func,
     store: Store<()>,
     instance: Instance,
 }
@@ -16,8 +17,12 @@ impl Engine {
         let module = Module::new(&wt, &bytes)?;
         let mut store = Store::new(&wt, ());
 
-        let print_fn = Func::wrap(&mut store, |ptr: u32, len: u32| {
-            println!("PINT {} {}", ptr, len);
+        let print_fn = Func::wrap(&mut store, |mut caller: Caller<'_, ()>, ptr: u32, len: u32| {
+            let mem = caller.get_export("memory").unwrap().into_memory().unwrap();
+            let mut buf = vec![0; len as usize];
+            mem.read(caller, ptr as usize, &mut buf);
+            let s = String::from_utf8(buf).unwrap();
+            println!("Plugin: {}", s);
         });
 
         let instance = Instance::new(&mut store, &module, &[print_fn.into()])?;
@@ -25,6 +30,7 @@ impl Engine {
         Ok(Self {
             wt,
             module,
+            print_fn,
             store,
             instance,
         })
