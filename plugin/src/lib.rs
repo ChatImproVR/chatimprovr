@@ -16,7 +16,8 @@ make_app_state!(State);
 
 impl AppState for State {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
-        print!("FUCK\n");
+        print!("I'm gonna ");
+        println!("scream");
         dbg!(Transform {
             position: Point3::origin(),
             rotation: Isometry3::identity(),
