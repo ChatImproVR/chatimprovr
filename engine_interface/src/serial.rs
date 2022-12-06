@@ -1,7 +1,10 @@
 //! Types used for communication with the engine
+use std::io::{Write, Read};
+
 use crate::plugin::EngineSchedule;
 use crate::prelude::*;
-use serde::{Deserialize, Serialize};
+use bincode::Options;
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EngineIntrinsics {
@@ -12,9 +15,11 @@ pub struct EngineIntrinsics {
 /// Data transferred from Host to Plugin
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ReceiveBuf {
+    /// Which system to execute
+    pub system: usize,
     /// Entity IDs aligned with components
     pub entities: Vec<EntityId>,
-    /// Component data, in the same order as the query
+    /// Component data, with components in the same order as the query terms
     pub components: Vec<Vec<u8>>,
     /// Message buffers, in the same order as the subscribed channels
     pub messages: Vec<Vec<Message>>,
@@ -40,6 +45,23 @@ pub struct SystemDescriptor {
     pub subscriptions: Vec<ChannelId>,
     /// ECS query info
     pub query: Vec<QueryTerm>,
+}
+
+fn bincode_opts() -> impl Options {
+    // NOTE: This is actually different from the default bincode serialize() function!!
+    bincode::DefaultOptions::new()
+}
+
+pub fn serialize<W: Write, T: Serialize>(w: W, val: &T) -> bincode::Result<()> {
+    bincode_opts().serialize_into(w, val)
+}
+
+pub fn serialized_size<T: Serialize>(val: &T) -> bincode::Result<usize> {
+    Ok(bincode_opts().serialized_size(val)? as usize)
+}
+
+pub fn deserialize<R: Read, T: DeserializeOwned>(r: R) -> bincode::Result<T> {
+    bincode_opts().deserialize_from(r)
 }
 
 /*
