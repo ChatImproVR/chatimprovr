@@ -1,13 +1,14 @@
-use std::sync::{Mutex, MutexGuard};
-
 pub use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     ecs::{Component, EntityId},
     pcg::Pcg,
-    prelude::{setup_panic, EngineCommand},
-    serial::{deserialize, serialize, EcsData, SystemDescriptor},
+    prelude::{setup_panic, EngineCommand, Message},
+    serial::{
+        deserialize, serialize, serialize_into, serialized_size, EcsData, ReceiveBuf, SendBuf,
+        SystemDescriptor,
+    },
 };
 
 /// Full plugin context, contains user state and engine IO buffers
@@ -57,10 +58,17 @@ pub trait AppState: Sized {
 /// components therein
 #[derive(Serialize, Deserialize)]
 pub struct EngineIo {
+    /// Random number generator
     #[serde(skip)]
     pub(crate) pcg: Pcg,
+    /// ECS data (In and Out)
     pub(crate) ecs: EcsData,
+    /// Sent commands
     pub(crate) commands: Vec<EngineCommand>,
+    /// Received messages
+    pub(crate) message_rx: Vec<Message>,
+    /// Sent messages
+    pub(crate) message_tx: Vec<Message>,
 }
 
 /// Scheduling of systems
@@ -104,14 +112,39 @@ impl<U: AppState> Context<U> {
     pub fn dispatch(&mut self) -> *mut u8 {
         // Initialize user code if not already present
         // We do this BEFORE EngineIo is actually filled, so that it doesn't have any query data
+        let user_was_created = self.user.is_none();
         let user = self
             .user
             .get_or_insert_with(|| U::new(&mut self.io, &mut self.sched));
 
         // Deserialize state from server
-        self.io =
+        let recv: ReceiveBuf =
             deserialize(std::io::Cursor::new(&self.buf)).expect("Failed to decode host message");
 
+        // Dispatch
+        let system = self.sched.callbacks[recv.system];
+        system(user, &mut self.io);
+
+        // Write return state
+        let send = SendBuf {
+            commands: std::mem::take(&mut self.io.commands),
+            ecs: std::mem::take(&mut self.io.ecs),
+            messages: std::mem::take(&mut self.io.message_tx),
+            sched: if user_was_created {
+                self.sched.systems.clone()
+            } else {
+                vec![]
+            },
+        };
+        let len: u32 = serialized_size(&send).expect("Failed to get size of host message") as u32;
+        self.buf.clear();
+
+        // Write header
+        self.buf.extend(len.to_le_bytes());
+        // Write data
+        serialize_into(&mut self.buf, &send).expect("Failed to encode host message");
+
+        // Return buffer pointer
         self.buf.as_mut_ptr()
     }
 
@@ -129,6 +162,8 @@ impl EngineIo {
             ecs: EcsData::default(),
             commands: vec![],
             pcg: Pcg::new(),
+            message_rx: vec![],
+            message_tx: vec![],
         }
     }
 

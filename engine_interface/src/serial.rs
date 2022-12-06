@@ -6,7 +6,7 @@ use crate::prelude::*;
 use bincode::Options;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct EngineIntrinsics {
     /// Random 64-bit number provided by the host
     pub random: u64,
@@ -23,7 +23,7 @@ pub struct EcsData {
 }
 
 /// Data transferred from Host to Plugin
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct ReceiveBuf {
     /// Which system to execute
     pub system: usize,
@@ -36,7 +36,7 @@ pub struct ReceiveBuf {
 }
 
 /// Data transferred from Plugin to Host
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct SendBuf {
     /// Commands to be sent to server
     pub commands: Vec<EngineCommand>,
@@ -49,7 +49,7 @@ pub struct SendBuf {
 }
 
 /// A description of a system within this plugin
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct SystemDescriptor {
     /// Channels this plugin subscribes to
     pub subscriptions: Vec<ChannelId>,
