@@ -1,10 +1,15 @@
-use std::sync::Mutex;
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Mutex,
+};
 
 use cimvr_common::{
     nalgebra::{self, Isometry3, Point3, Vector3},
     Transform,
 };
-use cimvr_engine_interface::{make_app_state, prelude::*, serial::SystemDescriptor, Locality, print, println, dbg};
+use cimvr_engine_interface::{
+    dbg, make_app_state, prelude::*, print, println, serial::SystemDescriptor, Locality,
+};
 
 // Need a rand syscall because it's necessary in order to operate the ECS
 
@@ -16,40 +21,45 @@ make_app_state!(State);
 
 impl AppState for State {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
-        print!("I'm gonna ");
-        println!("scream");
+        let mut h: HashSet<u32> = (0..100).collect();
+
+        std::time::SystemTime::now();
+        //panic!("FUCK");
+
+        /*
         dbg!(Transform {
             position: Point3::origin(),
             rotation: Isometry3::identity(),
             scale: Vector3::zeros(),
         });
+        */
 
         /*
-        let head = io.create_entity();
+            let head = io.create_entity();
 
-        io.add_component(
-            head,
-            Transform {
-                position: Point3::origin(),
-                rotation: Isometry3::identity(),
-                scale: Vector3::zeros(),
-            },
-        );
+            io.add_component(
+                head,
+                Transform {
+                    position: Point3::origin(),
+                    rotation: Isometry3::identity(),
+                    scale: Vector3::zeros(),
+                },
+            );
 
-        schedule.add_system(
-            SystemDescriptor {
-                subscriptions: vec![ChannelId {
-                    id: 0xDEADBEEF,
-                    locality: Locality::Local,
-                }],
-                query: vec![QueryTerm {
-                    component: Transform::ID,
-                    access: Access::Write,
-                }],
-            },
-            Self::system,
-        );
-    */
+            schedule.add_system(
+                SystemDescriptor {
+                    subscriptions: vec![ChannelId {
+                        id: 0xDEADBEEF,
+                        locality: Locality::Local,
+                    }],
+                    query: vec![QueryTerm {
+                        component: Transform::ID,
+                        access: Access::Write,
+                    }],
+                },
+                Self::system,
+            );
+        */
 
         Self { /*head*/ }
     }

@@ -1,10 +1,10 @@
 //! Types used for communication with the engine
-use std::io::{Write, Read};
+use std::io::{Read, Write};
 
 use crate::plugin::EngineSchedule;
 use crate::prelude::*;
 use bincode::Options;
-use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EngineIntrinsics {

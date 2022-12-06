@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     ecs::{Component, EntityId},
+    prelude::setup_panic,
     serial::SystemDescriptor,
 };
 
@@ -76,8 +77,11 @@ impl<U> EngineSchedule<U> {
 
 impl<U: AppState> Context<U> {
     pub fn new() -> Self {
+        setup_panic();
+
         let mut io = EngineIo::new();
         let mut sched = EngineSchedule::new();
+
         Self {
             user: U::new(&mut io, &mut sched),
             sched,

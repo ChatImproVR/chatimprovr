@@ -1,7 +1,9 @@
-use std::path::Path;
 use anyhow::Result;
-use cimvr_engine_interface::serial::{SendBuf, ReceiveBuf, EngineIntrinsics, serialized_size, serialize};
-use wasmtime::{Module, Instance, Store, Func, Caller, AsContextMut, Memory, TypedFunc};
+use cimvr_engine_interface::serial::{
+    serialize, serialized_size, EngineIntrinsics, ReceiveBuf, SendBuf,
+};
+use std::path::Path;
+use wasmtime::{AsContextMut, Caller, Func, Instance, Memory, Module, Store, TypedFunc};
 
 pub struct Engine {
     wt: wasmtime::Engine,
@@ -21,15 +23,18 @@ impl Engine {
         let module = Module::new(&wt, &bytes)?;
         let mut store = Store::new(&wt, ());
 
-        // Basic printing functionality 
-        let print_fn = Func::wrap(&mut store, |mut caller: Caller<'_, ()>, ptr: u32, len: u32| {
-            // TODO: What a disaster
-            let mem = caller.get_export("memory").unwrap().into_memory().unwrap();
-            let mut buf = vec![0; len as usize];
-            mem.read(caller, ptr as usize, &mut buf).unwrap();
-            let s = String::from_utf8(buf).unwrap();
-            print!("{}", s);
-        });
+        // Basic printing functionality
+        let print_fn = Func::wrap(
+            &mut store,
+            |mut caller: Caller<'_, ()>, ptr: u32, len: u32| {
+                // TODO: What a disaster
+                let mem = caller.get_export("memory").unwrap().into_memory().unwrap();
+                let mut buf = vec![0; len as usize];
+                mem.read(caller, ptr as usize, &mut buf).unwrap();
+                let s = String::from_utf8(buf).unwrap();
+                print!("{}", s);
+            },
+        );
 
         let instance = Instance::new(&mut store, &module, &[print_fn.into()])?;
 
@@ -56,9 +61,7 @@ impl Engine {
             entities: vec![],
             components: vec![],
             messages: vec![],
-            intrinsics: EngineIntrinsics {
-                random: 0,
-            },
+            intrinsics: EngineIntrinsics { random: 0 },
         };
 
         // Serialize directly into the module's memory. Saves time!
@@ -71,7 +74,7 @@ impl Engine {
         // Call the plugin!
         self.dispatch_fn.call(&mut self.store, ())?;
 
-        // Also deserialize directly from the module's memory 
+        // Also deserialize directly from the module's memory
         // Read length header that the plugin provides
 
         Ok(())

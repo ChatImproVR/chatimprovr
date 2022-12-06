@@ -8,6 +8,13 @@ pub fn _print_str(s: &str) {
     }
 }
 
+/// Set up printing for panics
+pub(crate) fn setup_panic() {
+    std::panic::set_hook(Box::new(|e| {
+        _print_str(&(e.to_string() + "\n"));
+    }))
+}
+
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => {{
