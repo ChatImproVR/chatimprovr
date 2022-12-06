@@ -137,10 +137,11 @@ impl<U: AppState> Context<U> {
             },
         };
         let len: u32 = serialized_size(&send).expect("Failed to get size of host message") as u32;
-        self.buf.clear();
 
         // Write header
+        self.buf.clear();
         self.buf.extend(len.to_le_bytes());
+
         // Write data
         serialize_into(&mut self.buf, &send).expect("Failed to encode host message");
 

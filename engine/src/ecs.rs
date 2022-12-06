@@ -237,5 +237,21 @@ mod tests {
 
         dbg!(&showed_up);
         assert!(showed_up.iter().all(|&v| v), "But it was my birthday!!");
+
+        let n_comp_a = ecs
+            .query(&[QueryTerm {
+                component: comp_a,
+                access: Access::Read,
+            }])
+            .len();
+        assert_eq!(n_comp_a, 100);
+
+        let n_comp_b = ecs
+            .query(&[QueryTerm {
+                component: comp_b,
+                access: Access::Read,
+            }])
+            .len();
+        assert_eq!(n_comp_b, 50);
     }
 }
