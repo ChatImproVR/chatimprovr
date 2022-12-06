@@ -1,16 +1,19 @@
 use anyhow::{bail, Result};
 use cimvr_engine_interface::serial::{
-    serialize_into, serialized_size, EcsData, EngineIntrinsics, ReceiveBuf, SendBuf,
+    deserialize, serialize_into, serialized_size, EcsData, EngineIntrinsics, ReceiveBuf, SendBuf,
 };
 use rand::prelude::*;
-use std::path::Path;
+use std::{io::Cursor, path::Path};
 use wasmtime::{
     AsContextMut, Caller, Extern, Func, ImportType, Instance, Memory, Module, Store, TypedFunc,
 };
 
 pub mod ecs;
+pub use cimvr_engine_interface;
 
-pub struct Engine {
+pub struct Engine {}
+
+pub struct Plugin {
     wt: wasmtime::Engine,
     module: Module,
     print_fn: Func,
@@ -22,7 +25,7 @@ pub struct Engine {
     reserve_fn: TypedFunc<u32, u32>,
 }
 
-impl Engine {
+impl Plugin {
     pub fn new(plugin_path: impl AsRef<Path>) -> Result<Self> {
         let wt = wasmtime::Engine::new(&Default::default())?;
         let bytes = std::fs::read(plugin_path)?;
@@ -78,30 +81,31 @@ impl Engine {
         })
     }
 
-    pub fn dispatch(&mut self) -> Result<()> {
-        let recv_buf = ReceiveBuf {
-            system: 0,
-            ecs: EcsData {
-                entities: vec![],
-                components: vec![],
-            },
-            messages: vec![],
-            intrinsics: EngineIntrinsics { random: 0 },
-        };
-
+    pub fn dispatch(&mut self, recv: &ReceiveBuf) -> Result<SendBuf> {
         // Serialize directly into the module's memory. Saves time!
-        let size = serialized_size(&recv_buf)?;
+        let size = serialized_size(&recv)?;
         let ptr = self.reserve_fn.call(&mut self.store, size as u32)?;
         let mem = self.mem.data_mut(&mut self.store);
-        let slice = std::io::Cursor::new(&mut mem[ptr as usize..][..size]);
-        serialize_into(slice, &recv_buf)?;
+        let cursor = Cursor::new(&mut mem[ptr as usize..][..size]);
+        serialize_into(cursor, &recv)?;
 
         // Call the plugin!
-        self.dispatch_fn.call(&mut self.store, ())?;
+        let ptr = self.dispatch_fn.call(&mut self.store, ())?;
 
         // Also deserialize directly from the module's memory
         // Read length header that the plugin provides
+        let mem = self.mem.data_mut(&mut self.store);
+        let ptr = ptr as usize;
 
-        Ok(())
+        let (header, xs) = mem[ptr..].split_at(4);
+
+        // Read header for length
+        let mut header_bytes = [0; 4];
+        header_bytes.copy_from_slice(&header);
+        let len = u32::from_le_bytes(header_bytes) as usize;
+        let slice = &xs[..len];
+
+        // Deserialize it
+        Ok(deserialize(Cursor::new(slice))?)
     }
 }
