@@ -169,6 +169,16 @@ impl EngineIo {
 
     pub fn add_component<C: Component>(&mut self, entity: EntityId, data: &C) {
         let data = serialize(data).expect("Failed to serialize component data");
+
+        // Sanity check
+        assert_eq!(
+            data.len(),
+            usize::from(C::ID.size),
+            "Component size mismatch; ComponentId prescribes {} but serialize reports {}",
+            C::ID.size,
+            data.len(),
+        );
+
         self.commands
             .push(EngineCommand::AddComponent(entity, C::ID, data));
     }

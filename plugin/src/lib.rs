@@ -4,7 +4,7 @@ use std::{
 };
 
 use cimvr_common::{
-    nalgebra::{self, Isometry3, Point3, Vector3},
+    nalgebra::{self, Isometry3, Point3, UnitQuaternion, Vector3},
     Transform,
 };
 use cimvr_engine_interface::{
@@ -25,8 +25,8 @@ impl AppState for State {
             head,
             &Transform {
                 position: Point3::origin(),
-                rotation: Isometry3::identity(),
-                scale: Vector3::zeros(),
+                rotation: UnitQuaternion::identity(),
+                //scale: Vector3::zeros(),
             },
         );
 
