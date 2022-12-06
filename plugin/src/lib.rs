@@ -4,20 +4,26 @@ use cimvr_common::{
     nalgebra::{self, Isometry3, Point3, Vector3},
     Transform,
 };
-use cimvr_engine_interface::{make_app_state, prelude::*, serial::SystemDescriptor, Locality};
+use cimvr_engine_interface::{make_app_state, prelude::*, serial::SystemDescriptor, Locality, dbgk};
 
 // Need a rand syscall because it's necessary in order to operate the ECS
 
 struct State {
-    head: EntityId,
+    //head: EntityId,
 }
 
 make_app_state!(State);
 
 impl AppState for State {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
-        printkkk!("FUCK\n");
+        printk!("FUCK\n");
+        dbgk!(Transform {
+            position: Point3::origin(),
+            rotation: Isometry3::identity(),
+            scale: Vector3::zeros(),
+        });
 
+        /*
         let head = io.create_entity();
 
         io.add_component(
@@ -42,8 +48,9 @@ impl AppState for State {
             },
             Self::system,
         );
+    */
 
-        Self { head }
+        Self { /*head*/ }
     }
 }
 

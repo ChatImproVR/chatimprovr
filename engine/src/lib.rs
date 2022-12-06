@@ -18,11 +18,12 @@ impl Engine {
         let mut store = Store::new(&wt, ());
 
         let print_fn = Func::wrap(&mut store, |mut caller: Caller<'_, ()>, ptr: u32, len: u32| {
+            // TODO: What a disaster
             let mem = caller.get_export("memory").unwrap().into_memory().unwrap();
             let mut buf = vec![0; len as usize];
-            mem.read(caller, ptr as usize, &mut buf);
+            mem.read(caller, ptr as usize, &mut buf).unwrap();
             let s = String::from_utf8(buf).unwrap();
-            println!("Plugin: {}", s);
+            print!("{}", s);
         });
 
         let instance = Instance::new(&mut store, &module, &[print_fn.into()])?;
