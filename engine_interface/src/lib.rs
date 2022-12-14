@@ -16,6 +16,9 @@ pub mod serial;
 /// Message channels
 pub mod channels;
 
+/// Systems and scheduling
+pub mod system;
+
 /// PCG algorithm for generating random universally-unique entity IDs
 pub(crate) mod pcg;
 
@@ -30,6 +33,7 @@ pub mod prelude {
     pub use super::channels::*;
     pub use super::ecs::*;
     pub use super::stdout::*;
+    pub use super::system::*;
     //pub use crate::{print, println};
 
     #[cfg(feature = "wasm-plugin")]

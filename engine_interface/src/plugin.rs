@@ -4,10 +4,9 @@ use serde::{Deserialize, Serialize};
 use crate::{
     ecs::{Component, EntityId},
     pcg::Pcg,
-    prelude::{setup_panic, EngineCommand, Message},
+    prelude::{setup_panic, EngineCommand, Message, SystemDescriptor},
     serial::{
         deserialize, serialize, serialize_into, serialized_size, EcsData, ReceiveBuf, SendBuf,
-        SystemDescriptor,
     },
 };
 

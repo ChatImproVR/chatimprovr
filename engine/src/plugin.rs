@@ -20,7 +20,8 @@ pub struct Plugin {
 }
 
 impl Plugin {
-    pub fn new(wt: &wasmtime::Engine, plugin_path: impl AsRef<Path>) -> Result<Self> {
+    /// Load the plugin in an uninitialized state
+    pub fn new(wt: &wasmtime::Engine, plugin_path: impl AsRef<Path>) -> Result<(Self, ReceiveBuf)> {
         let bytes = std::fs::read(plugin_path)?;
         let module = Module::new(wt, &bytes)?;
         let mut store = Store::new(wt, ());
@@ -38,7 +39,7 @@ impl Plugin {
             },
         );
 
-        // Basic printing functionality
+        // Random number "syscall". TODO: Include this in SendBuf instead?
         let random_fn = Func::wrap(&mut store, || rand::thread_rng().gen::<u64>());
 
         let mut imports: Vec<Extern> = vec![];
@@ -73,6 +74,10 @@ impl Plugin {
         })
     }
 
+    /// Run the initial plugin setup. WARNING: Subsequent calls will cause buggy behaviour
+    pub fn setup() -> Result<SendBuf> {}
+
+    /// Dispatch plugin internals with given intent
     pub fn dispatch(&mut self, recv: &ReceiveBuf) -> Result<SendBuf> {
         // Serialize directly into the module's memory. Saves time!
         let size = serialized_size(&recv)?;
@@ -85,17 +90,16 @@ impl Plugin {
         let ptr = self.dispatch_fn.call(&mut self.store, ())?;
 
         // Also deserialize directly from the module's memory
-        // Read length header that the plugin provides
         let mem = self.mem.data_mut(&mut self.store);
         let ptr = ptr as usize;
 
-        let (header, xs) = mem[ptr..].split_at(4);
-
         // Read header for length
         let mut header_bytes = [0; 4];
+        let (header, forever_after) = mem[ptr..].split_at(header_bytes.len());
         header_bytes.copy_from_slice(&header);
-        let len = u32::from_le_bytes(header_bytes) as usize;
-        let slice = &xs[..len];
+        let payload_len = u32::from_le_bytes(header_bytes) as usize;
+
+        let slice = &forever_after[..payload_len];
 
         // Deserialize it
         Ok(deserialize(Cursor::new(slice))?)

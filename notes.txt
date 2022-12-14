@@ -1,0 +1,6 @@
+Okay so we need a real init() function 
+
+BECAUSE right now there's a circular dependency; you have to know the system number to execute the first query but you have to know which system to query first! 
+So! we're going to abstract away the message receive function from wasm
+
+It would be cool to do a roundtrip test for it too

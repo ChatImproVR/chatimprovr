@@ -39,15 +39,6 @@ pub struct SendBuf {
     pub ecs: EcsData,
 }
 
-/// A description of a system within this plugin
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct SystemDescriptor {
-    /// Channels this plugin subscribes to
-    pub subscriptions: Vec<ChannelId>,
-    /// ECS query info
-    pub query: Vec<QueryTerm>,
-}
-
 fn bincode_opts() -> impl Options {
     // NOTE: This is actually different from the default bincode serialize() function!!
     bincode::DefaultOptions::new()
