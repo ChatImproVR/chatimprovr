@@ -18,8 +18,8 @@ pub struct EcsData {
 /// Data transferred from Host to Plugin
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct ReceiveBuf {
-    /// Which system to execute
-    pub system: usize,
+    /// Which system to execute, None if initializing
+    pub system: Option<usize>,
     /// ECS data
     pub ecs: EcsData,
     /// Message buffers, in the same order as the subscribed channels

@@ -109,31 +109,29 @@ impl<U: AppState> Context<U> {
 
     /// Entry point for user code
     pub fn dispatch(&mut self) -> *mut u8 {
-        // Initialize user code if not already present
-        // We do this BEFORE EngineIo is actually filled, so that it doesn't have any query data
-        let user_was_created = self.user.is_none();
-        let user = self
-            .user
-            .get_or_insert_with(|| U::new(&mut self.io, &mut self.sched));
-
         // Deserialize state from server
         let recv: ReceiveBuf =
             deserialize(std::io::Cursor::new(&self.buf)).expect("Failed to decode host message");
 
-        // Dispatch
-        let system = self.sched.callbacks[recv.system];
-        system(user, &mut self.io);
+        if let Some(system_idx) = recv.system {
+            // Call system function with user data
+            let user = self
+                .user
+                .as_mut()
+                .expect("Attempted to call system before initialization");
+            let system = self.sched.callbacks[system_idx];
+            system(user, &mut self.io);
+        } else {
+            // Initialize plugin internals
+            self.user = Some(U::new(&mut self.io, &mut self.sched));
+        }
 
         // Write return state
         let send = SendBuf {
             commands: std::mem::take(&mut self.io.commands),
             ecs: std::mem::take(&mut self.io.ecs),
             messages: std::mem::take(&mut self.io.message_tx),
-            sched: if user_was_created {
-                self.sched.systems.clone()
-            } else {
-                vec![]
-            },
+            sched: std::mem::take(&mut self.sched.systems),
         };
         let len: u32 = serialized_size(&send).expect("Failed to get size of host message") as u32;
 

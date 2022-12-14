@@ -18,7 +18,7 @@ impl Pcg {
 
     fn new_detailed(seed: u64, multiplier: u64, increment: u64) -> Self {
         Self {
-            state: seed + increment,
+            state: seed.wrapping_add(increment),
             multiplier,
             increment,
         }

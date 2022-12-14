@@ -5,12 +5,12 @@ use serde::{Deserialize, Serialize};
 /// A description of a system within this plugin
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct SystemDescriptor {
-    /// The execution stage in which the system is to be executed
+    /// The stage controls when this system is executed relative to engine functions
     pub stage: Stage,
-    /// Channels this plugin subscribes to
+    /// Channels this system subscribes to
     pub subscriptions: Vec<ChannelId>,
-    /// ECS query info
-    pub query: Vec<QueryTerm>,
+    /// Component queries
+    pub query: Query,
 }
 
 /// The execution cycle of the engine is something like this:

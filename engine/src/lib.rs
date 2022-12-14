@@ -12,6 +12,9 @@ use interface::{
 };
 use plugin::Plugin;
 
+pub use wasmtime::Engine;
+
+/*
 struct PluginState {
     code: Plugin,
     systems: Vec<SystemDescriptor>,
@@ -43,6 +46,7 @@ impl Engine {
 
     pub fn dispatch(&mut self, stage: Stage) -> Result<()> {
         for plugin in &mut self.plugins {
+            /*
             for (system_idx, system) in plugin.systems.iter().enumerate() {
                 // Filter to the requested stage
                 if system.stage != stage {
@@ -51,7 +55,7 @@ impl Engine {
 
                 // TODO: Prep ECS data here!
                 let recv_buf = ReceiveBuf {
-                    system: system_idx,
+                    system: Some(system_idx),
                     ecs: EcsData {
                         entities: vec![],
                         components: vec![],
@@ -67,6 +71,7 @@ impl Engine {
 
                 apply_ecs_updates(&mut self.ecs, &ret, &system.query)?;
             }
+            */
         }
 
         Ok(())
@@ -103,3 +108,4 @@ fn apply_ecs_updates(ecs: &mut Ecs, send: &SendBuf, query: &[QueryTerm]) -> Resu
 
     Ok(())
 }
+*/

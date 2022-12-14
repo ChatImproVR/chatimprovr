@@ -9,6 +9,9 @@ pub struct QueryTerm {
     pub access: Access,
 }
 
+/// A description of an ECS query
+pub type Query = Vec<QueryTerm>;
+
 /// Universally-unique Entity ID
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct EntityId(pub u128);

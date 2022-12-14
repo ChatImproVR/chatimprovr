@@ -7,9 +7,7 @@ use cimvr_common::{
     nalgebra::{self, Isometry3, Point3, UnitQuaternion, Vector3},
     Transform,
 };
-use cimvr_engine_interface::{
-    dbg, make_app_state, prelude::*, print, println, serial::SystemDescriptor, Locality,
-};
+use cimvr_engine_interface::{dbg, make_app_state, prelude::*, print, println, Locality};
 
 struct State {
     head: EntityId,
@@ -32,6 +30,7 @@ impl AppState for State {
 
         schedule.add_system(
             SystemDescriptor {
+                stage: Stage::Input,
                 subscriptions: vec![ChannelId {
                     id: 0xDEADBEEF,
                     locality: Locality::Local,

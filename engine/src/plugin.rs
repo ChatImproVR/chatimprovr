@@ -4,9 +4,7 @@ use cimvr_engine_interface::serial::{
 };
 use rand::prelude::*;
 use std::{io::Cursor, path::Path};
-use wasmtime::{
-    AsContextMut, Caller, Extern, Func, ImportType, Instance, Memory, Module, Store, TypedFunc,
-};
+use wasmtime::{Caller, Extern, Func, ImportType, Instance, Memory, Module, Store, TypedFunc};
 
 pub struct Plugin {
     module: Module,
@@ -21,7 +19,7 @@ pub struct Plugin {
 
 impl Plugin {
     /// Load the plugin in an uninitialized state
-    pub fn new(wt: &wasmtime::Engine, plugin_path: impl AsRef<Path>) -> Result<(Self, ReceiveBuf)> {
+    pub fn new(wt: &wasmtime::Engine, plugin_path: impl AsRef<Path>) -> Result<Self> {
         let bytes = std::fs::read(plugin_path)?;
         let module = Module::new(wt, &bytes)?;
         let mut store = Store::new(wt, ());
@@ -74,19 +72,18 @@ impl Plugin {
         })
     }
 
-    /// Run the initial plugin setup. WARNING: Subsequent calls will cause buggy behaviour
-    pub fn setup() -> Result<SendBuf> {}
-
     /// Dispatch plugin internals with given intent
     pub fn dispatch(&mut self, recv: &ReceiveBuf) -> Result<SendBuf> {
-        // Serialize directly into the module's memory. Saves time!
+        // Rerve needed space within the plugin's memory
         let size = serialized_size(&recv)?;
         let ptr = self.reserve_fn.call(&mut self.store, size as u32)?;
+
+        // Serialize directly into the module's memory. Saves time!
         let mem = self.mem.data_mut(&mut self.store);
         let cursor = Cursor::new(&mut mem[ptr as usize..][..size]);
         serialize_into(cursor, &recv)?;
 
-        // Call the plugin!
+        // Call the plugin
         let ptr = self.dispatch_fn.call(&mut self.store, ())?;
 
         // Also deserialize directly from the module's memory
