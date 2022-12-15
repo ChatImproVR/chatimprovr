@@ -14,8 +14,6 @@ use crate::{
 pub struct Context<U> {
     /// User-defined state
     user: Option<U>,
-    /// Ecs state, commands
-    io: EngineIo,
     /// Buffer for communication with host
     buf: Vec<u8>,
     /// Callbacks for systems and their associated subscription parameters
@@ -101,7 +99,6 @@ impl<U: AppState> Context<U> {
 
         Self {
             user: None,
-            io: EngineIo::new(),
             sched: EngineSchedule::new(),
             buf: vec![],
         }
@@ -113,6 +110,8 @@ impl<U: AppState> Context<U> {
         let recv: ReceiveBuf =
             deserialize(std::io::Cursor::new(&self.buf)).expect("Failed to decode host message");
 
+        let mut io = EngineIo::new(todo!(), recv.ecs);
+
         if let Some(system_idx) = recv.system {
             // Call system function with user data
             let user = self
@@ -120,18 +119,19 @@ impl<U: AppState> Context<U> {
                 .as_mut()
                 .expect("Attempted to call system before initialization");
             let system = self.sched.callbacks[system_idx];
-            system(user, &mut self.io);
+            system(user, &mut io);
         } else {
             // Initialize plugin internals
-            self.user = Some(U::new(&mut self.io, &mut self.sched));
+            self.user = Some(U::new(&mut io, &mut self.sched));
         }
 
         // Write return state
         let send = SendBuf {
-            commands: std::mem::take(&mut self.io.commands),
-            ecs: std::mem::take(&mut self.io.ecs),
-            messages: std::mem::take(&mut self.io.message_tx),
-            sched: std::mem::take(&mut self.sched.systems),
+            commands: std::mem::take(&mut io.commands),
+            ecs: std::mem::take(&mut io.ecs),
+            messages: std::mem::take(&mut io.message_tx),
+            // TODO: Only send this on init()
+            sched: self.sched.systems.clone(),
         };
         let len: u32 = serialized_size(&send).expect("Failed to get size of host message") as u32;
 
@@ -155,12 +155,12 @@ impl<U: AppState> Context<U> {
 }
 
 impl EngineIo {
-    pub fn new() -> Self {
+    pub fn new(message_rx: Vec<Message>, ecs: EcsData) -> Self {
         Self {
-            ecs: EcsData::default(),
+            ecs,
             commands: vec![],
             pcg: Pcg::new(),
-            message_rx: vec![],
+            message_rx,
             message_tx: vec![],
         }
     }

@@ -49,3 +49,12 @@ pub enum EngineCommand {
     // For now we're betting that the user doesn't add that many entities at once...
     AddComponent(EntityId, ComponentId, Vec<u8>),
 }
+
+impl QueryTerm {
+    pub fn new<T: Component>(access: Access) -> Self {
+        Self {
+            component: T::ID,
+            access,
+        }
+    }
+}

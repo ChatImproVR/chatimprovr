@@ -24,28 +24,17 @@ impl AppState for State {
             &Transform {
                 position: Point3::origin(),
                 rotation: UnitQuaternion::identity(),
-                //scale: Vector3::zeros(),
             },
         );
 
         schedule.add_system(
             SystemDescriptor {
                 stage: Stage::Input,
-                subscriptions: vec![ChannelId {
-                    id: 0xDEADBEEF,
-                    locality: Locality::Local,
-                }],
-                query: vec![QueryTerm {
-                    component: Transform::ID,
-                    access: Access::Write,
-                }],
+                subscriptions: vec![],
+                query: vec![QueryTerm::new::<Transform>(Access::Write)],
             },
             Self::system,
         );
-
-        for _ in 0..10 {
-            dbg!(io.random());
-        }
 
         Self { head }
     }
