@@ -44,6 +44,8 @@ impl AppState for State {
 
 impl State {
     fn system(&mut self, cmd: &mut NonQueryIo, query: &mut QueryResult) {
+        dbg!(std::f32::consts::PI);
+
         for key in query.iter() {
             cmd.add_component(key.entity(), &Transform::default());
 

@@ -1,18 +1,18 @@
 use anyhow::{bail, Result};
 use cimvr_engine_interface::serial::{
-    deserialize, serialize_into, serialized_size, EcsData, ReceiveBuf, SendBuf,
+    deserialize, serialize_into, serialized_size, ReceiveBuf, SendBuf,
 };
 use rand::prelude::*;
 use std::{io::Cursor, path::Path};
-use wasmtime::{Caller, Extern, Func, ImportType, Instance, Memory, Module, Store, TypedFunc};
+use wasmtime::{Caller, Extern, Func, Instance, Memory, Module, Store, TypedFunc};
 
 pub struct Plugin {
+    store: Store<()>,
     module: Module,
+    instance: Instance,
+    mem: Memory,
     print_fn: Func,
     random_fn: Func,
-    mem: Memory,
-    store: Store<()>,
-    instance: Instance,
     dispatch_fn: TypedFunc<(), u32>,
     reserve_fn: TypedFunc<u32, u32>,
 }

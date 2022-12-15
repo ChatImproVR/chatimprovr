@@ -2,21 +2,18 @@ pub mod ecs;
 pub mod plugin;
 use std::path::PathBuf;
 
-use anyhow::Result;
+use anyhow::{Ok, Result};
 pub use cimvr_engine_interface as interface;
 use ecs::Ecs;
 use interface::{
-    prelude::{Access, EngineCommand, QueryTerm, SystemDescriptor},
+    prelude::*,
     serial::{EcsData, ReceiveBuf, SendBuf},
     system::Stage,
 };
 use plugin::Plugin;
 
-pub use wasmtime::Engine;
-
 // Keep the ECS in an Arc, so that it may be read simultaneously
 
-/*
 struct PluginState {
     code: Plugin,
     systems: Vec<SystemDescriptor>,
@@ -46,9 +43,26 @@ impl Engine {
         Ok(Self { wasm, plugins, ecs })
     }
 
+    /// Initialize plugin code. Must be called at least once!
+    pub fn init(&mut self) -> Result<()> {
+        for plugin in &mut self.plugins {
+            let send = ReceiveBuf {
+                system: None,
+                ecs: EcsData::default(),
+            };
+            let recv = plugin.code.dispatch(&send)?;
+
+            apply_ecs_updates(&mut self.ecs, &recv)?;
+
+            plugin.systems = recv.sched;
+        }
+
+        Ok(())
+    }
+
+    /// Dispatch plugin code on the given stage
     pub fn dispatch(&mut self, stage: Stage) -> Result<()> {
         for plugin in &mut self.plugins {
-            /*
             for (system_idx, system) in plugin.systems.iter().enumerate() {
                 // Filter to the requested stage
                 if system.stage != stage {
@@ -62,18 +76,12 @@ impl Engine {
                         entities: vec![],
                         components: vec![],
                     },
-                    messages: vec![],
                 };
 
                 let ret = plugin.code.dispatch(&recv_buf)?;
 
-                if plugin.systems.is_empty() {
-                    plugin.systems = ret.sched;
-                }
-
-                apply_ecs_updates(&mut self.ecs, &ret, &system.query)?;
+                apply_ecs_updates(&mut self.ecs, &ret)?;
             }
-            */
         }
 
         Ok(())
@@ -84,21 +92,10 @@ impl Engine {
     }
 }
 
-fn apply_ecs_updates(ecs: &mut Ecs, send: &SendBuf, query: &[QueryTerm]) -> Result<()> {
-    // Apply queried ECS data writes
-    for (comp_idx, term) in query.iter().enumerate() {
-        if term.access == Access::Read {
-            continue;
-        }
-
-        for entity in &send.ecs.entities {
-            ecs.get_mut(*entity, term.component)
-                .copy_from_slice(&send.ecs.components[comp_idx]);
-        }
-    }
-
+fn apply_ecs_updates(ecs: &mut Ecs, send: &SendBuf) -> Result<()> {
     // Apply commands
     for command in &send.commands {
+        // TODO: Throw error on modification of non-queried data...
         match command {
             EngineCommand::Create(id) => ecs.import_entity(*id),
             EngineCommand::Delete(id) => ecs.remove_entity(*id),
@@ -110,4 +107,3 @@ fn apply_ecs_updates(ecs: &mut Ecs, send: &SendBuf, query: &[QueryTerm]) -> Resu
 
     Ok(())
 }
-*/
