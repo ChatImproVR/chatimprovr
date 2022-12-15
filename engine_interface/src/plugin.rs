@@ -14,7 +14,7 @@ pub struct Context<U> {
     /// User-defined state
     user: Option<U>,
     /// Buffer for communication with host
-    buf: Vec<u8>,
+    buf: Vec<u8>, // TODO: SAFETY: Make this buffer volatile?! Host write to it externally...
     /// Callbacks for systems and their associated subscription parameters
     sched: EngineSchedule<U>,
 }
@@ -86,9 +86,9 @@ impl<U> EngineSchedule<U> {
         }
     }
 
+    // TODO: Decide whether ECS data is flushed to the engine in between!
     /// Contract: Systems within the same stage are executed in the order in which they are added
     /// by this function.
-    /// TODO: Decide whether ECS data is flushed to the engine in between!
     pub fn add_system(&mut self, desc: SystemDescriptor, cb: Callback<U>) {
         self.systems.push(desc);
         self.callbacks.push(cb);

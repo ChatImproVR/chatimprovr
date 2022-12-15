@@ -103,6 +103,7 @@ impl QueryResult {
             .map(|(idx, entity)| Key { idx, entity })
     }
 
+    /// Get the relevant component storage indices and
     #[track_caller]
     fn indices<T: Component>(&self, key: Key) -> (usize, Range<usize>) {
         let component_idx = self
