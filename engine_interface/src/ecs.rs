@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::serial::{deserialize, serialize, EcsData};
@@ -73,6 +71,17 @@ pub struct QueryResult {
     query: Query,
 }
 
+pub struct Key {
+    idx: usize,
+    entity: EntityId,
+}
+
+impl Key {
+    pub fn entity(&self) -> EntityId {
+        self.entity
+    }
+}
+
 impl QueryResult {
     pub(crate) fn new(ecs: EcsData, query: Query) -> Self {
         Self {
@@ -82,66 +91,38 @@ impl QueryResult {
         }
     }
 
-    fn iter_mut<'a>(&'a mut self) -> QueryIter<'a> {
-        QueryIter::new(&mut self)
-    }
-}
-
-pub struct QueryIter<'a> {
-    data: &'a mut QueryResult,
-    idx: usize,
-}
-
-impl QueryIter<'_> {
-    fn new(data: &mut QueryResult) -> Self {
-        Self { data, idx: 0 }
-    }
-}
-
-impl<'a> Iterator for QueryIter<'a> {
-    type Item = EntityRef<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let bound_check = self.idx > self.data.ecs.entities.len();
-        bound_check.then(|| EntityRef {
-            idx: self.idx,
-            data: self.data,
-        })
-    }
-}
-
-pub struct EntityRef<'a> {
-    idx: usize,
-    data: &'a mut QueryResult,
-}
-
-impl EntityRef<'_> {
-    pub fn entity(&self) -> EntityId {
-        self.data.ecs.entities[self.idx]
+    pub fn iter(&self) -> impl Iterator<Item = Key> {
+        self.ecs
+            .entities
+            .clone()
+            .into_iter()
+            .enumerate()
+            .map(|(idx, entity)| Key { idx, entity })
     }
 
-    pub fn read<T: Component>(&self) -> T {
+    pub fn read<T: Component>(&self, key: Key) -> T {
         // TODO: Cache query lookups!
         let idx = self
-            .data
             .query
             .iter()
             .position(|c| c.component == T::ID)
             .expect("Attempted to read component not queried");
 
-        let dense = &mut self.data.ecs.components[idx];
+        let dense = &self.ecs.components[key.idx];
 
         let size = T::ID.size as usize;
-        let entry_slice = &dense[idx * size..][..size];
+        let entry_slice = &dense[key.idx * size..][..size];
 
         deserialize(entry_slice).expect("Failed to deserialize component for reading")
     }
 
-    pub fn write<T: Component>(&mut self, data: &T) {
-        let entity = self.entity();
+    pub fn write<T: Component>(&mut self, key: Key, data: &T) {
+        let entity = self.ecs.entities[key.idx];
         let data = serialize(data).expect("Failed to serialize component for writing");
-        self.data
-            .commands
+
+        // TODO: Writeback to ECS data? May not ever be needed!
+
+        self.commands
             .push(EngineCommand::AddComponent(entity, T::ID, data))
     }
 
