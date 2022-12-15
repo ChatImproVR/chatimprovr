@@ -14,6 +14,8 @@ use plugin::Plugin;
 
 pub use wasmtime::Engine;
 
+// Keep the ECS in an Arc, so that it may be read simultaneously
+
 /*
 struct PluginState {
     code: Plugin,

@@ -16,7 +16,7 @@ struct State {
 make_app_state!(State);
 
 impl AppState for State {
-    fn new(cmd: &mut EcsCommandBuf, schedule: &mut EngineSchedule<Self>) -> Self {
+    fn new(cmd: &mut NonQueryIo, schedule: &mut EngineSchedule<Self>) -> Self {
         let head = cmd.create_entity();
 
         cmd.add_component(
@@ -27,6 +27,8 @@ impl AppState for State {
             },
         );
 
+        // In the future it would be super cool to do this like Bevy and be able to just infer the
+        // query from the type arguments and such...
         schedule.add_system(
             SystemDescriptor {
                 stage: Stage::Input,
@@ -41,7 +43,7 @@ impl AppState for State {
 }
 
 impl State {
-    fn system(&mut self, cmd: &mut EcsCommandBuf, query: &mut QueryTransaction) {
+    fn system(&mut self, cmd: &mut NonQueryIo, query: &mut QueryResult) {
         for mut row in query.iter_mut() {
             cmd.add_component(row.entity(), &Transform::default());
 
@@ -49,6 +51,8 @@ impl State {
             row.modify::<Transform>(|t| {
                 t.rotation *= UnitQuaternion::from_euler_angles(0.1, 0., 0.)
             });
+
+            dbg!(row.read::<Transform>());
         }
     }
 }

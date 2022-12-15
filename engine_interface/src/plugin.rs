@@ -20,7 +20,7 @@ pub struct Context<U> {
 }
 
 /// System callable by the engine  
-pub type Callback<UserState> = fn(&mut UserState, &mut EcsCommandBuf, &mut QueryTransaction);
+pub type Callback<UserState> = fn(&mut UserState, &mut NonQueryIo, &mut QueryResult);
 
 /// Basically main() for plugins; allows a struct implementing AppState to be the state and entry
 /// point for the plugin
@@ -46,25 +46,28 @@ macro_rules! make_app_state {
 
 /// Application state, defines a constructor with common engine interface in it
 pub trait AppState: Sized {
-    fn new(io: &mut EcsCommandBuf, sched: &mut EngineSchedule<Self>) -> Self;
+    fn new(io: &mut NonQueryIo, sched: &mut EngineSchedule<Self>) -> Self;
 }
 
 /// Contains the query result, and any received messages.
 /// Also contains the commands to be sent to the engine, and lists the modified entities and
 /// components therein
+/// TODO: Find a better name for this lmao
 #[derive(Serialize, Deserialize)]
-pub struct EcsCommandBuf {
+pub struct NonQueryIo {
     /// Random number generator
     #[serde(skip)]
     pub(crate) pcg: Pcg,
-    /// ECS data (In and Out)
-    pub(crate) ecs: EcsData,
     /// Sent commands
     pub(crate) commands: Vec<EngineCommand>,
-    /// Received messages
-    pub(crate) message_rx: Vec<Message>,
+    /*
+    /// Received messages, one array for each subscribed channel (in the same order)
+    pub(crate) message_rx: Vec<Vec<Message>>,
     /// Sent messages
     pub(crate) message_tx: Vec<Message>,
+    /// Subscriptions, for referencing to get recieved messages on a channel
+    subscriptions: Vec<ChannelId>,
+    */
 }
 
 /// Scheduling of systems
@@ -83,6 +86,9 @@ impl<U> EngineSchedule<U> {
         }
     }
 
+    /// Contract: Systems within the same stage are executed in the order in which they are added
+    /// by this function.
+    /// TODO: Decide whether ECS data is flushed to the engine in between!
     pub fn add_system(&mut self, desc: SystemDescriptor, cb: Callback<U>) {
         self.systems.push(desc);
         self.callbacks.push(cb);
@@ -109,7 +115,7 @@ impl<U: AppState> Context<U> {
         let recv: ReceiveBuf =
             deserialize(std::io::Cursor::new(&self.buf)).expect("Failed to decode host message");
 
-        let mut io = EcsCommandBuf::new(todo!(), recv.ecs);
+        let mut io = NonQueryIo::new();
 
         if let Some(system_idx) = recv.system {
             // Call system function with user data
@@ -118,7 +124,11 @@ impl<U: AppState> Context<U> {
                 .as_mut()
                 .expect("Attempted to call system before initialization");
             let system = self.sched.callbacks[system_idx];
-            system(user, &mut io, todo!());
+
+            let query = self.sched.systems[system_idx].query.clone();
+            let mut query_result = QueryResult::new(recv.ecs, query);
+
+            system(user, &mut io, &mut query_result);
         } else {
             // Initialize plugin internals
             self.user = Some(U::new(&mut io, &mut self.sched));
@@ -127,8 +137,8 @@ impl<U: AppState> Context<U> {
         // Write return state
         let send = SendBuf {
             commands: std::mem::take(&mut io.commands),
-            ecs: std::mem::take(&mut io.ecs),
-            messages: std::mem::take(&mut io.message_tx),
+            //ecs: std::mem::take(&mut io.ecs),
+            //messages: std::mem::take(&mut io.message_tx),
             // TODO: Only send this on init()
             sched: self.sched.systems.clone(),
         };
@@ -153,14 +163,11 @@ impl<U: AppState> Context<U> {
     }
 }
 
-impl EcsCommandBuf {
-    pub fn new(message_rx: Vec<Message>, ecs: EcsData) -> Self {
+impl NonQueryIo {
+    pub fn new() -> Self {
         Self {
-            ecs,
             commands: vec![],
             pcg: Pcg::new(),
-            message_rx,
-            message_tx: vec![],
         }
     }
 
