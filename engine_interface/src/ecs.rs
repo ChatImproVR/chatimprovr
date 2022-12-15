@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 /// A single requirement in a query
@@ -56,5 +58,54 @@ impl QueryTerm {
             component: T::ID,
             access,
         }
+    }
+}
+
+/// Read and write ECS data relevant to a query
+pub struct QueryTransaction {
+    query: Query,
+}
+
+impl QueryTransaction {
+    pub fn iter_mut(&mut self) -> QueryTransactionIterator<'static> {
+        todo!()
+    }
+}
+
+pub struct QueryTransactionIterator<'a> {
+    trans: &'a mut QueryTransaction,
+    query: Query,
+}
+
+impl<'a> Iterator for QueryTransactionIterator<'a> {
+    type Item = QueryRow<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        todo!()
+    }
+}
+
+pub struct QueryRow<'a> {
+    trans: &'a mut QueryTransaction,
+    query: Query,
+}
+
+impl QueryRow<'_> {
+    pub fn entity(&self) -> EntityId {
+        todo!()
+    }
+
+    pub fn read<T: Component>(&self) -> T {
+        todo!()
+    }
+
+    pub fn write<T: Component>(&mut self, data: &T) {
+        todo!()
+    }
+
+    pub fn modify<T: Component>(&mut self, mut f: impl FnMut(&mut T)) {
+        let mut val = self.read();
+        f(&mut val);
+        self.write(&mut val);
     }
 }

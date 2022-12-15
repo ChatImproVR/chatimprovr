@@ -16,10 +16,10 @@ struct State {
 make_app_state!(State);
 
 impl AppState for State {
-    fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
-        let head = io.create_entity();
+    fn new(cmd: &mut EcsCommandBuf, schedule: &mut EngineSchedule<Self>) -> Self {
+        let head = cmd.create_entity();
 
-        io.add_component(
+        cmd.add_component(
             head,
             &Transform {
                 position: Point3::origin(),
@@ -41,7 +41,14 @@ impl AppState for State {
 }
 
 impl State {
-    fn system(&mut self, io: &mut EngineIo) {
-        println!("System runs!");
+    fn system(&mut self, cmd: &mut EcsCommandBuf, query: &mut QueryTransaction) {
+        for mut row in query.iter_mut() {
+            cmd.add_component(row.entity(), &Transform::default());
+
+            row.modify::<Transform>(|t| t.position.y += 0.1);
+            row.modify::<Transform>(|t| {
+                t.rotation *= UnitQuaternion::from_euler_angles(0.1, 0., 0.)
+            });
+        }
     }
 }

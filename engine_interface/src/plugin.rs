@@ -2,9 +2,8 @@ pub use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    ecs::{Component, EntityId},
     pcg::Pcg,
-    prelude::{setup_panic, EngineCommand, Message, SystemDescriptor},
+    prelude::*,
     serial::{
         deserialize, serialize, serialize_into, serialized_size, EcsData, ReceiveBuf, SendBuf,
     },
@@ -21,7 +20,7 @@ pub struct Context<U> {
 }
 
 /// System callable by the engine  
-pub type Callback<UserState> = fn(&mut UserState, &mut EngineIo);
+pub type Callback<UserState> = fn(&mut UserState, &mut EcsCommandBuf, &mut QueryTransaction);
 
 /// Basically main() for plugins; allows a struct implementing AppState to be the state and entry
 /// point for the plugin
@@ -47,14 +46,14 @@ macro_rules! make_app_state {
 
 /// Application state, defines a constructor with common engine interface in it
 pub trait AppState: Sized {
-    fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self;
+    fn new(io: &mut EcsCommandBuf, sched: &mut EngineSchedule<Self>) -> Self;
 }
 
 /// Contains the query result, and any received messages.
 /// Also contains the commands to be sent to the engine, and lists the modified entities and
 /// components therein
 #[derive(Serialize, Deserialize)]
-pub struct EngineIo {
+pub struct EcsCommandBuf {
     /// Random number generator
     #[serde(skip)]
     pub(crate) pcg: Pcg,
@@ -110,7 +109,7 @@ impl<U: AppState> Context<U> {
         let recv: ReceiveBuf =
             deserialize(std::io::Cursor::new(&self.buf)).expect("Failed to decode host message");
 
-        let mut io = EngineIo::new(todo!(), recv.ecs);
+        let mut io = EcsCommandBuf::new(todo!(), recv.ecs);
 
         if let Some(system_idx) = recv.system {
             // Call system function with user data
@@ -119,7 +118,7 @@ impl<U: AppState> Context<U> {
                 .as_mut()
                 .expect("Attempted to call system before initialization");
             let system = self.sched.callbacks[system_idx];
-            system(user, &mut io);
+            system(user, &mut io, todo!());
         } else {
             // Initialize plugin internals
             self.user = Some(U::new(&mut io, &mut self.sched));
@@ -154,7 +153,7 @@ impl<U: AppState> Context<U> {
     }
 }
 
-impl EngineIo {
+impl EcsCommandBuf {
     pub fn new(message_rx: Vec<Message>, ecs: EcsData) -> Self {
         Self {
             ecs,

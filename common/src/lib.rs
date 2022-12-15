@@ -11,6 +11,15 @@ pub struct Transform {
     //pub scale: Vector3<f32>,
 }
 
+impl Default for Transform {
+    fn default() -> Self {
+        Self {
+            position: Point3::origin(),
+            rotation: UnitQuaternion::identity(),
+        }
+    }
+}
+
 impl Component for Transform {
     const ID: ComponentId = ComponentId {
         // steakhouse
