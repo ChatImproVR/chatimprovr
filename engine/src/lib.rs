@@ -69,13 +69,12 @@ impl Engine {
                     continue;
                 }
 
+                let ecs = query_ecs(&mut self.ecs, &system.query)?;
+
                 // TODO: Prep ECS data here!
                 let recv_buf = ReceiveBuf {
                     system: Some(system_idx),
-                    ecs: EcsData {
-                        entities: vec![],
-                        components: vec![],
-                    },
+                    ecs,
                 };
 
                 let ret = plugin.code.dispatch(&recv_buf)?;
@@ -90,6 +89,22 @@ impl Engine {
     pub fn ecs(&mut self) -> &mut Ecs {
         &mut self.ecs
     }
+}
+
+fn query_ecs(ecs: &Ecs, query: &Query) -> Result<EcsData> {
+    let entities = ecs.query(query).into_iter().collect();
+    let mut components = vec![vec![]; query.len()];
+
+    for &entity in &entities {
+        for (term, comp) in query.iter().zip(&mut components) {
+            comp.extend_from_slice(ecs.get(entity, term.component));
+        }
+    }
+
+    Ok(EcsData {
+        entities,
+        components,
+    })
 }
 
 fn apply_ecs_updates(ecs: &mut Ecs, send: &SendBuf) -> Result<()> {

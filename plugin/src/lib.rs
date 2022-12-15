@@ -47,8 +47,6 @@ impl State {
         dbg!(std::f32::consts::PI);
 
         for key in query.iter() {
-            cmd.add_component(key.entity(), &Transform::default());
-
             query.modify::<Transform>(key, |t| t.position.y += 0.1);
             query.modify::<Transform>(key, |t| {
                 t.rotation *= UnitQuaternion::from_euler_angles(0.1, 0., 0.)

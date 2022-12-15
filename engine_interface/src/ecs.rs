@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::serial::{deserialize, serialize, EcsData};
@@ -64,7 +66,7 @@ impl QueryTerm {
 /// Read and write ECS data relevant to a query
 pub struct QueryResult {
     /// For modifications. TODO: Use a faster method of update xfer...
-    commands: Vec<EngineCommand>,
+    pub(crate) commands: Vec<EngineCommand>,
     /// ECS data from host
     ecs: EcsData,
     /// The original query, for reference
@@ -101,28 +103,41 @@ impl QueryResult {
             .map(|(idx, entity)| Key { idx, entity })
     }
 
-    pub fn read<T: Component>(&self, key: Key) -> T {
-        // TODO: Cache query lookups!
+    #[track_caller]
+    fn indices<T: Component>(&self, key: Key) -> (usize, Range<usize>) {
         let component_idx = self
             .query
             .iter()
             .position(|c| c.component == T::ID)
-            .expect("Attempted to read component not queried");
-
-        let dense = &self.ecs.components[component_idx];
+            .expect("Attempted to access component not queried");
 
         let size = T::ID.size as usize;
-        let entry_slice = &dense[key.idx * size..][..size];
+        let begin = key.idx * size;
+        let end = begin + size;
 
-        deserialize(entry_slice).expect("Failed to deserialize component for reading")
+        (component_idx, begin..end)
+    }
+
+    pub fn read<T: Component>(&self, key: Key) -> T {
+        // TODO: Cache query lookups!
+        let (component_idx, range) = self.indices::<T>(key);
+        let dense = &self.ecs.components[component_idx];
+        deserialize(&dense[range]).expect("Failed to deserialize component for reading")
     }
 
     pub fn write<T: Component>(&mut self, key: Key, data: &T) {
         let entity = self.ecs.entities[key.idx];
+        // Serialize data
+        // TODO: Never allocate in hot loops!
         let data = serialize(data).expect("Failed to serialize component for writing");
 
-        // TODO: Writeback to ECS data? May not ever be needed!
+        // Write back to ECS storage for possible later modification. This is never read by the
+        // host, but MAY be read by us!
+        let (component_idx, range) = self.indices::<T>(key);
+        let dense = &mut self.ecs.components[component_idx];
+        dense[range].copy_from_slice(&data);
 
+        // Write host command
         self.commands
             .push(EngineCommand::AddComponent(entity, T::ID, data))
     }

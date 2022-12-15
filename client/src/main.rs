@@ -8,7 +8,7 @@ fn main() -> Result<()> {
     let mut engine = Engine::new(&[path.into()])?;
     engine.init()?;
 
-    for _ in 0..100 {
+    for _ in 0..10 {
         engine.dispatch(Stage::Input)?;
     }
 

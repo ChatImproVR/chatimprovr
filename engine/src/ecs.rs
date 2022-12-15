@@ -101,7 +101,7 @@ impl Ecs {
     }
 
     /// Get data associated with a component
-    pub fn get(&mut self, entity: EntityId, component: ComponentId) -> &[u8] {
+    pub fn get(&self, entity: EntityId, component: ComponentId) -> &[u8] {
         self.map
             .get(&component)
             .expect("Missing entity")

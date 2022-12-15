@@ -129,6 +129,8 @@ impl<U: AppState> Context<U> {
             let mut query_result = QueryResult::new(recv.ecs, query);
 
             system(user, &mut io, &mut query_result);
+
+            io.commands.extend(query_result.commands);
         } else {
             // Initialize plugin internals
             self.user = Some(U::new(&mut io, &mut self.sched));
