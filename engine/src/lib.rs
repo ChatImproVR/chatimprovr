@@ -44,6 +44,8 @@ impl Engine {
     }
 
     /// Initialize plugin code. Must be called at least once!
+    /// This is seperate from the constructor so that you may differentiate between loading errors
+    /// and init errors, and also to allow you to decide when plugin code actually begins executing.
     pub fn init(&mut self) -> Result<()> {
         for plugin in &mut self.plugins {
             let send = ReceiveBuf {

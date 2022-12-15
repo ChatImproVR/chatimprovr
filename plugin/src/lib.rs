@@ -1,10 +1,5 @@
-use std::{
-    collections::{HashMap, HashSet},
-    sync::Mutex,
-};
-
 use cimvr_common::{
-    nalgebra::{self, Isometry3, Point3, UnitQuaternion, Vector3},
+    nalgebra::{Point3, UnitQuaternion},
     Transform,
 };
 use cimvr_engine_interface::{dbg, make_app_state, prelude::*, print, println, Locality};
@@ -44,15 +39,8 @@ impl AppState for State {
 
 impl State {
     fn system(&mut self, cmd: &mut NonQueryIo, query: &mut QueryResult) {
-        dbg!(std::f32::consts::PI);
-
         for key in query.iter() {
             query.modify::<Transform>(key, |t| t.position.y += 0.1);
-            query.modify::<Transform>(key, |t| {
-                t.rotation *= UnitQuaternion::from_euler_angles(0.1, 0., 0.)
-            });
-
-            dbg!(query.read::<Transform>(key));
         }
     }
 }
