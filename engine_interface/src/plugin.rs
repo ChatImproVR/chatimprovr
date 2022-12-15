@@ -4,9 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     pcg::Pcg,
     prelude::*,
-    serial::{
-        deserialize, serialize, serialize_into, serialized_size, EcsData, ReceiveBuf, SendBuf,
-    },
+    serial::{deserialize, serialize, serialize_into, serialized_size, ReceiveBuf, SendBuf},
 };
 
 /// Full plugin context, contains user state and engine IO buffers
@@ -14,7 +12,7 @@ pub struct Context<U> {
     /// User-defined state
     user: Option<U>,
     /// Buffer for communication with host
-    buf: Vec<u8>, // TODO: SAFETY: Make this buffer volatile?! Host write to it externally...
+    buf: Vec<u8>, // TODO: SAFETY: Make this buffer volatile?! Host writes to it externally...
     /// Callbacks for systems and their associated subscription parameters
     sched: EngineSchedule<U>,
 }
@@ -27,19 +25,25 @@ pub type Callback<UserState> = fn(&mut UserState, &mut NonQueryIo, &mut QueryRes
 #[macro_export]
 macro_rules! make_app_state {
     ($AppState:ident) => {
-        static CTX: Lazy<Mutex<Context<$AppState>>> = Lazy::new(|| Mutex::new(Context::new()));
+        mod _ctx {
+            // TODO: This is a stupid hack
+            use super::$AppState;
+            use cimvr_engine_interface::plugin::{Context, Lazy};
+            use std::sync::Mutex;
+            static CTX: Lazy<Mutex<Context<$AppState>>> = Lazy::new(|| Mutex::new(Context::new()));
 
-        /// Reserve internal memory for external writes
-        #[no_mangle]
-        fn _reserve(bytes: u32) -> *mut u8 {
-            // TODO: What if we fail?
-            CTX.lock().unwrap().reserve(bytes)
-        }
+            /// Reserve internal memory for external writes
+            #[no_mangle]
+            fn _reserve(bytes: u32) -> *mut u8 {
+                // TODO: What if we fail?
+                CTX.lock().unwrap().reserve(bytes)
+            }
 
-        /// Run internal code, returning pointer to the output buffer
-        #[no_mangle]
-        fn _dispatch() -> *mut u8 {
-            CTX.lock().unwrap().dispatch()
+            /// Run internal code, returning pointer to the output buffer
+            #[no_mangle]
+            fn _dispatch() -> *mut u8 {
+                CTX.lock().unwrap().dispatch()
+            }
         }
     };
 }

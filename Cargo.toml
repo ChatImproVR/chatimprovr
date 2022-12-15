@@ -1,9 +1,10 @@
 [workspace]
 members = [
+    "engine_interface",
+    "engine",
+    "common",
     "client",
     "server",
-    "engine",
     "plugin",
-    "common",
-    "engine_interface",
+    "plugin2",
 ]
