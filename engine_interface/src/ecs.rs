@@ -71,6 +71,7 @@ pub struct QueryResult {
     query: Query,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Key {
     idx: usize,
     entity: EntityId,
@@ -102,13 +103,13 @@ impl QueryResult {
 
     pub fn read<T: Component>(&self, key: Key) -> T {
         // TODO: Cache query lookups!
-        let idx = self
+        let component_idx = self
             .query
             .iter()
             .position(|c| c.component == T::ID)
             .expect("Attempted to read component not queried");
 
-        let dense = &self.ecs.components[key.idx];
+        let dense = &self.ecs.components[component_idx];
 
         let size = T::ID.size as usize;
         let entry_slice = &dense[key.idx * size..][..size];
@@ -126,9 +127,9 @@ impl QueryResult {
             .push(EngineCommand::AddComponent(entity, T::ID, data))
     }
 
-    pub fn modify<T: Component>(&mut self, mut f: impl FnMut(&mut T)) {
-        let mut val = self.read();
+    pub fn modify<T: Component>(&mut self, key: Key, mut f: impl FnMut(&mut T)) {
+        let mut val = self.read(key);
         f(&mut val);
-        self.write(&mut val);
+        self.write(key, &mut val);
     }
 }

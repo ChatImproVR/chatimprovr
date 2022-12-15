@@ -18,7 +18,6 @@ fn main() -> Result<()> {
             entities: vec![],
             components: vec![],
         },
-        messages: vec![],
     })?;
 
     dbg!(recv);
@@ -32,7 +31,6 @@ fn main() -> Result<()> {
                 entities: vec![],
                 components: vec![],
             },
-            messages: vec![],
         })?;
     }
 

@@ -44,15 +44,15 @@ impl AppState for State {
 
 impl State {
     fn system(&mut self, cmd: &mut NonQueryIo, query: &mut QueryResult) {
-        for mut row in query.iter_mut() {
-            cmd.add_component(row.entity(), &Transform::default());
+        for key in query.iter() {
+            cmd.add_component(key.entity(), &Transform::default());
 
-            row.modify::<Transform>(|t| t.position.y += 0.1);
-            row.modify::<Transform>(|t| {
+            query.modify::<Transform>(key, |t| t.position.y += 0.1);
+            query.modify::<Transform>(key, |t| {
                 t.rotation *= UnitQuaternion::from_euler_angles(0.1, 0., 0.)
             });
 
-            dbg!(row.read::<Transform>());
+            dbg!(query.read::<Transform>(key));
         }
     }
 }
