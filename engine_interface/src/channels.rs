@@ -16,11 +16,11 @@ pub struct AuthorId(u32);
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Message {
     /// Channel ID
-    channel: ChannelId,
+    pub channel: ChannelId,
     /// Return-address of message author. Always `Some()` when received,
     /// `None` will send to all potential recipients,
     /// `Some(id)` will send to just the given author. Useful for return messages
-    author: Option<AuthorId>,
+    pub author: Option<AuthorId>,
     /// Message content
-    data: Vec<u8>,
+    pub data: Vec<u8>,
 }

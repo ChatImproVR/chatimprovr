@@ -20,7 +20,7 @@ struct PluginState {
 }
 
 pub struct Engine {
-    wasm: wasmtime::Engine,
+    _wasm: wasmtime::Engine,
     plugins: Vec<PluginState>,
     ecs: Ecs,
 }
@@ -40,7 +40,11 @@ impl Engine {
             .collect::<Result<_>>()?;
         let ecs = Ecs::new();
 
-        Ok(Self { wasm, plugins, ecs })
+        Ok(Self {
+            _wasm: wasm,
+            plugins,
+            ecs,
+        })
     }
 
     /// Initialize plugin code. Must be called at least once!
