@@ -28,7 +28,7 @@ impl Plugin {
         let print_fn = Func::wrap(
             &mut store,
             |mut caller: Caller<'_, ()>, ptr: u32, len: u32| {
-                // TODO: What a disaster
+                // TODO: Shorten this
                 let mem = caller.get_export("memory").unwrap().into_memory().unwrap();
                 let mut buf = vec![0; len as usize];
                 mem.read(caller, ptr as usize, &mut buf).unwrap();

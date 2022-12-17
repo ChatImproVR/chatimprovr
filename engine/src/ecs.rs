@@ -66,7 +66,7 @@ impl Ecs {
 
     /// Create a new entity
     pub fn create_entity(&mut self) -> EntityId {
-        // TODO: While entity id is not in entities loop...
+        // TODO: While new entity id is not in entities loop...
         let id = EntityId(rand::thread_rng().gen());
         self.entities.insert(id);
         id
