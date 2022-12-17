@@ -54,6 +54,10 @@ pub enum EngineCommand {
     AddComponent(EntityId, ComponentId, Vec<u8>),
 }
 
+pub fn query<T: Component>(access: Access) -> QueryComponent {
+    QueryComponent::new::<T>(access)
+}
+
 impl QueryComponent {
     pub fn new<T: Component>(access: Access) -> Self {
         Self {
