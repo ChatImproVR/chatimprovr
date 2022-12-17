@@ -23,6 +23,8 @@ pub struct ReceiveBuf {
     pub system: Option<usize>,
     /// Compact ECS data
     pub ecs: EcsData,
+    /// Message inbox
+    pub inbox: Inbox,
     /*
     /// Message buffers, in the same order as the subscribed channels
     pub messages: Vec<Vec<Message>>,
@@ -40,6 +42,8 @@ pub struct SendBuf {
     */
     /// Schedule setup on init. Must be empty except for first use!
     pub sched: Vec<SystemDescriptor>,
+    /// Message outbox
+    pub outbox: Vec<Message>,
 }
 
 fn bincode_opts() -> impl Options {

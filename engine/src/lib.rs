@@ -46,8 +46,7 @@ impl Engine {
         let wasm = wasmtime::Engine::new(&Default::default())?;
         let plugins: Vec<PluginState> = plugins
             .iter()
-            .map(|p| Plugin::new(&wasm, p))
-            .map(|plugin| plugin.map(PluginState::new))
+            .map(|p| Plugin::new(&wasm, p).map(PluginState::new))
             .collect::<Result<_>>()?;
         let ecs = Ecs::new();
 
@@ -65,6 +64,7 @@ impl Engine {
         for plugin in &mut self.plugins {
             let send = ReceiveBuf {
                 system: None,
+                inbox: std::mem::take(&mut plugin.inbox),
                 ecs: EcsData::default(),
             };
             let recv = plugin.code.dispatch(&send)?;
@@ -91,12 +91,15 @@ impl Engine {
                 // TODO: Prep ECS data here!
                 let recv_buf = ReceiveBuf {
                     system: Some(system_idx),
+                    inbox: std::mem::take(&mut plugin.inbox),
                     ecs,
                 };
 
                 let ret = plugin.code.dispatch(&recv_buf)?;
 
                 apply_ecs_updates(&mut self.ecs, &ret)?;
+
+                // TODO: distribute messages
             }
         }
 

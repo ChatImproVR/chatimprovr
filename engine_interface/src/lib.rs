@@ -22,7 +22,7 @@ pub mod system;
 /// PCG algorithm for generating random universally-unique entity IDs
 pub(crate) mod pcg;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Locality {
     Local,
     Remote,

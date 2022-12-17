@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 pub use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 
@@ -64,6 +66,10 @@ pub struct NonQueryIo {
     pub(crate) pcg: Pcg,
     /// Sent commands
     pub(crate) commands: Vec<EngineCommand>,
+    /// Sent messages
+    pub(crate) outbox: Vec<Message>,
+    /// Inbox
+    pub(crate) inbox: Inbox,
     /*
     /// Received messages, one array for each subscribed channel (in the same order)
     pub(crate) message_rx: Vec<Vec<Message>>,
@@ -119,7 +125,7 @@ impl<U: AppState> Context<U> {
         let recv: ReceiveBuf =
             deserialize(std::io::Cursor::new(&self.buf)).expect("Failed to decode host message");
 
-        let mut io = NonQueryIo::new();
+        let mut io = NonQueryIo::new(recv.inbox);
 
         if let Some(system_idx) = recv.system {
             // Call system function with user data
@@ -146,6 +152,7 @@ impl<U: AppState> Context<U> {
             //ecs: std::mem::take(&mut io.ecs),
             //messages: std::mem::take(&mut io.message_tx),
             // TODO: Only send this on init()
+            outbox: std::mem::take(&mut io.outbox),
             sched: self.sched.systems.clone(),
         };
         let len: u32 = serialized_size(&send).expect("Failed to get size of host message") as u32;
@@ -170,10 +177,12 @@ impl<U: AppState> Context<U> {
 }
 
 impl NonQueryIo {
-    pub fn new() -> Self {
+    pub fn new(inbox: Inbox) -> Self {
         Self {
             commands: vec![],
             pcg: Pcg::new(),
+            outbox: vec![],
+            inbox: Inbox::new(),
         }
     }
 
@@ -206,4 +215,6 @@ impl NonQueryIo {
     pub fn random(&mut self) -> u32 {
         self.pcg.gen_u32()
     }
+
+    pub fn send(&mut self, msg: Message) {}
 }
