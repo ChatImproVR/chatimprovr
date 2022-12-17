@@ -216,8 +216,10 @@ impl NonQueryIo {
         self.pcg.gen_u32()
     }
 
-    pub fn inbox(&self) -> &Inbox {
-        &self.inbox
+    pub fn inbox<M: Message>(&mut self) -> impl Iterator<Item = M> + '_ {
+        self.inbox.entry(M::CHANNEL).or_default().iter().map(|m| {
+            deserialize(std::io::Cursor::new(&m.data)).expect("Failed to deserialize message")
+        })
     }
 
     pub fn send<M: Message>(&mut self, data: &M) {

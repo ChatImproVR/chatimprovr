@@ -18,7 +18,8 @@ struct StringMessage(String);
 
 impl Message for StringMessage {
     const CHANNEL: ChannelId = ChannelId {
-        id: 28308423098094823,
+        // That's what I've been wating for, that's what it's all about. Wahoo!
+        id: 0xEEEAAA_BABEEE,
         locality: Locality::Local,
     };
 }
@@ -52,23 +53,17 @@ impl AppState for State {
 
 impl State {
     fn system(&mut self, cmd: &mut NonQueryIo, query: &mut QueryResult) {
-        println!("HEWWO?");
-        if let Some(inbox) = &cmd.inbox().get(&StringMessage::CHANNEL) {
-            for msg in *inbox {
-                println!(
-                    "{:?}: {}",
-                    msg.channel,
-                    String::from_utf8(msg.data.clone()).unwrap()
-                );
-            }
-        } else {
-            println!("Empty inbox qwq");
+        for StringMessage(txt) in cmd.inbox() {
+            println!("Message: {}", txt);
         }
 
         for key in query.iter() {
             query.modify::<Transform>(key, |t| t.position.y += 0.1);
-            let k = query.read::<Transform>(key).position.y;
-            let txt = format!("Hewwo! {}", k);
+
+            let y = query.read::<Transform>(key).position.y;
+
+            let txt = format!("Hewwo! {}", y);
+
             cmd.send(&StringMessage(txt));
         }
     }
