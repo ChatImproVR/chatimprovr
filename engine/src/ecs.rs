@@ -1,4 +1,7 @@
-use cimvr_engine_interface::prelude::*;
+use cimvr_engine_interface::{
+    prelude::*,
+    serial::{deserialize, serialize},
+};
 use rand::prelude::*;
 use std::collections::{HashMap, HashSet};
 
@@ -72,8 +75,17 @@ impl Ecs {
         id
     }
 
+    /// Convenient add component
+    pub fn add_component<C: Component>(&mut self, entity: EntityId, data: &C) {
+        self.add_component_raw(
+            entity,
+            C::ID,
+            &serialize(data).expect("Failed to serialize component"),
+        );
+    }
+
     /// Add component to entity, or overwrite existing data
-    pub fn add_component(&mut self, entity: EntityId, component: ComponentId, data: &[u8]) {
+    pub fn add_component_raw(&mut self, entity: EntityId, component: ComponentId, data: &[u8]) {
         assert_eq!(data.len(), component.size as usize, "");
         assert!(
             self.entities.contains(&entity),
@@ -100,8 +112,13 @@ impl Ecs {
             .expect("Entity missing component")
     }
 
+    /// Convenient get function
+    pub fn get<C: Component>(&self, entity: EntityId) -> C {
+        deserialize(self.get_raw(entity, C::ID)).expect("Failed to deserialize component")
+    }
+
     /// Get data associated with a component
-    pub fn get(&self, entity: EntityId, component: ComponentId) -> &[u8] {
+    pub fn get_raw(&self, entity: EntityId, component: ComponentId) -> &[u8] {
         self.map
             .get(&component)
             .expect("Missing entity")
@@ -199,7 +216,7 @@ mod tests {
 
         let test_val = 0x1337_3621_0420_6969_u64;
         let e = ecs.create_entity();
-        ecs.add_component(e, comp_a, &test_val.to_le_bytes());
+        ecs.add_component_raw(e, comp_a, &test_val.to_le_bytes());
 
         let entities = ecs.query(&[QueryComponent {
             component: comp_a,
@@ -207,7 +224,7 @@ mod tests {
         }]);
 
         for ent in entities {
-            let buf = ecs.get(ent, comp_a);
+            let buf = ecs.get_raw(ent, comp_a);
             let val = u64::from_le_bytes(buf.try_into().unwrap());
             assert_eq!(val, test_val);
             println!("{:X}", val);
@@ -231,9 +248,9 @@ mod tests {
         for i in 0..100u64 {
             let e = ecs.create_entity();
             if i < 50 {
-                ecs.add_component(e, comp_b, &i.to_le_bytes());
+                ecs.add_component_raw(e, comp_b, &i.to_le_bytes());
             }
-            ecs.add_component(e, comp_a, &0x1337_3621_0420_6969_u64.to_le_bytes());
+            ecs.add_component_raw(e, comp_a, &0x1337_3621_0420_6969_u64.to_le_bytes());
         }
 
         let entities = ecs.query(&[
@@ -249,7 +266,7 @@ mod tests {
 
         let mut showed_up = vec![false; 50];
         for ent in entities {
-            let buf = ecs.get(ent, comp_b);
+            let buf = ecs.get_raw(ent, comp_b);
             let val = u64::from_le_bytes(buf.try_into().unwrap());
             showed_up[val as usize] = true;
         }

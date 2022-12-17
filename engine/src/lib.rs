@@ -203,7 +203,7 @@ fn query_ecs(ecs: &Ecs, query: &Query) -> Result<EcsData> {
 
     for &entity in &entities {
         for (term, comp) in query.iter().zip(&mut components) {
-            comp.extend_from_slice(ecs.get(entity, term.component));
+            comp.extend_from_slice(ecs.get_raw(entity, term.component));
         }
     }
 
@@ -221,7 +221,7 @@ fn apply_ecs_updates(ecs: &mut Ecs, send: &SendBuf) -> Result<()> {
             EngineCommand::Create(id) => ecs.import_entity(*id),
             EngineCommand::Delete(id) => ecs.remove_entity(*id),
             EngineCommand::AddComponent(entity, component, data) => {
-                ecs.add_component(*entity, *component, data)
+                ecs.add_component_raw(*entity, *component, data)
             }
         }
     }

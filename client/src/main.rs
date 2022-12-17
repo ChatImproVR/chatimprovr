@@ -1,6 +1,12 @@
 use anyhow::Result;
-use cimvr_common::StringMessage;
-use cimvr_engine::{interface::system::Stage, Engine};
+use cimvr_common::{StringMessage, Transform};
+use cimvr_engine::{
+    interface::{
+        prelude::{query, Access},
+        system::Stage,
+    },
+    Engine,
+};
 use std::path::PathBuf;
 
 fn main() -> Result<()> {
@@ -24,6 +30,14 @@ fn main() -> Result<()> {
         for msg in engine.inbox::<StringMessage>() {
             dbg!(msg);
         }
+
+        for entity in engine.ecs().query(&[query::<Transform>(Access::Read)]) {
+            let t = engine.ecs().get::<Transform>(entity);
+            println!("{:?}", t);
+        }
+
+        let ent = engine.ecs().create_entity();
+        engine.ecs().add_component(ent, &Transform::default());
     }
 
     Ok(())
