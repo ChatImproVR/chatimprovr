@@ -4,6 +4,7 @@ pub use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    dbg,
     pcg::Pcg,
     prelude::*,
     serial::{deserialize, serialize, serialize_into, serialized_size, ReceiveBuf, SendBuf},
@@ -135,9 +136,11 @@ impl<U: AppState> Context<U> {
                 .expect("Attempted to call system before initialization");
             let system = self.sched.callbacks[system_idx];
 
+            // Get query results
             let query = self.sched.systems[system_idx].query.clone();
             let mut query_result = QueryResult::new(recv.ecs, query);
 
+            // Run the user's system
             system(user, &mut io, &mut query_result);
 
             io.commands.extend(query_result.commands);
@@ -149,9 +152,6 @@ impl<U: AppState> Context<U> {
         // Write return state
         let send = SendBuf {
             commands: std::mem::take(&mut io.commands),
-            //ecs: std::mem::take(&mut io.ecs),
-            //messages: std::mem::take(&mut io.message_tx),
-            // TODO: Only send this on init()
             outbox: std::mem::take(&mut io.outbox),
             systems: self.sched.systems.clone(),
         };
@@ -182,7 +182,7 @@ impl NonQueryIo {
             commands: vec![],
             pcg: Pcg::new(),
             outbox: vec![],
-            inbox: Inbox::new(),
+            inbox,
         }
     }
 
@@ -216,5 +216,11 @@ impl NonQueryIo {
         self.pcg.gen_u32()
     }
 
-    pub fn send(&mut self, msg: Message) {}
+    pub fn inbox(&self) -> &Inbox {
+        &self.inbox
+    }
+
+    pub fn send(&mut self, channel: ChannelId, data: Vec<u8>) {
+        self.outbox.push(Message { channel, data });
+    }
 }

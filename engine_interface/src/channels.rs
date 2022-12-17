@@ -21,10 +21,12 @@ pub struct AuthorId(u32);
 pub struct Message {
     /// Channel ID
     pub channel: ChannelId,
+    /*
     /// Return-address of message author. Always `Some()` when received,
     /// `None` will send to all potential recipients,
     /// `Some(id)` will send to just the given author. Useful for return messages
     pub author: Option<AuthorId>,
+    */
     /// Message content
     pub data: Vec<u8>,
 }

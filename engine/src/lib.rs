@@ -111,30 +111,37 @@ impl Engine {
                     continue;
                 }
 
+                // Query ECS
                 let ecs = query_ecs(&mut self.ecs, &system.query)?;
 
-                // TODO: Prep ECS data here!
+                // Write input data
                 let recv_buf = ReceiveBuf {
                     system: Some(system_idx),
                     inbox: std::mem::take(&mut plugin.inbox),
                     ecs,
                 };
 
+                // Run plugin
                 let ret = plugin.code.dispatch(&recv_buf)?;
 
+                // Write back to ECS
+                // TODO: Defer this? It's currently in Arbitrary order!
                 apply_ecs_updates(&mut self.ecs, &ret)?;
+
+                // Receive outbox
+                plugin.outbox = ret.outbox;
             }
         }
 
-        // Distribute messages
+        // Distribute messages, apply ECS updates
         for i in 0..self.plugins.len() {
             for msg in std::mem::take(&mut self.plugins[i].outbox) {
                 let chan = msg.channel;
                 for j in &self.indices[&(chan, stage)] {
                     self.plugins[*j]
                         .inbox
-                        .get_mut(&chan)
-                        .unwrap()
+                        .entry(chan)
+                        .or_default()
                         .push(msg.clone());
                 }
             }
