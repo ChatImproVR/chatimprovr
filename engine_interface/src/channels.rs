@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::Locality;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-pub(crate) type Inbox = HashMap<ChannelId, Vec<MessageData>>;
+pub type Inbox = HashMap<ChannelId, Vec<MessageData>>;
 
 /// Channel identity, corresponds to exactly one local or remote connection
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]

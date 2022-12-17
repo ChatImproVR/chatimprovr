@@ -34,6 +34,7 @@ pub mod prelude {
     pub use super::ecs::*;
     pub use super::stdout::*;
     pub use super::system::*;
+    pub use super::Locality;
     //pub use crate::{print, println};
 
     #[cfg(feature = "wasm-plugin")]

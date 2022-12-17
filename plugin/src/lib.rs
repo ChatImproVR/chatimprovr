@@ -1,23 +1,11 @@
-use cimvr_common::Transform;
-use cimvr_engine_interface::{make_app_state, prelude::*, println, Locality};
-use serde::{Deserialize, Serialize};
+use cimvr_common::{StringMessage, Transform};
+use cimvr_engine_interface::{make_app_state, prelude::*, println};
 
 struct State {
     head: EntityId,
 }
 
 make_app_state!(State);
-
-#[derive(Serialize, Deserialize)]
-struct StringMessage(String);
-
-impl Message for StringMessage {
-    const CHANNEL: ChannelId = ChannelId {
-        // That's what I've been waitin for, that's what it's all about! Wahoo!
-        id: 0x0000000_EEEAAA_BABEEE,
-        locality: Locality::Local,
-    };
-}
 
 impl UserState for State {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {

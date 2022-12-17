@@ -7,7 +7,7 @@ pub use cimvr_engine_interface as interface;
 use ecs::Ecs;
 use interface::{
     prelude::*,
-    serial::{EcsData, ReceiveBuf, SendBuf},
+    serial::{deserialize, serialize, EcsData, ReceiveBuf, SendBuf},
     system::Stage,
 };
 use plugin::Plugin;
@@ -21,6 +21,8 @@ pub struct Engine {
     ecs: Ecs,
     /// Message distribution indices, maps channel id -> plugin indices
     indices: HashMap<(ChannelId, Stage), Vec<usize>>,
+    /// User inboxes
+    external_inbox: Inbox,
 }
 
 /// Plugin management structure
@@ -48,6 +50,7 @@ impl PluginState {
 }
 
 impl Engine {
+    /// Load plugins at the given paths
     pub fn new(plugins: &[PathBuf]) -> Result<Self> {
         let wasm = wasmtime::Engine::new(&Default::default())?;
         let plugins: Vec<PluginState> = plugins
@@ -61,6 +64,7 @@ impl Engine {
             indices: HashMap::new(),
             plugins,
             ecs,
+            external_inbox: HashMap::new(),
         })
     }
 
@@ -133,7 +137,7 @@ impl Engine {
             }
         }
 
-        // Distribute messages, apply ECS updates
+        // Distribute messages
         for i in 0..self.plugins.len() {
             for msg in std::mem::take(&mut self.plugins[i].outbox) {
                 let chan = msg.channel;
@@ -144,14 +148,52 @@ impl Engine {
                         .or_default()
                         .push(msg.clone());
                 }
+                if let Some(inbox) = self.external_inbox.get_mut(&chan) {
+                    inbox.push(msg.clone());
+                }
             }
         }
 
         Ok(())
     }
 
+    /// Access ECS data
     pub fn ecs(&mut self) -> &mut Ecs {
         &mut self.ecs
+    }
+
+    /// Subscribe to the given channel
+    pub fn subscribe<M: Message>(&mut self) {
+        self.external_inbox.entry(M::CHANNEL).or_default();
+    }
+
+    /// Drain messages from the given channel
+    pub fn inbox<M: Message>(&mut self) -> impl Iterator<Item = M> + '_ {
+        self.external_inbox
+            .get_mut(&M::CHANNEL)
+            .expect("Attempted to access a channel we haven't subscribed to")
+            .drain(..)
+            .map(|msg| {
+                deserialize(std::io::Cursor::new(msg.data)).expect("Failed to decode message")
+            })
+    }
+
+    /// Broadcast a message
+    pub fn send<M: Message>(&mut self, stage: Stage, data: M) {
+        let msg = MessageData {
+            channel: M::CHANNEL,
+            data: serialize(&data).expect("Failed to serialize message"),
+        };
+
+        if let Some(indices) = self.indices.get(&(M::CHANNEL, stage)) {
+            for idx in indices {
+                self.plugins[*idx]
+                    .inbox
+                    .entry(M::CHANNEL)
+                    .or_default()
+                    .push(msg.clone());
+            }
+        }
     }
 }
 

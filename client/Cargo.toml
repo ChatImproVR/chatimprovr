@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 anyhow = "1"
 cimvr_engine = { path = "../engine" }
+cimvr_common = { path = "../common" }

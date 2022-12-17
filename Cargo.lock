@@ -148,6 +148,7 @@ name = "cimvr_client"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "cimvr_common",
  "cimvr_engine",
 ]
 

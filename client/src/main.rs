@@ -1,4 +1,5 @@
 use anyhow::Result;
+use cimvr_common::StringMessage;
 use cimvr_engine::{interface::system::Stage, Engine};
 use std::path::PathBuf;
 
@@ -13,9 +14,16 @@ fn main() -> Result<()> {
     let mut engine = Engine::new(&paths)?;
     engine.init()?;
 
+    engine.subscribe::<StringMessage>();
+
+    engine.send(Stage::Input, StringMessage("Server says haiiiii :3".into()));
+
     for i in 0..4 {
         println!("ITERATION {i}:");
         engine.dispatch(Stage::Input)?;
+        for msg in engine.inbox::<StringMessage>() {
+            dbg!(msg);
+        }
     }
 
     Ok(())
