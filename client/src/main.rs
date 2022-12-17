@@ -7,7 +7,7 @@ fn main() -> Result<()> {
 
     let paths = [
         base_path.join("plugin.wasm").into(),
-        base_path.join("plugin2.wasm").into(),
+        //base_path.join("plugin2.wasm").into(),
     ];
 
     let mut engine = Engine::new(&paths)?;

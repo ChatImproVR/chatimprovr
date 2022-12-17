@@ -153,7 +153,7 @@ impl<U: AppState> Context<U> {
             //messages: std::mem::take(&mut io.message_tx),
             // TODO: Only send this on init()
             outbox: std::mem::take(&mut io.outbox),
-            sched: self.sched.systems.clone(),
+            systems: self.sched.systems.clone(),
         };
         let len: u32 = serialized_size(&send).expect("Failed to get size of host message") as u32;
 

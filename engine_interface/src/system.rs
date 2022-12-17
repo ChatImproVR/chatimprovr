@@ -20,7 +20,7 @@ pub struct SystemDescriptor {
 /// * Render
 /// * Send messages to server
 /// This flag indicates which stage the plugin is to be executed AFTER
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Stage {
     /// Keyboard and other Input is received in this stage
     Input,

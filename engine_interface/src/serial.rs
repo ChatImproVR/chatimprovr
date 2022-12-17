@@ -41,7 +41,7 @@ pub struct SendBuf {
     pub messages: Vec<Message>,
     */
     /// Schedule setup on init. Must be empty except for first use!
-    pub sched: Vec<SystemDescriptor>,
+    pub systems: Vec<SystemDescriptor>,
     /// Message outbox
     pub outbox: Vec<Message>,
 }

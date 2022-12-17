@@ -14,6 +14,15 @@ use plugin::Plugin;
 
 // Keep the ECS in an Arc, so that it may be read simultaneously
 
+/// Plugin state, plugin code, ECS state, messaging machinery, and more
+pub struct Engine {
+    _wasm: wasmtime::Engine,
+    plugins: Vec<PluginState>,
+    ecs: Ecs,
+    /// Message distribution indices, maps channel id -> plugin indices
+    indices: HashMap<(ChannelId, Stage), Vec<usize>>,
+}
+
 /// Plugin management structure
 struct PluginState {
     /// Plugin code and interface
@@ -22,19 +31,16 @@ struct PluginState {
     systems: Vec<SystemDescriptor>,
     /// Message inbox
     inbox: HashMap<ChannelId, Vec<Message>>,
-}
-
-/// Plugin state, plugin code, ECS state, messaging machinery, and more
-pub struct Engine {
-    _wasm: wasmtime::Engine,
-    plugins: Vec<PluginState>,
-    ecs: Ecs,
+    // TODO: Make this Vec<Arc<Message>>? Faster! (No unnecessary copying)
+    /// Message outbox
+    outbox: Vec<Message>,
 }
 
 impl PluginState {
     pub fn new(code: Plugin) -> Self {
         PluginState {
             code,
+            outbox: vec![],
             systems: vec![],
             inbox: HashMap::default(),
         }
@@ -52,6 +58,7 @@ impl Engine {
 
         Ok(Self {
             _wasm: wasm,
+            indices: HashMap::new(),
             plugins,
             ecs,
         })
@@ -61,7 +68,9 @@ impl Engine {
     /// This is seperate from the constructor so that you may differentiate between loading errors
     /// and init errors, and also to allow you to decide when plugin code actually begins executing.
     pub fn init(&mut self) -> Result<()> {
-        for plugin in &mut self.plugins {
+        // Dispatch all plugins
+        for (plugin_idx, plugin) in self.plugins.iter_mut().enumerate() {
+            // Dispatch init signal
             let send = ReceiveBuf {
                 system: None,
                 inbox: std::mem::take(&mut plugin.inbox),
@@ -69,16 +78,32 @@ impl Engine {
             };
             let recv = plugin.code.dispatch(&send)?;
 
+            // Apply ECS commands
             apply_ecs_updates(&mut self.ecs, &recv)?;
 
-            plugin.systems = recv.sched;
+            // Setup message indices
+            for sys in &recv.systems {
+                for &channel in &sys.subscriptions {
+                    self.indices
+                        .entry((channel, sys.stage))
+                        .or_default()
+                        .push(plugin_idx);
+                }
+            }
+
+            // Set up schedule, send first messages
+            plugin.systems = recv.systems;
+            plugin.outbox = recv.outbox;
         }
+
+        // TODO: Panic if called again!
 
         Ok(())
     }
 
     /// Dispatch plugin code on the given stage
     pub fn dispatch(&mut self, stage: Stage) -> Result<()> {
+        // Run plugins
         for plugin in &mut self.plugins {
             for (system_idx, system) in plugin.systems.iter().enumerate() {
                 // Filter to the requested stage
@@ -98,8 +123,20 @@ impl Engine {
                 let ret = plugin.code.dispatch(&recv_buf)?;
 
                 apply_ecs_updates(&mut self.ecs, &ret)?;
+            }
+        }
 
-                // TODO: distribute messages
+        // Distribute messages
+        for i in 0..self.plugins.len() {
+            for msg in std::mem::take(&mut self.plugins[i].outbox) {
+                let chan = msg.channel;
+                for j in &self.indices[&(chan, stage)] {
+                    self.plugins[*j]
+                        .inbox
+                        .get_mut(&chan)
+                        .unwrap()
+                        .push(msg.clone());
+                }
             }
         }
 
