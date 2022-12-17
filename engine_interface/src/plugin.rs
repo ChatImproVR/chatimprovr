@@ -21,7 +21,7 @@ pub struct Context<U> {
 }
 
 /// System callable by the engine  
-pub type Callback<UserState> = fn(&mut UserState, &mut NonQueryIo, &mut QueryResult);
+pub type Callback<UserState> = fn(&mut UserState, &mut EngineIo, &mut QueryResult);
 
 /// Basically main() for plugins; allows a struct implementing AppState to be the state and entry
 /// point for the plugin
@@ -53,7 +53,7 @@ macro_rules! make_app_state {
 
 /// Application state, defines a constructor with common engine interface in it
 pub trait AppState: Sized {
-    fn new(io: &mut NonQueryIo, sched: &mut EngineSchedule<Self>) -> Self;
+    fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self;
 }
 
 /// Contains the query result, and any received messages.
@@ -61,7 +61,7 @@ pub trait AppState: Sized {
 /// components therein
 /// TODO: Find a better name for this lmao
 #[derive(Serialize, Deserialize)]
-pub struct NonQueryIo {
+pub struct EngineIo {
     /// Random number generator
     #[serde(skip)]
     pub(crate) pcg: Pcg,
@@ -126,7 +126,7 @@ impl<U: AppState> Context<U> {
         let recv: ReceiveBuf =
             deserialize(std::io::Cursor::new(&self.buf)).expect("Failed to decode host message");
 
-        let mut io = NonQueryIo::new(recv.inbox);
+        let mut io = EngineIo::new(recv.inbox);
 
         if let Some(system_idx) = recv.system {
             // Call system function with user data
@@ -176,7 +176,7 @@ impl<U: AppState> Context<U> {
     }
 }
 
-impl NonQueryIo {
+impl EngineIo {
     pub(crate) fn new(inbox: Inbox) -> Self {
         Self {
             commands: vec![],

@@ -9,7 +9,7 @@ struct State {}
 make_app_state!(State);
 
 impl AppState for State {
-    fn new(cmd: &mut NonQueryIo, schedule: &mut EngineSchedule<Self>) -> Self {
+    fn new(cmd: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
         schedule.add_system(
             SystemDescriptor {
                 stage: Stage::Input,
@@ -24,7 +24,7 @@ impl AppState for State {
 }
 
 impl State {
-    fn system(&mut self, cmd: &mut NonQueryIo, query: &mut QueryResult) {
+    fn system(&mut self, cmd: &mut EngineIo, query: &mut QueryResult) {
         for key in query.iter() {
             query.modify::<Transform>(key, |t| {
                 t.rotation *= UnitQuaternion::from_euler_angles(0.1, 0., 0.)

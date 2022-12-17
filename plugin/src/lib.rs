@@ -25,17 +25,14 @@ impl Message for StringMessage {
 }
 
 impl AppState for State {
-    fn new(cmd: &mut NonQueryIo, schedule: &mut EngineSchedule<Self>) -> Self {
-        let head = cmd.create_entity();
+    fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
+        // Create a new entity
+        let head = io.create_entity();
 
-        cmd.add_component(
-            head,
-            &Transform {
-                position: Point3::origin(),
-                rotation: UnitQuaternion::identity(),
-            },
-        );
+        // Add the Transform component to it
+        io.add_component(head, &Transform::default());
 
+        // Schedule the system
         // In the future it would be super cool to do this like Bevy and be able to just infer the
         // query from the type arguments and such...
         schedule.add_system(
@@ -44,7 +41,7 @@ impl AppState for State {
                 subscriptions: vec![sub::<StringMessage>()],
                 query: vec![query::<Transform>(Access::Write)],
             },
-            Self::system,
+            Self::my_system,
         );
 
         Self { head }
@@ -52,8 +49,8 @@ impl AppState for State {
 }
 
 impl State {
-    fn system(&mut self, cmd: &mut NonQueryIo, query: &mut QueryResult) {
-        for StringMessage(txt) in cmd.inbox() {
+    fn my_system(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        for StringMessage(txt) in io.inbox() {
             println!("Message: {}", txt);
         }
 
@@ -64,7 +61,7 @@ impl State {
 
             let txt = format!("Hewwo! {}", y);
 
-            cmd.send(&StringMessage(txt));
+            io.send(&StringMessage(txt));
         }
     }
 }
