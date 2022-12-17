@@ -2,14 +2,14 @@ use cimvr_common::{
     nalgebra::{Point3, UnitQuaternion},
     Transform,
 };
-use cimvr_engine_interface::{dbg, make_app_state, prelude::*, print, println, Locality};
+use cimvr_engine_interface::{dbg, make_app_state, prelude::*};
 
 struct State {}
 
 make_app_state!(State);
 
 impl UserState for State {
-    fn new(cmd: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
+    fn new(_cmd: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
         schedule.add_system(
             SystemDescriptor {
                 stage: Stage::Input,

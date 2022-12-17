@@ -1,6 +1,6 @@
 use cimvr_engine_interface::prelude::*;
 pub use nalgebra;
-use nalgebra::{Isometry3, Point3, UnitQuaternion, Vector3};
+use nalgebra::{Point3, UnitQuaternion};
 use serde::{Deserialize, Serialize};
 
 /// A transform component on an entity

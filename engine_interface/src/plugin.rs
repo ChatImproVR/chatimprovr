@@ -1,12 +1,10 @@
 use crate::{
-    dbg,
     pcg::Pcg,
     prelude::*,
     serial::{deserialize, serialize, serialize_into, serialized_size, ReceiveBuf, SendBuf},
 };
 pub use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Application state, defines a constructor with common engine interface in it
 pub trait UserState: Sized {

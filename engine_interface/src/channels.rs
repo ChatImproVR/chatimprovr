@@ -12,9 +12,11 @@ pub struct ChannelId {
     pub locality: Locality,
 }
 
+/*
 /// Anonymous identity of peer plugin, for return messages
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AuthorId(u32);
+*/
 
 /// A single message sent or received
 #[derive(Clone, Debug, Serialize, Deserialize)]

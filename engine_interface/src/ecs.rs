@@ -77,6 +77,9 @@ pub struct QueryResult {
     query: Query,
 }
 
+// TODO: Use only EntityId instead of this method...
+// We should be able to read/write specific ids!
+/// Opaque key to access query indices
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Key {
     idx: usize,
@@ -98,6 +101,7 @@ impl QueryResult {
         }
     }
 
+    /// Iterate through query entities
     pub fn iter(&self) -> impl Iterator<Item = Key> {
         self.ecs
             .entities
@@ -123,6 +127,7 @@ impl QueryResult {
         (component_idx, begin..end)
     }
 
+    /// Read the data in the given component
     pub fn read<T: Component>(&self, key: Key) -> T {
         // TODO: Cache query lookups!
         let (component_idx, range) = self.indices::<T>(key);
@@ -130,6 +135,7 @@ impl QueryResult {
         deserialize(&dense[range]).expect("Failed to deserialize component for reading")
     }
 
+    /// Write the given data to the component
     pub fn write<T: Component>(&mut self, key: Key, data: &T) {
         let entity = self.ecs.entities[key.idx];
         // Serialize data
@@ -147,6 +153,8 @@ impl QueryResult {
             .push(EngineCommand::AddComponent(entity, T::ID, data))
     }
 
+    // TODO: This is dreadfully slow but there's no way around that
+    /// Modify the component "in place"
     pub fn modify<T: Component>(&mut self, key: Key, mut f: impl FnMut(&mut T)) {
         let mut val = self.read(key);
         f(&mut val);

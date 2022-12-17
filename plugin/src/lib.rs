@@ -1,10 +1,5 @@
-use cimvr_common::{
-    nalgebra::{Point3, UnitQuaternion},
-    Transform,
-};
-use cimvr_engine_interface::{
-    dbg, make_app_state, prelude::*, print, println, serial::serialize, Locality,
-};
+use cimvr_common::Transform;
+use cimvr_engine_interface::{make_app_state, prelude::*, println, Locality};
 use serde::{Deserialize, Serialize};
 
 struct State {
@@ -50,18 +45,21 @@ impl UserState for State {
 
 impl State {
     fn my_system(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        // Receive messages
         for StringMessage(txt) in io.inbox() {
             println!("Message: {}", txt);
         }
 
+        // Iterate through the query
         for key in query.iter() {
             query.modify::<Transform>(key, |t| t.position.y += 0.1);
 
             let y = query.read::<Transform>(key).position.y;
 
-            let txt = format!("Hewwo! {}", y);
-
-            io.send(&StringMessage(txt));
+            if key.entity() == self.head {
+                let txt = format!("Head y pos: {}", y);
+                io.send(&StringMessage(txt));
+            }
         }
     }
 }
