@@ -1,6 +1,6 @@
 pub mod ecs;
 pub mod plugin;
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::{Ok, Result};
 pub use cimvr_engine_interface as interface;
@@ -14,15 +14,31 @@ use plugin::Plugin;
 
 // Keep the ECS in an Arc, so that it may be read simultaneously
 
+/// Plugin management structure
 struct PluginState {
+    /// Plugin code and interface
     code: Plugin,
+    /// Systems on this plugin
     systems: Vec<SystemDescriptor>,
+    /// Message inbox
+    inbox: HashMap<ChannelId, Vec<Message>>,
 }
 
+/// Plugin state, plugin code, ECS state, messaging machinery, and more
 pub struct Engine {
     _wasm: wasmtime::Engine,
     plugins: Vec<PluginState>,
     ecs: Ecs,
+}
+
+impl PluginState {
+    pub fn new(code: Plugin) -> Self {
+        PluginState {
+            code,
+            systems: vec![],
+            inbox: HashMap::default(),
+        }
+    }
 }
 
 impl Engine {
@@ -31,12 +47,7 @@ impl Engine {
         let plugins: Vec<PluginState> = plugins
             .iter()
             .map(|p| Plugin::new(&wasm, p))
-            .map(|plugin| {
-                Ok(PluginState {
-                    code: plugin?,
-                    systems: vec![],
-                })
-            })
+            .map(|plugin| plugin.map(PluginState::new))
             .collect::<Result<_>>()?;
         let ecs = Ecs::new();
 
