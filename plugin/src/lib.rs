@@ -18,8 +18,8 @@ struct StringMessage(String);
 
 impl Message for StringMessage {
     const CHANNEL: ChannelId = ChannelId {
-        // That's what I've been wating for, that's what it's all about. Wahoo!
-        id: 0xEEEAAA_BABEEE,
+        // That's what I've been waitin for, that's what it's all about! Wahoo!
+        id: 0x0000000_EEEAAA_BABEEE,
         locality: Locality::Local,
     };
 }
@@ -41,7 +41,7 @@ impl AppState for State {
         schedule.add_system(
             SystemDescriptor {
                 stage: Stage::Input,
-                subscriptions: vec![StringMessage::CHANNEL],
+                subscriptions: vec![sub::<StringMessage>()],
                 query: vec![query::<Transform>(Access::Write)],
             },
             Self::system,
