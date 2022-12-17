@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use crate::Locality;
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-pub(crate) type Inbox = HashMap<ChannelId, Vec<Message>>;
+pub(crate) type Inbox = HashMap<ChannelId, Vec<MessageData>>;
 
 /// Channel identity, corresponds to exactly one local or remote connection
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
@@ -18,7 +18,7 @@ pub struct AuthorId(u32);
 
 /// A single message sent or received
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Message {
+pub struct MessageData {
     /// Channel ID
     pub channel: ChannelId,
     /*
@@ -29,4 +29,10 @@ pub struct Message {
     */
     /// Message content
     pub data: Vec<u8>,
+}
+
+/// A single message sent or received
+pub trait Message: Serialize + DeserializeOwned + Sized {
+    /// Channel ID
+    const CHANNEL: ChannelId;
 }

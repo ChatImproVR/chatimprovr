@@ -5,6 +5,7 @@ use cimvr_common::{
 use cimvr_engine_interface::{
     dbg, make_app_state, prelude::*, print, println, serial::serialize, Locality,
 };
+use serde::{Deserialize, Serialize};
 
 struct State {
     head: EntityId,
@@ -12,10 +13,15 @@ struct State {
 
 make_app_state!(State);
 
-const TEST_CHAN: ChannelId = ChannelId {
-    id: 28308423098094823,
-    locality: Locality::Local,
-};
+#[derive(Serialize, Deserialize)]
+struct StringMessage(String);
+
+impl Message for StringMessage {
+    const CHANNEL: ChannelId = ChannelId {
+        id: 28308423098094823,
+        locality: Locality::Local,
+    };
+}
 
 impl AppState for State {
     fn new(cmd: &mut NonQueryIo, schedule: &mut EngineSchedule<Self>) -> Self {
@@ -34,7 +40,7 @@ impl AppState for State {
         schedule.add_system(
             SystemDescriptor {
                 stage: Stage::Input,
-                subscriptions: vec![TEST_CHAN],
+                subscriptions: vec![StringMessage::CHANNEL],
                 query: vec![QueryTerm::new::<Transform>(Access::Write)],
             },
             Self::system,
@@ -47,7 +53,7 @@ impl AppState for State {
 impl State {
     fn system(&mut self, cmd: &mut NonQueryIo, query: &mut QueryResult) {
         println!("HEWWO?");
-        if let Some(inbox) = &cmd.inbox().get(&TEST_CHAN) {
+        if let Some(inbox) = &cmd.inbox().get(&StringMessage::CHANNEL) {
             for msg in *inbox {
                 println!(
                     "{:?}: {}",
@@ -62,7 +68,8 @@ impl State {
         for key in query.iter() {
             query.modify::<Transform>(key, |t| t.position.y += 0.1);
             let k = query.read::<Transform>(key).position.y;
-            cmd.send(TEST_CHAN, format!("Hewwo! {}", k).bytes().collect());
+            let txt = format!("Hewwo! {}", k);
+            cmd.send(&StringMessage(txt));
         }
     }
 }

@@ -68,7 +68,7 @@ pub struct NonQueryIo {
     /// Sent commands
     pub(crate) commands: Vec<EngineCommand>,
     /// Sent messages
-    pub(crate) outbox: Vec<Message>,
+    pub(crate) outbox: Vec<MessageData>,
     /// Inbox
     pub(crate) inbox: Inbox,
     /*
@@ -220,7 +220,10 @@ impl NonQueryIo {
         &self.inbox
     }
 
-    pub fn send(&mut self, channel: ChannelId, data: Vec<u8>) {
-        self.outbox.push(Message { channel, data });
+    pub fn send<M: Message>(&mut self, data: &M) {
+        self.outbox.push(MessageData {
+            channel: M::CHANNEL,
+            data: serialize(data).expect("Failed to serialize message data"),
+        });
     }
 }

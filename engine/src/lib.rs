@@ -30,10 +30,10 @@ struct PluginState {
     /// Systems on this plugin
     systems: Vec<SystemDescriptor>,
     /// Message inbox
-    inbox: HashMap<ChannelId, Vec<Message>>,
+    inbox: HashMap<ChannelId, Vec<MessageData>>,
     // TODO: Make this Vec<Arc<Message>>? Faster! (No unnecessary copying)
     /// Message outbox
-    outbox: Vec<Message>,
+    outbox: Vec<MessageData>,
 }
 
 impl PluginState {

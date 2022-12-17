@@ -43,7 +43,7 @@ pub struct SendBuf {
     /// Schedule setup on init. Must be empty except for first use!
     pub systems: Vec<SystemDescriptor>,
     /// Message outbox
-    pub outbox: Vec<Message>,
+    pub outbox: Vec<MessageData>,
 }
 
 fn bincode_opts() -> impl Options {
