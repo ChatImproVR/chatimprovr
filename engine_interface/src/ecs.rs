@@ -6,7 +6,7 @@ use crate::serial::{deserialize, serialize, EcsData};
 
 /// A single requirement in a query
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct QueryTerm {
+pub struct QueryComponent {
     /// Component ID queried
     pub component: ComponentId,
     /// Access level granted to this component
@@ -14,7 +14,7 @@ pub struct QueryTerm {
 }
 
 /// A description of an ECS query
-pub type Query = Vec<QueryTerm>;
+pub type Query = Vec<QueryComponent>;
 
 /// Universally-unique Entity ID
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -54,7 +54,7 @@ pub enum EngineCommand {
     AddComponent(EntityId, ComponentId, Vec<u8>),
 }
 
-impl QueryTerm {
+impl QueryComponent {
     pub fn new<T: Component>(access: Access) -> Self {
         Self {
             component: T::ID,

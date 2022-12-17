@@ -14,7 +14,7 @@ impl AppState for State {
             SystemDescriptor {
                 stage: Stage::Input,
                 subscriptions: vec![],
-                query: vec![QueryTerm::new::<Transform>(Access::Write)],
+                query: vec![QueryComponent::new::<Transform>(Access::Write)],
             },
             Self::system,
         );

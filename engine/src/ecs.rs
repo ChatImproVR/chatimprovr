@@ -25,7 +25,7 @@ impl Ecs {
     /// Returns the list of relevant entities
     /// Empty queries panic.
     /// If a component requested does not exist, panic.
-    pub fn query(&self, query: &[QueryTerm]) -> HashSet<EntityId> {
+    pub fn query(&self, query: &[QueryComponent]) -> HashSet<EntityId> {
         //let (init, rest) = q.split_first().expect("Empty query");
         let Some((init, rest)) = query.split_first() else { return HashSet::new() };
 
@@ -201,7 +201,7 @@ mod tests {
         let e = ecs.create_entity();
         ecs.add_component(e, comp_a, &test_val.to_le_bytes());
 
-        let entities = ecs.query(&[QueryTerm {
+        let entities = ecs.query(&[QueryComponent {
             component: comp_a,
             access: Access::Read,
         }]);
@@ -237,11 +237,11 @@ mod tests {
         }
 
         let entities = ecs.query(&[
-            QueryTerm {
+            QueryComponent {
                 component: comp_a,
                 access: Access::Read,
             },
-            QueryTerm {
+            QueryComponent {
                 component: comp_b,
                 access: Access::Read,
             },
@@ -258,7 +258,7 @@ mod tests {
         assert!(showed_up.iter().all(|&v| v), "But it was my birthday!!");
 
         let n_comp_a = ecs
-            .query(&[QueryTerm {
+            .query(&[QueryComponent {
                 component: comp_a,
                 access: Access::Read,
             }])
@@ -266,7 +266,7 @@ mod tests {
         assert_eq!(n_comp_a, 100);
 
         let n_comp_b = ecs
-            .query(&[QueryTerm {
+            .query(&[QueryComponent {
                 component: comp_b,
                 access: Access::Read,
             }])

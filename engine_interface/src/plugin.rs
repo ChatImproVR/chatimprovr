@@ -177,7 +177,7 @@ impl<U: AppState> Context<U> {
 }
 
 impl NonQueryIo {
-    pub fn new(inbox: Inbox) -> Self {
+    pub(crate) fn new(inbox: Inbox) -> Self {
         Self {
             commands: vec![],
             pcg: Pcg::new(),
