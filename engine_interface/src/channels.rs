@@ -21,7 +21,7 @@ pub struct AuthorId(u32);
 pub struct MessageData {
     /// Channel ID
     pub channel: ChannelId,
-    /*
+    /* TODO: Return addresses
     /// Return-address of message author. Always `Some()` when received,
     /// `None` will send to all potential recipients,
     /// `Some(id)` will send to just the given author. Useful for return messages

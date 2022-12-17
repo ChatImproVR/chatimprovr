@@ -24,7 +24,7 @@ impl Message for StringMessage {
     };
 }
 
-impl AppState for State {
+impl UserState for State {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
         // Create a new entity
         let head = io.create_entity();

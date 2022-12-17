@@ -8,7 +8,7 @@ struct State {}
 
 make_app_state!(State);
 
-impl AppState for State {
+impl UserState for State {
     fn new(cmd: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
         schedule.add_system(
             SystemDescriptor {

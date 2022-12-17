@@ -1,14 +1,17 @@
-use std::collections::HashMap;
-
-pub use once_cell::sync::Lazy;
-use serde::{Deserialize, Serialize};
-
 use crate::{
     dbg,
     pcg::Pcg,
     prelude::*,
     serial::{deserialize, serialize, serialize_into, serialized_size, ReceiveBuf, SendBuf},
 };
+pub use once_cell::sync::Lazy;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+/// Application state, defines a constructor with common engine interface in it
+pub trait UserState: Sized {
+    fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self;
+}
 
 /// Full plugin context, contains user state and engine IO buffers
 pub struct Context<U> {
@@ -21,7 +24,7 @@ pub struct Context<U> {
 }
 
 /// System callable by the engine  
-pub type Callback<UserState> = fn(&mut UserState, &mut EngineIo, &mut QueryResult);
+pub type Callback<U> = fn(&mut U, &mut EngineIo, &mut QueryResult);
 
 /// Basically main() for plugins; allows a struct implementing AppState to be the state and entry
 /// point for the plugin
@@ -51,11 +54,6 @@ macro_rules! make_app_state {
     };
 }
 
-/// Application state, defines a constructor with common engine interface in it
-pub trait AppState: Sized {
-    fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self;
-}
-
 /// Contains the query result, and any received messages.
 /// Also contains the commands to be sent to the engine, and lists the modified entities and
 /// components therein
@@ -71,14 +69,6 @@ pub struct EngineIo {
     pub(crate) outbox: Vec<MessageData>,
     /// Inbox
     pub(crate) inbox: Inbox,
-    /*
-    /// Received messages, one array for each subscribed channel (in the same order)
-    pub(crate) message_rx: Vec<Vec<Message>>,
-    /// Sent messages
-    pub(crate) message_tx: Vec<Message>,
-    /// Subscriptions, for referencing to get recieved messages on a channel
-    subscriptions: Vec<ChannelId>,
-    */
 }
 
 /// Scheduling of systems
@@ -106,7 +96,7 @@ impl<U> EngineSchedule<U> {
     }
 }
 
-impl<U: AppState> Context<U> {
+impl<U: UserState> Context<U> {
     /// Creates context, but don't set up usercode yet since we're not in _dispatch(),
     /// and that means that the engine would never see our output.
     /// Called from _reserve() oddly enough, because this structure manages memory.
