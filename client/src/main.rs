@@ -13,6 +13,7 @@ use glutin::event_loop::ControlFlow;
 use render::RenderEngine;
 use std::path::PathBuf;
 
+mod input;
 mod render;
 
 struct Client {
@@ -61,6 +62,7 @@ fn main() -> Result<()> {
             }
             Event::RedrawRequested(_) => {
                 client.frame().expect("Frame returned error");
+                glutin_ctx.swap_buffers().unwrap();
             }
             Event::WindowEvent { ref event, .. } => {
                 client.handle_event(event);

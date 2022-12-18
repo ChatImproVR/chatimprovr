@@ -53,6 +53,20 @@ pub enum Primitive {
     Triangles,
 }
 
+/// Information about the display; may be a window or a VR headset
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub struct Screen {
+    pub width: u32,
+    pub height: u32,
+}
+
+impl Message for Screen {
+    const CHANNEL: ChannelId = ChannelId {
+        id: 0x234980,
+        locality: Locality::Local,
+    };
+}
+
 impl Component for Render {
     const ID: ComponentId = ComponentId {
         id: 0xDD05,
