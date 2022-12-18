@@ -221,6 +221,10 @@ dependencies = [
 [[package]]
 name = "cimvr_server"
 version = "0.1.0"
+dependencies = [
+ "cimvr_common",
+ "cimvr_engine",
+]
 
 [[package]]
 name = "cmake"

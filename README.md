@@ -14,3 +14,9 @@ Make sure you have the `wasm32-unknown-unknown` target installed;
 ```sh
 rustup target add wasm32-unknown-unknown
 ```
+
+![Visual aid for crate graph](./graph.svg)
+
+# TODO
+* [ ] Use real UUIDs instead of these random numbers and silly ID constants
+* [ ] All of the other TODOs... `grep -ir 'todo' */src/*`
