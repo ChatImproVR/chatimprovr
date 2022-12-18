@@ -1,3 +1,4 @@
+extern crate glow as gl;
 use anyhow::Result;
 use cimvr_common::{StringMessage, Transform};
 use cimvr_engine::{
@@ -7,38 +8,84 @@ use cimvr_engine::{
     },
     Engine,
 };
+use glutin::event::{Event, WindowEvent};
+use glutin::event_loop::ControlFlow;
 use std::path::PathBuf;
 
+mod render;
+
+struct Client {
+    engine: Engine,
+    gl: gl::Context,
+}
+
 fn main() -> Result<()> {
-    let base_path: PathBuf = "target/wasm32-unknown-unknown/release/".into();
+    // Parse args
+    let args = std::env::args().skip(1);
+    let paths: Vec<PathBuf> = args.map(PathBuf::from).collect();
 
-    let paths = [
-        base_path.join("plugin.wasm").into(),
-        //base_path.join("plugin2.wasm").into(),
-    ];
+    // Set up window
+    let event_loop = glutin::event_loop::EventLoop::new();
+    let window_builder = glutin::window::WindowBuilder::new().with_title("ChatImproVR");
 
+    // Set up OpenGL
+    let glutin_ctx = unsafe {
+        glutin::ContextBuilder::new()
+            .with_vsync(true)
+            .build_windowed(window_builder, &event_loop)?
+            .make_current()
+            .unwrap()
+    };
+
+    let gl = unsafe {
+        gl::Context::from_loader_function(|s| glutin_ctx.get_proc_address(s) as *const _)
+    };
+
+    // Set up engine and initialize plugins
     let mut engine = Engine::new(&paths)?;
-    engine.init()?;
+    engine.init_plugins()?;
 
-    engine.subscribe::<StringMessage>();
+    let mut client = Client::new(engine, gl)?;
 
-    engine.send(Stage::Input, StringMessage("Server says haiiiii :3".into()));
-
-    for i in 0..4 {
-        println!("ITERATION {i}:");
-        engine.dispatch(Stage::Input)?;
-        for msg in engine.inbox::<StringMessage>() {
-            dbg!(msg);
+    event_loop.run(move |event, _, control_flow| {
+        *control_flow = ControlFlow::Poll;
+        match event {
+            Event::LoopDestroyed => {
+                return;
+            }
+            Event::MainEventsCleared => {
+                glutin_ctx.window().request_redraw();
+            }
+            Event::RedrawRequested(_) => {
+                client.frame().expect("Frame returned error");
+            }
+            Event::WindowEvent { ref event, .. } => {
+                client.handle_event(event);
+                match event {
+                    WindowEvent::Resized(physical_size) => {
+                        glutin_ctx.resize(*physical_size);
+                    }
+                    WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                    _ => (),
+                }
+            }
+            _ => (),
         }
+    });
+}
 
-        for entity in engine.ecs().query(&[query::<Transform>(Access::Read)]) {
-            let t = engine.ecs().get::<Transform>(entity);
-            println!("{:?}", t);
-        }
-
-        let ent = engine.ecs().create_entity();
-        engine.ecs().add_component(ent, &Transform::default());
+impl Client {
+    pub fn new(engine: Engine, gl: gl::Context) -> Result<Self> {
+        Ok(Self { engine, gl })
     }
 
-    Ok(())
+    pub fn handle_event(&mut self, event: &WindowEvent) {
+        match event {
+            _ => (),
+        }
+    }
+
+    pub fn frame(&mut self) -> Result<()> {
+        Ok(())
+    }
 }

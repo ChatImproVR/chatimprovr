@@ -71,7 +71,7 @@ impl Engine {
     /// Initialize plugin code. Must be called at least once!
     /// This is seperate from the constructor so that you may differentiate between loading errors
     /// and init errors, and also to allow you to decide when plugin code actually begins executing.
-    pub fn init(&mut self) -> Result<()> {
+    pub fn init_plugins(&mut self) -> Result<()> {
         // Dispatch all plugins
         for (plugin_idx, plugin) in self.plugins.iter_mut().enumerate() {
             // Dispatch init signal

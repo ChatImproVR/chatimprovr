@@ -9,3 +9,8 @@ edition = "2021"
 anyhow = "1"
 cimvr_engine = { path = "../engine" }
 cimvr_common = { path = "../common" }
+
+bytemuck = "1.12.1"
+glutin = "0.29.1"
+nalgebra = { version = "0.31.4" }
+glow = "0.11.2"
