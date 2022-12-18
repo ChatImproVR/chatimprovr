@@ -1,5 +1,5 @@
 extern crate glow as gl;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use cimvr_common::{StringMessage, Transform};
 use cimvr_engine::{
     interface::{
@@ -10,13 +10,14 @@ use cimvr_engine::{
 };
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
+use render::RenderEngine;
 use std::path::PathBuf;
 
 mod render;
 
 struct Client {
     engine: Engine,
-    gl: gl::Context,
+    render: RenderEngine,
 }
 
 fn main() -> Result<()> {
@@ -76,11 +77,13 @@ fn main() -> Result<()> {
 
 impl Client {
     pub fn new(engine: Engine, gl: gl::Context) -> Result<Self> {
-        Ok(Self { engine, gl })
+        let render = RenderEngine::new(gl).context("Setting up render engine")?;
+        Ok(Self { engine, render })
     }
 
     pub fn handle_event(&mut self, event: &WindowEvent) {
         match event {
+            WindowEvent::Resized(physical_size) => self.render.set_screen_size(*physical_size),
             _ => (),
         }
     }
