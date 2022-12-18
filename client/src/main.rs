@@ -89,8 +89,16 @@ impl Client {
     }
 
     pub fn frame(&mut self) -> Result<()> {
-        self.engine.dispatch(Stage::Input);
-        self.engine.dispatch(Stage::Media);
+        // Input stage
+        self.engine.dispatch(Stage::Input)?;
+
+        // Physics stage
+        self.engine.dispatch(Stage::Physics)?;
+
+        // Media stage
+        self.render.frame(&mut self.engine);
+        self.engine.dispatch(Stage::Media)?;
+
         Ok(())
     }
 }

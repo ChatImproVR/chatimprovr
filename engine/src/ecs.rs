@@ -28,7 +28,7 @@ impl Ecs {
     /// Returns the list of relevant entities
     /// Empty queries panic.
     /// If a component requested does not exist, panic.
-    pub fn query(&self, query: &[QueryComponent]) -> HashSet<EntityId> {
+    pub fn query(&mut self, query: &[QueryComponent]) -> HashSet<EntityId> {
         //let (init, rest) = q.split_first().expect("Empty query");
         let Some((init, rest)) = query.split_first() else { return HashSet::new() };
 
@@ -36,8 +36,8 @@ impl Ecs {
         // TODO: Pick smallest?
         let mut entities: HashSet<EntityId> = self
             .map
-            .get(&init.component)
-            .expect("Component does not exist")
+            .entry(init.component)
+            .or_default()
             .keys()
             .copied()
             .collect();

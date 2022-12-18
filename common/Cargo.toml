@@ -7,4 +7,3 @@ edition = "2021"
 nalgebra = { version = "0.31.4", features = ["serde-serialize"] }
 cimvr_engine_interface = { path = "../engine_interface" }
 serde = { version = "1", features = ["derive"] }
-winit = { version = "0.27.5", features = ["serde"] }

@@ -197,7 +197,7 @@ impl Engine {
     }
 }
 
-fn query_ecs(ecs: &Ecs, query: &Query) -> Result<EcsData> {
+fn query_ecs(ecs: &mut Ecs, query: &Query) -> Result<EcsData> {
     let entities = ecs.query(query).into_iter().collect();
     let mut components = vec![vec![]; query.len()];
 
