@@ -3,12 +3,14 @@ pub use nalgebra;
 use nalgebra::{Point3, UnitQuaternion};
 use serde::{Deserialize, Serialize};
 
-/// A transform component on an entity
+pub mod input;
+pub mod render;
+
+/// Component representing positino and orientation
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
 pub struct Transform {
     pub position: Point3<f32>,
     pub rotation: UnitQuaternion<f32>,
-    //pub scale: Vector3<f32>,
 }
 
 impl Component for Transform {
@@ -19,6 +21,7 @@ impl Component for Transform {
     };
 }
 
+/// Simple string message
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct StringMessage(pub String);
 
