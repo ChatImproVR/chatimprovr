@@ -15,7 +15,10 @@ Make sure you have the `wasm32-unknown-unknown` target installed;
 rustup target add wasm32-unknown-unknown
 ```
 
+# Organization 
 ![Visual aid for crate graph](./graph.svg)
+
+Plugins are required to import `engine_interface`. Most plugins will need to import `common`, as it provides interfacing with the provided client and server. The `engine` and `engine_interface` crates are all that are needed to set up arbitrary new platforms...
 
 # TODO
 * [ ] Use real UUIDs instead of these random numbers and silly ID constants
