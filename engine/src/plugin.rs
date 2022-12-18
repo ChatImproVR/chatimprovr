@@ -49,7 +49,7 @@ impl Plugin {
                 ("_random", wasmtime::ExternType::Func(_)) => {
                     imports.push(random_fn.into());
                 }
-                _ => bail!("Unhandled import {:#?}", imp),
+                _ => eprintln!("Unhandled import {:#?}", imp),
             }
         }
 

@@ -13,13 +13,14 @@ pub struct SystemDescriptor {
     pub query: Query,
 }
 
+/// This flag indicates which stage the plugin is to be executed **after**.
+/// For example, the Input stage is executed after user input
 /// The execution cycle of the engine is something like this:
 /// * Sync ECS with server
-/// * Collect keyboard input
-/// * Physics
-/// * Render
+/// * Collect keyboard, VR tracking input (`Stage::Input`)
+/// * Physics (`Stage::Physics`)
+/// * Graphics and sound (`Stage::Media`)
 /// * Send messages to server
-/// This flag indicates which stage the plugin is to be executed AFTER
 #[derive(Clone, Copy, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Stage {
     /// Keyboard and other Input is received in this stage

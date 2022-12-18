@@ -76,8 +76,8 @@ fn main() -> Result<()> {
 }
 
 impl Client {
-    pub fn new(engine: Engine, gl: gl::Context) -> Result<Self> {
-        let render = RenderEngine::new(gl).context("Setting up render engine")?;
+    pub fn new(mut engine: Engine, gl: gl::Context) -> Result<Self> {
+        let render = RenderEngine::new(gl, &mut engine).context("Setting up render engine")?;
         Ok(Self { engine, render })
     }
 
@@ -89,6 +89,8 @@ impl Client {
     }
 
     pub fn frame(&mut self) -> Result<()> {
+        self.engine.dispatch(Stage::Input);
+        self.engine.dispatch(Stage::Media);
         Ok(())
     }
 }
