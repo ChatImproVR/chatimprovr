@@ -46,8 +46,10 @@ fn main() -> Result<()> {
     let mut engine = Engine::new(&paths)?;
     engine.init_plugins()?;
 
+    // Setup client code
     let mut client = Client::new(engine, gl)?;
 
+    // Run event loop
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
         match event {

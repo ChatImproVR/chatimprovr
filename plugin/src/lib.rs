@@ -1,4 +1,7 @@
-use cimvr_common::{StringMessage, Transform};
+use cimvr_common::{
+    render::{Handle, Primitive, Render},
+    StringMessage, Transform,
+};
 use cimvr_engine_interface::{make_app_state, prelude::*, println};
 
 struct State {
@@ -14,6 +17,14 @@ impl UserState for State {
 
         // Add the Transform component to it
         io.add_component(head, &Transform::default());
+        io.add_component(
+            head,
+            &Render {
+                id: Handle(3984203840),
+                primitive: Primitive::Lines,
+                limit: 0,
+            },
+        );
 
         // Schedule the system
         // In the future it would be super cool to do this like Bevy and be able to just infer the

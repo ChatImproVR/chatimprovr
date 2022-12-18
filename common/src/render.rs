@@ -56,7 +56,7 @@ pub enum Primitive {
 impl Component for Render {
     const ID: ComponentId = ComponentId {
         id: 0xDD05,
-        size: 0x6969,
+        size: 7,
     };
 }
 
