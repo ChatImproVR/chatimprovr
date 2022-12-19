@@ -1,6 +1,6 @@
 use cimvr_engine_interface::prelude::*;
 pub use nalgebra;
-use nalgebra::{Point3, UnitQuaternion};
+use nalgebra::{Matrix4, Point3, UnitQuaternion};
 use serde::{Deserialize, Serialize};
 
 pub mod input;
@@ -41,5 +41,13 @@ impl Default for Transform {
             pos: Point3::origin(),
             orient: UnitQuaternion::identity(),
         }
+    }
+}
+
+impl Transform {
+    /// Turn it into a Matrix;
+    /// Represent the transformation as a linear transformation of homogeneous coordinates.
+    pub fn to_homogeneous(&self) -> Matrix4<f32> {
+        Matrix4::new_translation(&self.pos.coords) * self.orient.to_homogeneous()
     }
 }

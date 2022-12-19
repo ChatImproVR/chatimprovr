@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+
+use anyhow::format_err;
 use anyhow::Result;
 use cimvr_common::{render::*, Transform};
 use cimvr_engine::{
@@ -9,19 +12,17 @@ use glutin::dpi::PhysicalSize;
 use nalgebra::Matrix4;
 
 pub struct RenderPlugin {
-    gl: gl::Context,
+    gl: glow::Context,
+    rdr: RenderEngine,
 }
-
-/// A 4x4 matrix as nested arrays
-type RawMatrix = [[f32; 4]; 4];
-
-struct RenderObject {}
 
 impl RenderPlugin {
     pub fn new(gl: gl::Context, engine: &mut Engine) -> Result<Self> {
         engine.subscribe::<RenderData>();
 
-        Ok(Self { gl })
+        let rdr = RenderEngine::new(&gl)?;
+
+        Ok(Self { gl, rdr })
     }
 
     pub fn set_screen_size(&mut self, size: PhysicalSize<u32>) {
@@ -32,36 +33,38 @@ impl RenderPlugin {
         }
     }
 
-    pub fn frame(&mut self, engine: &mut Engine) {
-        /*
+    pub fn frame(&mut self, engine: &mut Engine) -> Result<()> {
+        // Upload render data
         for msg in engine.inbox::<RenderData>() {
-            dbg!(msg);
+            self.rdr.upload(&self.gl, &msg);
         }
 
+        // Find camera, if any
         let entities = engine.ecs().query(&[
             query::<Render>(Access::Read),
             query::<Transform>(Access::Read),
         ]);
 
+        // Prepare data
+        let entities = engine.ecs().query(&[
+            query::<Render>(Access::Read),
+            query::<Transform>(Access::Read),
+        ]);
+
+        self.rdr.frame(&self.gl, proj, view, transforms, handles)?;
+
         for entity in entities {
             dbg!(engine.ecs().get::<Render>(entity));
             dbg!(engine.ecs().get::<Transform>(entity));
         }
-        */
     }
 }
 
+// TODO: destructors! (lol)
 /// Rendering engine state
-struct Engine {
-    // NOTE: We do not call destructors!
-    map: GpuMesh,
-    head: GpuMesh,
-
-    head_inst_vbo: gl::NativeBuffer,
-    head_count: usize,
-
-    map_shader: gl::Program,
-    head_shader: gl::Program,
+struct RenderEngine {
+    meshes: HashMap<RenderHandle, GpuMesh>,
+    shader: gl::Program,
 }
 
 struct GpuMesh {
@@ -71,8 +74,8 @@ struct GpuMesh {
     index_count: i32,
 }
 
-impl Engine {
-    pub fn new(gl: &gl::Context) -> Result<Self, String> {
+impl RenderEngine {
+    pub fn new(gl: &gl::Context) -> Result<Self> {
         unsafe {
             // Enable backface culling
             gl.enable(gl::CULL_FACE);
@@ -82,78 +85,32 @@ impl Engine {
             gl.depth_func(gl::LESS);
 
             // Compile shaders
-            let map_shader = compile_glsl_program(
+            let shader = compile_glsl_program(
                 &gl,
                 &[
-                    (gl::VERTEX_SHADER, include_str!("shaders/map.vert")),
+                    (gl::VERTEX_SHADER, include_str!("shaders/unlit.vert")),
                     (gl::FRAGMENT_SHADER, include_str!("shaders/unlit.frag")),
                 ],
             )?;
-
-            // Compile shaders
-            let head_shader = compile_glsl_program(
-                &gl,
-                &[
-                    (gl::VERTEX_SHADER, include_str!("shaders/head.vert")),
-                    (gl::FRAGMENT_SHADER, include_str!("shaders/unlit.frag")),
-                ],
-            )?;
-
-            // Upload head mesh
-            let head = upload_mesh(gl, gl::STATIC_DRAW, head_mesh)?;
-
-            // Upload map mesh
-            let map = upload_mesh(gl, gl::DYNAMIC_DRAW, map_mesh)?;
-
-            // Create head instance buffer
-            gl.bind_vertex_array(Some(head.vao));
-            let head_inst_vbo = gl.create_buffer()?;
-            gl.bind_buffer(gl::ARRAY_BUFFER, Some(head_inst_vbo));
-            gl.buffer_data_size(
-                gl::ARRAY_BUFFER,
-                (std::mem::size_of::<RawMatrix>() * MAX_HEADS) as i32,
-                gl::DYNAMIC_DRAW,
-            );
-            gl.bind_buffer(gl::ARRAY_BUFFER, None);
-
-            // Set up instance buffer
-            gl.bind_buffer(gl::ARRAY_BUFFER, Some(head_inst_vbo));
-            for i in 0..4 {
-                let attrib_idx = 2 + i;
-                gl.enable_vertex_attrib_array(attrib_idx);
-                gl.vertex_attrib_pointer_f32(
-                    attrib_idx,
-                    4,
-                    gl::FLOAT,
-                    false,
-                    std::mem::size_of::<RawMatrix>() as i32,
-                    i as i32 * std::mem::size_of::<[f32; 4]>() as i32,
-                );
-                gl.vertex_attrib_divisor(attrib_idx, 1);
-            }
-            gl.bind_buffer(gl::ARRAY_BUFFER, None);
-            gl.bind_vertex_array(None);
 
             Ok(Self {
-                head_inst_vbo,
-                head_count: 0,
-                head,
-                map,
-                map_shader,
-                head_shader,
+                meshes: HashMap::new(),
+                shader,
             })
         }
     }
 
-    /// Update head positions  
-    pub fn update_heads(&mut self, gl: &gl::Context, heads: &[RawMatrix]) {
-        assert!(heads.len() <= MAX_HEADS);
-        unsafe {
-            gl.bind_buffer(gl::ARRAY_BUFFER, Some(self.head_inst_vbo));
-            gl.buffer_sub_data_u8_slice(gl::ARRAY_BUFFER, 0, bytemuck::cast_slice(heads));
-            gl.bind_buffer(gl::ARRAY_BUFFER, None);
-            self.head_count = heads.len();
+    pub fn upload(&mut self, gl: &gl::Context, data: &RenderData) -> Result<()> {
+        // TODO: Use a different mesh type? Switch for upload frequency? Hmmm..
+        let gpu_mesh =
+            upload_mesh(gl, gl::DYNAMIC_DRAW, &data.mesh).expect("Failed to upload mesh");
+        let ret = self.meshes.insert(data.handle, gpu_mesh);
+
+        if ret.is_some() {
+            eprintln!("Warning: Overwrote render data {:?}", data.handle);
         }
+
+        Ok(())
     }
 
     /// The given heads will be rendered using the provided projection matrix and view Transform
@@ -163,7 +120,8 @@ impl Engine {
         gl: &gl::Context,
         proj: Matrix4<f32>,
         view: Matrix4<f32>,
-        //view: Transform,
+        transforms: &[Transform],
+        handles: &[RenderHandle],
     ) -> Result<(), String> {
         unsafe {
             // Clear depth and color buffers
@@ -174,39 +132,41 @@ impl Engine {
             let set_camera_uniforms = |shader| {
                 // Set camera matrix
                 gl.uniform_matrix_4_f32_slice(
-                    gl.get_uniform_location(shader, "view").as_ref(),
+                    gl.get_uniform_location(self.shader, "view").as_ref(),
                     false,
                     view.as_slice(),
                 );
 
                 gl.uniform_matrix_4_f32_slice(
-                    gl.get_uniform_location(shader, "proj").as_ref(),
+                    gl.get_uniform_location(self.shader, "proj").as_ref(),
                     false,
                     proj.as_slice(),
                 );
             };
 
             // Draw map
-            gl.use_program(Some(self.map_shader));
-            set_camera_uniforms(self.map_shader);
+            gl.use_program(Some(self.shader));
+            set_camera_uniforms(self.shader);
 
-            gl.bind_vertex_array(Some(self.map.vao));
-            gl.draw_elements(gl::TRIANGLES, self.map.index_count, gl::UNSIGNED_INT, 0);
-            gl.bind_vertex_array(None);
+            // TODO: Literally ANY optimization
+            for (transf, handle) in transforms.iter().zip(handles) {
+                let matrix = transf.to_homogeneous();
+                gl.uniform_matrix_4_f32_slice(
+                    gl.get_uniform_location(self.shader, "tranf").as_ref(),
+                    false,
+                    bytemuck::cast_slice(matrix.as_ref()),
+                );
 
-            // Draw heads
-            gl.use_program(Some(self.head_shader));
-            set_camera_uniforms(self.head_shader);
-
-            gl.bind_vertex_array(Some(self.head.vao));
-            gl.draw_elements_instanced(
-                gl::TRIANGLES,
-                self.head.index_count,
-                gl::UNSIGNED_INT,
-                0,
-                self.head_count as i32,
-            );
-            gl.bind_vertex_array(None);
+                if let Some(mesh) = self.meshes.get(&handle) {
+                    // Draw mesh data
+                    gl.bind_vertex_array(Some(mesh.vao));
+                    gl.draw_elements(gl::TRIANGLES, mesh.index_count, gl::UNSIGNED_SHORT, 0);
+                    gl.bind_vertex_array(None);
+                } else {
+                    // TODO: Use the log() crate!
+                    eprintln!("Warning: Attempted to access absent mesh data {:?}", handle);
+                }
+            }
 
             Ok(())
         }
@@ -227,7 +187,7 @@ pub fn view_from_transform(head: &Transform) -> Matrix4<f32> {
 }
 
 /// Compiles (*_SHADER, <source>) into a shader program for OpenGL
-fn compile_glsl_program(gl: &gl::Context, sources: &[(u32, &str)]) -> Result<gl::Program, String> {
+fn compile_glsl_program(gl: &gl::Context, sources: &[(u32, &str)]) -> Result<gl::Program> {
     // Compile default shaders
     unsafe {
         let program = gl.create_program().expect("Cannot create program");
@@ -242,7 +202,10 @@ fn compile_glsl_program(gl: &gl::Context, sources: &[(u32, &str)]) -> Result<gl:
             gl.compile_shader(shader);
 
             if !gl.get_shader_compile_status(shader) {
-                return Err(gl.get_shader_info_log(shader));
+                return Err(format_err!(
+                    "OpenGL compile shader: {}",
+                    gl.get_shader_info_log(shader)
+                ));
             }
 
             gl.attach_shader(program, shader);
@@ -253,7 +216,10 @@ fn compile_glsl_program(gl: &gl::Context, sources: &[(u32, &str)]) -> Result<gl:
         gl.link_program(program);
 
         if !gl.get_program_link_status(program) {
-            return Err(gl.get_program_info_log(program));
+            return Err(format_err!(
+                "OpenGL link shader: {}",
+                gl.get_program_info_log(program)
+            ));
         }
 
         for shader in shaders {

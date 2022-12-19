@@ -1,6 +1,6 @@
 use cimvr_common::{
     input::InputEvents,
-    render::{Handle, Primitive, Render},
+    render::{Primitive, Render, RenderHandle},
     StringMessage, Transform,
 };
 use cimvr_engine_interface::{make_app_state, prelude::*, println};
@@ -21,7 +21,7 @@ impl UserState for State {
         io.add_component(
             head,
             &Render {
-                id: Handle(3984203840),
+                id: RenderHandle(3984203840),
                 primitive: Primitive::Lines,
                 limit: 0,
             },

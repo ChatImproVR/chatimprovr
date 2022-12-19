@@ -15,12 +15,13 @@ pub struct Vertex {
 
 /// Unique handle to previously-sent RenderData
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub struct Handle(pub u128);
+pub struct RenderHandle(pub u128);
 
 /// All information required to define a renderable mesh
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RenderData {
     pub mesh: Mesh,
+    pub handle: RenderHandle,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -35,7 +36,7 @@ pub struct Mesh {
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Render {
     /// Id of the associated RenderData
-    pub id: Handle,
+    pub id: RenderHandle,
     /// Primitive to construct this object
     pub primitive: Primitive,
     /// * If no vertices, no indices: Vertex shader procedurally generates vertices
