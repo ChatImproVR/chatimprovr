@@ -25,7 +25,19 @@ pub struct EntityId(pub u128);
 pub struct ComponentId {
     /// Universally-unique id
     pub id: u128,
-    /// Size in bytes
+    /// Serialized size in bytes
+    ///
+    /// Preemptive FAQ:
+    /// Q: What? How do I get this number?
+    /// A: Just put any ol number in and use it in `add_component()` once.
+    /// A: Or just use `engine_interface::serial::serialized_size()`
+    ///
+    /// Q: Why do you need this?
+    /// A: So the engine can check that it's right
+    /// A: To easily move components around in memory
+    ///
+    /// Q: Is this the same as the size of the associated type?
+    /// A: Not always! std::mem::size_of<T>() where T: Component can be different than serialized_size
     pub size: u16,
 }
 

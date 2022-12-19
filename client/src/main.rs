@@ -4,7 +4,7 @@ use cimvr_engine::{interface::system::Stage, Engine};
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
 use input::UserInputHandler;
-use render::RenderEngine;
+use render::RenderPlugin;
 use std::path::PathBuf;
 
 mod input;
@@ -12,7 +12,7 @@ mod render;
 
 struct Client {
     engine: Engine,
-    render: RenderEngine,
+    render: RenderPlugin,
     input: UserInputHandler,
 }
 
@@ -76,7 +76,7 @@ fn main() -> Result<()> {
 
 impl Client {
     pub fn new(mut engine: Engine, gl: gl::Context) -> Result<Self> {
-        let render = RenderEngine::new(gl, &mut engine).context("Setting up render engine")?;
+        let render = RenderPlugin::new(gl, &mut engine).context("Setting up render engine")?;
         let input = UserInputHandler::new();
         Ok(Self {
             engine,

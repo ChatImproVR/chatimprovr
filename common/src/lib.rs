@@ -9,8 +9,10 @@ pub mod render;
 /// Component representing positino and orientation
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
 pub struct Transform {
-    pub position: Point3<f32>,
-    pub rotation: UnitQuaternion<f32>,
+    /// Position
+    pub pos: Point3<f32>,
+    /// Orientation (Rotation)
+    pub orient: UnitQuaternion<f32>,
 }
 
 impl Component for Transform {
@@ -36,8 +38,8 @@ impl Message for StringMessage {
 impl Default for Transform {
     fn default() -> Self {
         Self {
-            position: Point3::origin(),
-            rotation: UnitQuaternion::identity(),
+            pos: Point3::origin(),
+            orient: UnitQuaternion::identity(),
         }
     }
 }

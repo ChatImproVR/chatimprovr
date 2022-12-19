@@ -57,9 +57,9 @@ impl State {
 
         // Iterate through the query
         for key in query.iter() {
-            query.modify::<Transform>(key, |t| t.position.y += 0.1);
+            query.modify::<Transform>(key, |t| t.pos.y += 0.1);
 
-            let y = query.read::<Transform>(key).position.y;
+            let y = query.read::<Transform>(key).pos.y;
 
             if key.entity() == self.head {
                 let txt = format!("Head y pos: {}", y);

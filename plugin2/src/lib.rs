@@ -27,7 +27,7 @@ impl State {
     fn system(&mut self, cmd: &mut EngineIo, query: &mut QueryResult) {
         for key in query.iter() {
             query.modify::<Transform>(key, |t| {
-                t.rotation *= UnitQuaternion::from_euler_angles(0.1, 0., 0.)
+                t.orient *= UnitQuaternion::from_euler_angles(0.1, 0., 0.)
             });
 
             dbg!(query.read::<Transform>(key));
@@ -37,8 +37,8 @@ impl State {
         cmd.add_component(
             ent,
             &Transform {
-                position: Point3::new(0.1, 0.5, 0.8),
-                rotation: UnitQuaternion::identity(),
+                pos: Point3::new(0.1, 0.5, 0.8),
+                orient: UnitQuaternion::identity(),
             },
         );
     }

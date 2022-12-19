@@ -80,3 +80,9 @@ impl Message for RenderData {
         locality: Locality::Local,
     };
 }
+
+impl Vertex {
+    pub fn new(pos: [f32; 3], uvw: [f32; 3]) -> Self {
+        Self { pos, uvw }
+    }
+}
