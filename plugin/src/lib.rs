@@ -1,30 +1,26 @@
+use std::f32::consts::FRAC_PI_2;
+
 use cimvr_common::{
-    input::InputEvents,
-    nalgebra::{Point3, UnitQuaternion, Vector3},
+    input::{ElementState, InputEvent, InputEvents, MouseButton, MouseEvent},
+    nalgebra::{Point3, UnitQuaternion, Vector3, Vector4},
     render::{CameraComponent, Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
     FrameTime, Transform,
 };
 use cimvr_engine_interface::{dbg, make_app_state, prelude::*, print, println};
 
 struct State {
-    head: EntityId,
+    arcball: ArcBall,
+    arcball_control: ArcBallController,
 }
 
 make_app_state!(State);
 
 impl UserState for State {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
-        // Create head
-        let head = io.create_entity();
-        let camera_pos = Point3::new(3., 3., 3.);
-        io.add_component(
-            head,
-            &Transform {
-                pos: camera_pos,
-                orient: UnitQuaternion::face_towards(&camera_pos.coords, &Vector3::y()),
-            },
-        );
-        io.add_component(head, &CameraComponent);
+        // Create camera
+        let camera_ent = io.create_entity();
+        io.add_component(camera_ent, &Transform::default());
+        io.add_component(camera_ent, &CameraComponent);
 
         // Craate cube
         let cube_ent = io.create_entity();
@@ -56,7 +52,153 @@ impl UserState for State {
             Self::camera_move,
         );
 
-        Self { head }
+        Self {
+            arcball: ArcBall::default(),
+            arcball_control: ArcBallController::default(),
+        }
+    }
+}
+
+impl State {
+    fn camera_move(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        // Handle input events
+        if let Some(InputEvents(events)) = io.inbox_first() {
+            for event in events {
+                self.arcball_control.handle_event(&event, &mut self.arcball);
+            }
+        }
+
+        // Set camera position
+        for key in query.iter() {
+            query.write::<Transform>(key, &self.arcball.camera_transf());
+        }
+    }
+}
+
+/// Arcball camera parameters
+#[derive(Copy, Clone)]
+pub struct ArcBall {
+    pub pivot: Point3<f32>,
+    pub distance: f32,
+    pub yaw: f32,
+    pub pitch: f32,
+}
+
+impl ArcBall {
+    pub fn camera_transf(&self) -> Transform {
+        Transform {
+            pos: self.pivot + self.eye(),
+            orient: self.orient(),
+        }
+    }
+
+    pub fn orient(&self) -> UnitQuaternion<f32> {
+        UnitQuaternion::face_towards(&(self.eye()), &Vector3::y())
+    }
+
+    pub fn eye(&self) -> Vector3<f32> {
+        Vector3::new(
+            self.yaw.cos() * self.pitch.cos().abs(),
+            self.pitch.sin(),
+            self.yaw.sin() * self.pitch.cos().abs(),
+        ) * self.distance
+    }
+}
+
+/// Arcball camera controller parameters
+#[derive(Copy, Clone)]
+pub struct ArcBallController {
+    pub pan_sensitivity: f32,
+    pub swivel_sensitivity: f32,
+    pub zoom_sensitivity: f32,
+    pub closest_zoom: f32,
+    pub last_mouse: Option<(f32, f32)>,
+    pub mouse_left: bool,
+    pub mouse_right: bool,
+}
+
+impl ArcBallController {
+    pub fn handle_event(&mut self, event: &InputEvent, arcball: &mut ArcBall) {
+        match event {
+            InputEvent::Mouse(mouse) => match mouse {
+                MouseEvent::Moved(x, y) => {
+                    if let Some((lx, ly)) = self.last_mouse {
+                        let (dx, dy) = (x - lx, y - ly);
+
+                        if self.mouse_left {
+                            self.pivot(arcball, dx, dy);
+                        } else if self.mouse_right {
+                            self.pan(arcball, dx, dy)
+                        }
+                    }
+
+                    self.last_mouse = Some((*x, *y));
+                }
+                MouseEvent::Scrolled(_, dy) => {
+                    self.zoom(arcball, *dy);
+                }
+                MouseEvent::Clicked(button, state, _) => {
+                    let b = *state == ElementState::Pressed;
+                    match button {
+                        MouseButton::Left => self.mouse_left = b,
+                        MouseButton::Right => self.mouse_right = b,
+                        _ => (),
+                    }
+                }
+                _ => (),
+            },
+            InputEvent::Keyboard(keyboard) => {}
+        }
+    }
+
+    fn pivot(&mut self, arcball: &mut ArcBall, delta_x: f32, delta_y: f32) {
+        arcball.yaw += delta_x * self.swivel_sensitivity;
+        arcball.pitch += delta_y * self.swivel_sensitivity;
+
+        arcball.pitch = arcball.pitch.clamp(-FRAC_PI_2, FRAC_PI_2);
+    }
+
+    fn pan(&mut self, arcball: &mut ArcBall, delta_x: f32, delta_y: f32) {
+        let delta = Vector4::new(
+            (-delta_x as f32) * arcball.distance,
+            (delta_y as f32) * arcball.distance,
+            0.0,
+            0.0,
+        ) * self.pan_sensitivity;
+
+        // TODO: This is dumb, just use the cross product 4head
+        let inv = arcball.camera_transf().to_homogeneous();
+        arcball.pivot += (inv * delta).xyz();
+    }
+
+    fn zoom(&mut self, arcball: &mut ArcBall, delta: f32) {
+        arcball.distance += delta * self.zoom_sensitivity.powf(2.) * arcball.distance;
+        arcball.distance = arcball.distance.max(self.closest_zoom);
+    }
+}
+
+impl Default for ArcBallController {
+    fn default() -> Self {
+        Self {
+            pan_sensitivity: 0.0015,
+            swivel_sensitivity: 0.005,
+            zoom_sensitivity: 0.3,
+            closest_zoom: 2.,
+            last_mouse: None,
+            mouse_left: false,
+            mouse_right: false,
+        }
+    }
+}
+
+impl Default for ArcBall {
+    fn default() -> Self {
+        Self {
+            pivot: Point3::new(0., 0., 0.),
+            pitch: 0.3,
+            yaw: -1.92,
+            distance: 10.,
+        }
     }
 }
 
@@ -80,32 +222,5 @@ fn cube() -> RenderData {
     RenderData {
         mesh: Mesh { vertices, indices },
         id: RenderHandle(3984203840),
-    }
-}
-
-impl State {
-    fn camera_move(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
-        // Receive messages
-
-        // Receive messages
-        for InputEvents(txt) in io.inbox() {
-            println!("Input events: {:#?}", txt);
-        }
-
-        // Iterate through the query
-        if let Some(time) = io.inbox_first::<FrameTime>() {
-            for key in query.iter() {
-                query.modify::<Transform>(key, |t| t.pos.y = time.time * 0.3);
-
-                /*
-                let y = query.read::<Transform>(key).pos.y;
-
-                if key.entity() == self.head {
-                let txt = format!("Head y pos: {}", y);
-                io.send(&StringMessage(txt));
-                }
-                */
-            }
-        }
     }
 }
