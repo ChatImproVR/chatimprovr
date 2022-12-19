@@ -65,10 +65,9 @@ impl RenderPlugin {
 
         // Set up camera matrices. TODO: Determine projection via plugin!
         let camera_transf = engine.ecs().get::<Transform>(camera_entity);
-        let view = view_from_transform(&camera_transf);
         let proj = Matrix4::new_perspective(
             self.screen_size.width as f32 / self.screen_size.height as f32,
-            1.,
+            90_f32.to_radians(),
             0.01,
             1000.,
         );
@@ -96,7 +95,7 @@ impl RenderPlugin {
 
         // Draw!
         self.rdr
-            .frame(&self.gl, proj, view, &transforms, &handles)?;
+            .frame(&self.gl, proj, camera_transf.view(), &transforms, &handles)?;
 
         // Reset timing
         self.last_frame = Instant::now();
@@ -237,19 +236,6 @@ impl RenderEngine {
             Ok(())
         }
     }
-}
-
-/// Creates a view matrix for the given head position
-pub fn view_from_transform(transf: &Transform) -> Matrix4<f32> {
-    // Invert this quaternion, orienting the world into NDC space
-    // Represent the rotation in homogeneous coordinates
-    let rotation = transf.orient.inverse().to_homogeneous();
-
-    // Invert this translation, translating the world into NDC space
-    let translation = Matrix4::new_translation(&-transf.pos.coords);
-
-    // Compose the view
-    rotation * translation
 }
 
 /// Compiles (*_SHADER, <source>) into a shader program for OpenGL

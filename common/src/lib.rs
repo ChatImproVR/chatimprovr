@@ -55,4 +55,17 @@ impl Transform {
     pub fn to_homogeneous(&self) -> Matrix4<f32> {
         Matrix4::new_translation(&self.pos.coords) * self.orient.to_homogeneous()
     }
+
+    /// Construct a view matrix from this transform; it's actually the inverse of to_homogeneous()!
+    pub fn view(&self) -> Matrix4<f32> {
+        // Invert this quaternion, orienting the world into NDC space
+        // Represent the rotation in homogeneous coordinates
+        let rotation = self.orient.inverse().to_homogeneous();
+
+        // Invert this translation, translating the world into NDC space
+        let translation = Matrix4::new_translation(&-self.pos.coords);
+
+        // Compose the view
+        rotation * translation
+    }
 }
