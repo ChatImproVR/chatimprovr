@@ -85,30 +85,27 @@ fn cube() -> RenderData {
 
 impl State {
     fn camera_move(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
-        /*
         // Receive messages
-        for time in io.inbox::<FrameTime>() {
-            //dbg!(time);
-        }
 
         // Receive messages
         for InputEvents(txt) in io.inbox() {
             println!("Input events: {:#?}", txt);
         }
-        */
 
         // Iterate through the query
-        for key in query.iter() {
-            query.modify::<Transform>(key, |t| t.pos.y += 0.01);
+        if let Some(time) = io.inbox_first::<FrameTime>() {
+            for key in query.iter() {
+                query.modify::<Transform>(key, |t| t.pos.y = time.time * 0.3);
 
-            /*
-            let y = query.read::<Transform>(key).pos.y;
+                /*
+                let y = query.read::<Transform>(key).pos.y;
 
-            if key.entity() == self.head {
+                if key.entity() == self.head {
                 let txt = format!("Head y pos: {}", y);
                 io.send(&StringMessage(txt));
+                }
+                */
             }
-            */
         }
     }
 }
