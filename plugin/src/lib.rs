@@ -21,7 +21,7 @@ impl UserState for State {
             head,
             &Transform {
                 pos: camera_pos,
-                orient: UnitQuaternion::look_at_rh(&-camera_pos.coords, &Vector3::y()),
+                orient: UnitQuaternion::face_towards(&camera_pos.coords, &Vector3::y()),
             },
         );
         io.add_component(head, &CameraComponent);
@@ -29,7 +29,14 @@ impl UserState for State {
         // Craate cube
         let cube_ent = io.create_entity();
         let cube_mesh = cube();
-        io.add_component(cube_ent, &Transform::default());
+        //io.add_component(cube_ent, &Transform::default());
+        io.add_component(
+            cube_ent,
+            &Transform {
+                pos: Point3::new(0., 0., 0.),
+                ..Default::default()
+            },
+        );
         io.add_component(
             cube_ent,
             &Render {
