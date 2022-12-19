@@ -1,4 +1,5 @@
 use cimvr_common::{
+    input::InputEvents,
     render::{Handle, Primitive, Render},
     StringMessage, Transform,
 };
@@ -32,7 +33,7 @@ impl UserState for State {
         schedule.add_system(
             SystemDescriptor {
                 stage: Stage::Input,
-                subscriptions: vec![sub::<StringMessage>()],
+                subscriptions: vec![sub::<StringMessage>(), sub::<InputEvents>()],
                 query: vec![query::<Transform>(Access::Write)],
             },
             Self::my_system,
@@ -46,7 +47,12 @@ impl State {
     fn my_system(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         // Receive messages
         for StringMessage(txt) in io.inbox() {
-            println!("Message: {}", txt);
+            println!("String message: {}", txt);
+        }
+
+        // Receive messages
+        for InputEvents(txt) in io.inbox() {
+            println!("Input events: {:#?}", txt);
         }
 
         // Iterate through the query

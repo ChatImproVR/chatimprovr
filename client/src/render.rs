@@ -27,6 +27,7 @@ impl RenderEngine {
     }
 
     pub fn frame(&mut self, engine: &mut Engine) {
+        /*
         for msg in engine.inbox::<RenderData>() {
             dbg!(msg);
         }
@@ -40,5 +41,6 @@ impl RenderEngine {
             dbg!(engine.ecs().get::<Render>(entity));
             dbg!(engine.ecs().get::<Transform>(entity));
         }
+        */
     }
 }

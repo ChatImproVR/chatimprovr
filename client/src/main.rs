@@ -1,15 +1,9 @@
 extern crate glow as gl;
 use anyhow::{Context, Result};
-use cimvr_common::{StringMessage, Transform};
-use cimvr_engine::{
-    interface::{
-        prelude::{query, Access},
-        system::Stage,
-    },
-    Engine,
-};
+use cimvr_engine::{interface::system::Stage, Engine};
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
+use input::UserInputHandler;
 use render::RenderEngine;
 use std::path::PathBuf;
 
@@ -19,6 +13,7 @@ mod render;
 struct Client {
     engine: Engine,
     render: RenderEngine,
+    input: UserInputHandler,
 }
 
 fn main() -> Result<()> {
@@ -82,10 +77,16 @@ fn main() -> Result<()> {
 impl Client {
     pub fn new(mut engine: Engine, gl: gl::Context) -> Result<Self> {
         let render = RenderEngine::new(gl, &mut engine).context("Setting up render engine")?;
-        Ok(Self { engine, render })
+        let input = UserInputHandler::new();
+        Ok(Self {
+            engine,
+            render,
+            input,
+        })
     }
 
     pub fn handle_event(&mut self, event: &WindowEvent) {
+        self.input.handle_winit_event(event);
         match event {
             WindowEvent::Resized(physical_size) => self.render.set_screen_size(*physical_size),
             _ => (),
@@ -94,6 +95,7 @@ impl Client {
 
     pub fn frame(&mut self) -> Result<()> {
         // Input stage
+        self.engine.send(Stage::Input, self.input.get_history());
         self.engine.dispatch(Stage::Input)?;
 
         // Physics stage
