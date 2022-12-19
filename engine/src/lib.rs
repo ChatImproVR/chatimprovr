@@ -97,7 +97,8 @@ impl Engine {
             plugin.outbox = recv.outbox;
         }
 
-        // TODO: Panic if called again!
+        // Distribute messages
+        self.propagate();
 
         Ok(())
     }
@@ -135,15 +136,21 @@ impl Engine {
         }
 
         // Distribute messages
+        self.propagate();
+
+        Ok(())
+    }
+
+    /// Propagate messages from plugin outboxes
+    fn propagate(&mut self) {
         for i in 0..self.plugins.len() {
             for msg in std::mem::take(&mut self.plugins[i].outbox) {
                 self.broadcast(msg);
             }
         }
-
-        Ok(())
     }
 
+    /// Broadcast message to relevant destinations
     fn broadcast(&mut self, msg: MessageData) {
         if let Some(destinations) = self.indices.get(&msg.channel) {
             for j in destinations {

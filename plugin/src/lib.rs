@@ -87,7 +87,7 @@ impl State {
     fn camera_move(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         // Receive messages
         for time in io.inbox::<FrameTime>() {
-            dbg!(time);
+            //dbg!(time);
         }
 
         /*
