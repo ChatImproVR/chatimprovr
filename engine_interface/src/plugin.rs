@@ -174,6 +174,14 @@ impl EngineIo {
         }
     }
 
+    /// Create an entity
+    pub fn create_entity(&mut self) -> EntityId {
+        let id = EntityId(self.pcg.gen_u128());
+        self.commands.push(EngineCommand::Create(id));
+        id
+    }
+
+    /// Add a component to an entity
     pub fn add_component<C: Component>(&mut self, entity: EntityId, data: &C) {
         let data = serialize(data).expect("Failed to serialize component data");
 
@@ -190,30 +198,35 @@ impl EngineIo {
             .push(EngineCommand::AddComponent(entity, C::ID, data));
     }
 
-    pub fn create_entity(&mut self) -> EntityId {
-        let id = EntityId(self.pcg.gen_u128());
-        self.commands.push(EngineCommand::Create(id));
-        id
-    }
-
+    /// Delete an entity and all of it's components
     pub fn remove_entity(&mut self, id: EntityId) {
         self.commands.push(EngineCommand::Delete(id));
     }
 
+    /// Generate a pseudorandom number
     pub fn random(&mut self) -> u32 {
         self.pcg.gen_u32()
     }
 
+    /// Read inbox for this message type
     pub fn inbox<M: Message>(&mut self) -> impl Iterator<Item = M> + '_ {
         self.inbox.entry(M::CHANNEL).or_default().iter().map(|m| {
             deserialize(std::io::Cursor::new(&m.data)).expect("Failed to deserialize message")
         })
     }
 
+    /// Send a message
     pub fn send<M: Message>(&mut self, data: &M) {
         self.outbox.push(MessageData {
             channel: M::CHANNEL,
             data: serialize(data).expect("Failed to serialize message data"),
         });
+    }
+
+    /// Get the first message on this channel, or return None
+    pub fn inbox_first<M: Message>(&mut self) -> Option<M> {
+        self.inbox.entry(M::CHANNEL).or_default().first().map(|m| {
+            deserialize(std::io::Cursor::new(&m.data)).expect("Failed to deserialize message")
+        })
     }
 }

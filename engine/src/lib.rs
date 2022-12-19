@@ -1,6 +1,6 @@
 pub mod ecs;
 pub mod plugin;
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, path::PathBuf, time::Instant};
 
 use anyhow::{Ok, Result};
 pub use cimvr_engine_interface as interface;
@@ -23,6 +23,8 @@ pub struct Engine {
     indices: HashMap<ChannelId, Vec<usize>>,
     /// User inboxes
     external_inbox: Inbox,
+    /// Start time
+    start_time: Instant,
 }
 
 /// Plugin management structure
@@ -61,6 +63,7 @@ impl Engine {
 
         Ok(Self {
             _wasm: wasm,
+            start_time: Instant::now(),
             indices: HashMap::new(),
             plugins,
             ecs,
