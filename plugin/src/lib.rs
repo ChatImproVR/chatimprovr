@@ -1,6 +1,7 @@
 use cimvr_common::{
     input::InputEvents,
-    render::{Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
+    nalgebra::{Point3, UnitQuaternion, Vector3},
+    render::{CameraComponent, Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
     StringMessage, Transform,
 };
 use cimvr_engine_interface::{make_app_state, prelude::*, println};
@@ -13,24 +14,34 @@ make_app_state!(State);
 
 impl UserState for State {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
-        // Create a new entity
+        // Create head
         let head = io.create_entity();
-
-        let cube_mesh = cube();
-
-        // Add the Transform component to it
-        io.add_component(head, &Transform::default());
+        let camera_pos = Point3::new(1., 1., 1.);
         io.add_component(
             head,
+            &Transform {
+                pos: camera_pos,
+                orient: UnitQuaternion::look_at_rh(&-camera_pos.coords, &Vector3::y()),
+            },
+        );
+        io.add_component(head, &CameraComponent);
+
+        // Craate cube
+        let cube_ent = io.create_entity();
+        let cube_mesh = cube();
+        io.add_component(cube_ent, &Transform::default());
+        io.add_component(
+            cube_ent,
             &Render {
                 id: cube_mesh.id,
-                primitive: Primitive::Lines,
+                primitive: Primitive::Triangles,
                 limit: None,
             },
         );
 
         io.send(&cube_mesh);
 
+        /*
         // Schedule the system
         // In the future it would be super cool to do this like Bevy and be able to just infer the
         // query from the type arguments and such...
@@ -42,6 +53,7 @@ impl UserState for State {
             },
             Self::my_system,
         );
+        */
 
         Self { head }
     }
@@ -70,6 +82,7 @@ fn cube() -> RenderData {
     }
 }
 
+/*
 impl State {
     fn my_system(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         // Receive messages
@@ -95,3 +108,4 @@ impl State {
         }
     }
 }
+*/

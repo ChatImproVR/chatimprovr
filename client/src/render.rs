@@ -44,7 +44,10 @@ impl RenderPlugin {
         // Find camera, if any
         let camera_entity = match engine.ecs().find(&[CameraComponent::ID, Transform::ID]) {
             Some(c) => c,
-            None => bail!("No Camera found! Did you attach both Transform and CameraComponent?"),
+            None => {
+                eprintln!("No Camera found! Did you attach both Transform and CameraComponent?");
+                return Ok(());
+            }
         };
 
         // Set up camera matrices. TODO: Determine projection via plugin!
