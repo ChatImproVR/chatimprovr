@@ -137,28 +137,29 @@ impl Engine {
         // Distribute messages
         for i in 0..self.plugins.len() {
             for msg in std::mem::take(&mut self.plugins[i].outbox) {
-                if let Some(destinations) = self.indices.get(&msg.channel) {
-                    for j in destinations {
-                        self.plugins[*j]
-                            .inbox
-                            .entry(msg.channel)
-                            .or_default()
-                            .push(msg.clone());
-                    }
-                } else {
-                    eprintln!(
-                        "Message on channel {:?} from plugin {} has no destination",
-                        msg.channel, i
-                    );
-                }
-
-                if let Some(inbox) = self.external_inbox.get_mut(&msg.channel) {
-                    inbox.push(msg.clone());
-                }
+                self.broadcast(msg);
             }
         }
 
         Ok(())
+    }
+
+    fn broadcast(&mut self, msg: MessageData) {
+        if let Some(destinations) = self.indices.get(&msg.channel) {
+            for j in destinations {
+                self.plugins[*j]
+                    .inbox
+                    .entry(msg.channel)
+                    .or_default()
+                    .push(msg.clone());
+            }
+        } else {
+            eprintln!("Message on channel {:?} has no destination", msg.channel,);
+        }
+
+        if let Some(inbox) = self.external_inbox.get_mut(&msg.channel) {
+            inbox.push(msg.clone());
+        }
     }
 
     /// Access ECS data
@@ -184,20 +185,10 @@ impl Engine {
 
     /// Broadcast a message
     pub fn send<M: Message>(&mut self, data: M) {
-        let msg = MessageData {
+        self.broadcast(MessageData {
             channel: M::CHANNEL,
             data: serialize(&data).expect("Failed to serialize message"),
-        };
-
-        if let Some(indices) = self.indices.get(&M::CHANNEL) {
-            for idx in indices {
-                self.plugins[*idx]
-                    .inbox
-                    .entry(M::CHANNEL)
-                    .or_default()
-                    .push(msg.clone());
-            }
-        }
+        });
     }
 }
 
