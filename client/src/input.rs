@@ -1,5 +1,4 @@
 use cimvr_common::input::*;
-use cimvr_engine::Engine;
 
 pub struct UserInputHandler {
     events: Vec<InputEvent>,

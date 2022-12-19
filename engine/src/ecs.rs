@@ -50,6 +50,20 @@ impl Ecs {
         entities
     }
 
+    /// Returns a semi-random entity matching the given query, if any
+    pub fn find(&mut self, query: &[ComponentId]) -> Option<EntityId> {
+        // TODO: Optimize me
+        let query: Vec<QueryComponent> = query
+            .into_iter()
+            .map(|c| QueryComponent {
+                component: *c,
+                access: Access::Read,
+            })
+            .collect();
+
+        self.query(&query).drain().next()
+    }
+
     /// Import an entity ID from elsewhere
     pub fn import_entity(&mut self, id: EntityId) {
         self.entities.insert(id);

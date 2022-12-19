@@ -17,11 +17,15 @@ pub struct Vertex {
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct RenderHandle(pub u128);
 
+/// Component denotes a camera
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub struct CameraComponent;
+
 /// All information required to define a renderable mesh
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RenderData {
     pub mesh: Mesh,
-    pub handle: RenderHandle,
+    pub id: RenderHandle,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -39,12 +43,14 @@ pub struct Render {
     pub id: RenderHandle,
     /// Primitive to construct this object
     pub primitive: Primitive,
-    /// * If no vertices, no indices: Vertex shader procedurally generates vertices
-    /// * If vertices, no indices: This many vertices are drawn
-    /// * If vertices, indices: This many indices are drawn
-    /// * If no vertices, indices: No object drawn. What are you trying to do??
-    /// * If limit == 0: Entire defined shape is drawn
-    pub limit: u32,
+    // /// * If no vertices, no indices: Vertex shader procedurally generates vertices
+    // /// * If vertices, no indices: This many vertices are drawn
+    // /// * If vertices, indices: This many indices are drawn
+    // /// * If no vertices, indices: No object drawn. What are you trying to do??
+    // /// * If limit == 0: Entire defined shape is drawn
+    /// Use this many indices, in order
+    /// Draw everything if None
+    pub limit: Option<u32>,
 }
 
 /// How to draw the given mesh
@@ -80,6 +86,13 @@ impl Message for RenderData {
     const CHANNEL: ChannelId = ChannelId {
         id: 0xCE0_0F_BEEF,
         locality: Locality::Local,
+    };
+}
+
+impl Component for CameraComponent {
+    const ID: ComponentId = ComponentId {
+        id: 0x1337_1337_1337_1337_1337_1337_1337_1337,
+        size: 0,
     };
 }
 

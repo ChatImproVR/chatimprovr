@@ -102,7 +102,7 @@ impl Client {
         self.engine.dispatch(Stage::Physics)?;
 
         // Media stage
-        self.render.frame(&mut self.engine);
+        self.render.frame(&mut self.engine)?;
         self.engine.dispatch(Stage::Media)?;
 
         Ok(())

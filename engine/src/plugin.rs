@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::Result;
 use cimvr_engine_interface::serial::{
     deserialize, serialize_into, serialized_size, ReceiveBuf, SendBuf,
 };
@@ -6,6 +6,7 @@ use rand::prelude::*;
 use std::{io::Cursor, path::Path};
 use wasmtime::{Caller, Extern, Func, Instance, Memory, Module, Store, TypedFunc};
 
+#[allow(dead_code)]
 pub struct Plugin {
     store: Store<()>,
     module: Module,

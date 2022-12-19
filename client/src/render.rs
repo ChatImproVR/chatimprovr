@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
+use anyhow::bail;
 use anyhow::format_err;
 use anyhow::Result;
 use cimvr_common::{render::*, Transform};
+use cimvr_engine::interface::prelude::Component;
 use cimvr_engine::{
     interface::prelude::{query, Access},
     Engine,
@@ -36,14 +38,19 @@ impl RenderPlugin {
     pub fn frame(&mut self, engine: &mut Engine) -> Result<()> {
         // Upload render data
         for msg in engine.inbox::<RenderData>() {
-            self.rdr.upload(&self.gl, &msg);
+            self.rdr.upload(&self.gl, &msg)?;
         }
 
         // Find camera, if any
-        let entities = engine.ecs().query(&[
-            query::<Render>(Access::Read),
-            query::<Transform>(Access::Read),
-        ]);
+        let camera_entity = match engine.ecs().find(&[CameraComponent::ID, Transform::ID]) {
+            Some(c) => c,
+            None => bail!("No Camera found! Did you attach both Transform and CameraComponent?"),
+        };
+
+        // Set up camera matrices. TODO: Determine projection via plugin!
+        let camera_transf = engine.ecs().get::<Transform>(camera_entity);
+        let view = view_from_transform(&camera_transf);
+        let proj = Matrix4::new_perspective(1., 1., 0., 10000.);
 
         // Prepare data
         let entities = engine.ecs().query(&[
@@ -51,12 +58,16 @@ impl RenderPlugin {
             query::<Transform>(Access::Read),
         ]);
 
-        self.rdr.frame(&self.gl, proj, view, transforms, handles)?;
+        // TODO: Don't allocate here smh
+        let mut transforms = vec![];
+        let mut handles = vec![];
 
         for entity in entities {
-            dbg!(engine.ecs().get::<Render>(entity));
-            dbg!(engine.ecs().get::<Transform>(entity));
+            transforms.push(engine.ecs().get::<Transform>(entity));
+            handles.push(engine.ecs().get::<Render>(entity));
         }
+
+        self.rdr.frame(&self.gl, proj, view, &transforms, &handles)
     }
 }
 
@@ -104,10 +115,10 @@ impl RenderEngine {
         // TODO: Use a different mesh type? Switch for upload frequency? Hmmm..
         let gpu_mesh =
             upload_mesh(gl, gl::DYNAMIC_DRAW, &data.mesh).expect("Failed to upload mesh");
-        let ret = self.meshes.insert(data.handle, gpu_mesh);
+        let ret = self.meshes.insert(data.id, gpu_mesh);
 
         if ret.is_some() {
-            eprintln!("Warning: Overwrote render data {:?}", data.handle);
+            eprintln!("Warning: Overwrote render data {:?}", data.id);
         }
 
         Ok(())
@@ -121,50 +132,69 @@ impl RenderEngine {
         proj: Matrix4<f32>,
         view: Matrix4<f32>,
         transforms: &[Transform],
-        handles: &[RenderHandle],
-    ) -> Result<(), String> {
+        handles: &[Render],
+    ) -> Result<()> {
         unsafe {
             // Clear depth and color buffers
             gl.clear_color(0.1, 0.2, 0.3, 1.0);
             gl.clear_depth_f32(1.);
             gl.clear(gl::COLOR_BUFFER_BIT | gl::STENCIL_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
-            let set_camera_uniforms = |shader| {
-                // Set camera matrix
-                gl.uniform_matrix_4_f32_slice(
-                    gl.get_uniform_location(self.shader, "view").as_ref(),
-                    false,
-                    view.as_slice(),
-                );
+            // Set camera matrix
+            gl.uniform_matrix_4_f32_slice(
+                gl.get_uniform_location(self.shader, "view").as_ref(),
+                false,
+                view.as_slice(),
+            );
 
-                gl.uniform_matrix_4_f32_slice(
-                    gl.get_uniform_location(self.shader, "proj").as_ref(),
-                    false,
-                    proj.as_slice(),
-                );
-            };
+            gl.uniform_matrix_4_f32_slice(
+                gl.get_uniform_location(self.shader, "proj").as_ref(),
+                false,
+                proj.as_slice(),
+            );
 
             // Draw map
             gl.use_program(Some(self.shader));
-            set_camera_uniforms(self.shader);
 
             // TODO: Literally ANY optimization
-            for (transf, handle) in transforms.iter().zip(handles) {
+            for (transf, rdr_comp) in transforms.iter().zip(handles) {
                 let matrix = transf.to_homogeneous();
                 gl.uniform_matrix_4_f32_slice(
-                    gl.get_uniform_location(self.shader, "tranf").as_ref(),
+                    gl.get_uniform_location(self.shader, "transf").as_ref(),
                     false,
                     bytemuck::cast_slice(matrix.as_ref()),
                 );
 
-                if let Some(mesh) = self.meshes.get(&handle) {
+                if let Some(mesh) = self.meshes.get(&rdr_comp.id) {
                     // Draw mesh data
                     gl.bind_vertex_array(Some(mesh.vao));
-                    gl.draw_elements(gl::TRIANGLES, mesh.index_count, gl::UNSIGNED_SHORT, 0);
+
+                    let primitive = match rdr_comp.primitive {
+                        Primitive::Lines => gl::LINES,
+                        Primitive::Points => gl::POINTS,
+                        Primitive::Triangles => gl::TRIANGLES,
+                    };
+
+                    let limit: i32 = match rdr_comp.limit {
+                        None => mesh.index_count,
+                        Some(lim) => lim.try_into().unwrap(),
+                    };
+
+                    assert!(
+                        limit < mesh.index_count,
+                        "Invalid draw limit, got {} but mesh has {} indices",
+                        limit,
+                        mesh.index_count
+                    );
+
+                    gl.draw_elements(primitive, limit, gl::UNSIGNED_SHORT, 0);
                     gl.bind_vertex_array(None);
                 } else {
                     // TODO: Use the log() crate!
-                    eprintln!("Warning: Attempted to access absent mesh data {:?}", handle);
+                    eprintln!(
+                        "Warning: Attempted to access absent mesh data {:?}",
+                        rdr_comp
+                    );
                 }
             }
 
@@ -174,13 +204,13 @@ impl RenderEngine {
 }
 
 /// Creates a view matrix for the given head position
-pub fn view_from_transform(head: &Transform) -> Matrix4<f32> {
+pub fn view_from_transform(transf: &Transform) -> Matrix4<f32> {
     // Invert this quaternion, orienting the world into NDC space
     // Represent the rotation in homogeneous coordinates
-    let rotation = head.orient.inverse().to_homogeneous();
+    let rotation = transf.orient.inverse().to_homogeneous();
 
     // Invert this translation, translating the world into NDC space
-    let translation = Matrix4::new_translation(&-head.pos.coords);
+    let translation = Matrix4::new_translation(&-transf.pos.coords);
 
     // Compose the view
     rotation * translation
