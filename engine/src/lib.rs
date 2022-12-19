@@ -20,7 +20,7 @@ pub struct Engine {
     plugins: Vec<PluginState>,
     ecs: Ecs,
     /// Message distribution indices, maps channel id -> plugin indices
-    indices: HashMap<(ChannelId, Stage), Vec<usize>>,
+    indices: HashMap<ChannelId, Vec<usize>>,
     /// User inboxes
     external_inbox: Inbox,
 }
@@ -88,10 +88,7 @@ impl Engine {
             // Setup message indices
             for sys in &recv.systems {
                 for &channel in &sys.subscriptions {
-                    self.indices
-                        .entry((channel, sys.stage))
-                        .or_default()
-                        .push(plugin_idx);
+                    self.indices.entry(channel).or_default().push(plugin_idx);
                 }
             }
 
@@ -140,15 +137,22 @@ impl Engine {
         // Distribute messages
         for i in 0..self.plugins.len() {
             for msg in std::mem::take(&mut self.plugins[i].outbox) {
-                let chan = msg.channel;
-                for j in &self.indices[&(chan, stage)] {
-                    self.plugins[*j]
-                        .inbox
-                        .entry(chan)
-                        .or_default()
-                        .push(msg.clone());
+                if let Some(destinations) = self.indices.get(&msg.channel) {
+                    for j in destinations {
+                        self.plugins[*j]
+                            .inbox
+                            .entry(msg.channel)
+                            .or_default()
+                            .push(msg.clone());
+                    }
+                } else {
+                    eprintln!(
+                        "Message on channel {:?} from plugin {} has no destination",
+                        msg.channel, i
+                    );
                 }
-                if let Some(inbox) = self.external_inbox.get_mut(&chan) {
+
+                if let Some(inbox) = self.external_inbox.get_mut(&msg.channel) {
                     inbox.push(msg.clone());
                 }
             }
@@ -179,13 +183,13 @@ impl Engine {
     }
 
     /// Broadcast a message
-    pub fn send<M: Message>(&mut self, stage: Stage, data: M) {
+    pub fn send<M: Message>(&mut self, data: M) {
         let msg = MessageData {
             channel: M::CHANNEL,
             data: serialize(&data).expect("Failed to serialize message"),
         };
 
-        if let Some(indices) = self.indices.get(&(M::CHANNEL, stage)) {
+        if let Some(indices) = self.indices.get(&M::CHANNEL) {
             for idx in indices {
                 self.plugins[*idx]
                     .inbox

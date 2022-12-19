@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use anyhow::bail;
 use anyhow::format_err;
 use anyhow::Result;
 use cimvr_common::{render::*, Transform};
@@ -184,7 +183,7 @@ impl RenderEngine {
                     };
 
                     assert!(
-                        limit < mesh.index_count,
+                        limit <= mesh.index_count,
                         "Invalid draw limit, got {} but mesh has {} indices",
                         limit,
                         mesh.index_count

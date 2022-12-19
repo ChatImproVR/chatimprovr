@@ -40,7 +40,6 @@ fn main() -> Result<()> {
 
     // Set up engine and initialize plugins
     let mut engine = Engine::new(&paths)?;
-    engine.init_plugins()?;
 
     // Setup client code
     let mut client = Client::new(engine, gl)?;
@@ -78,6 +77,10 @@ impl Client {
     pub fn new(mut engine: Engine, gl: gl::Context) -> Result<Self> {
         let render = RenderPlugin::new(gl, &mut engine).context("Setting up render engine")?;
         let input = UserInputHandler::new();
+
+        // Initialize plugins AFTER we set up our plugins
+        engine.init_plugins()?;
+
         Ok(Self {
             engine,
             render,
@@ -95,7 +98,7 @@ impl Client {
 
     pub fn frame(&mut self) -> Result<()> {
         // Input stage
-        self.engine.send(Stage::Input, self.input.get_history());
+        self.engine.send(self.input.get_history());
         self.engine.dispatch(Stage::Input)?;
 
         // Physics stage
