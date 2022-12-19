@@ -32,13 +32,14 @@ impl Message for InputEvents {
 
 /// Keyboard events
 #[derive(Serialize, Deserialize, Hash, Copy, Debug, Clone, PartialEq, Eq)]
-pub struct KeyboardEvent {
-    /// Key used
-    pub key: KeyCode,
-    /// State of the key
-    pub state: ElementState,
-    /// Modifiers used
-    pub modifiers: ModifiersState,
+pub enum KeyboardEvent {
+    Key {
+        /// Key used
+        key: KeyCode,
+        /// State of the key
+        state: ElementState,
+    },
+    Modifiers(ModifiersState),
 }
 
 /// Keyboard Modifier states
@@ -263,4 +264,15 @@ pub enum KeyCode {
     Copy,
     Paste,
     Cut,
+}
+
+impl Default for ModifiersState {
+    fn default() -> Self {
+        Self {
+            shift: false,
+            ctrl: false,
+            alt: false,
+            logo: false,
+        }
+    }
 }

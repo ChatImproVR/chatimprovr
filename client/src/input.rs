@@ -22,17 +22,21 @@ impl UserInputHandler {
                 if let glutin::event::KeyboardInput {
                     state,
                     virtual_keycode: Some(key),
-                    modifiers,
                     ..
                 } = input
                 {
-                    let event = KeyboardEvent {
+                    let event = KeyboardEvent::Key {
                         key: map_keycode(*key),
                         state: map_elem_state(*state),
-                        modifiers: map_modifiers(*modifiers),
                     };
                     self.events.push(InputEvent::Keyboard(event));
                 }
+            }
+            glutin::event::WindowEvent::ModifiersChanged(modifiers) => {
+                self.events
+                    .push(InputEvent::Keyboard(KeyboardEvent::Modifiers(
+                        map_modifiers(*modifiers),
+                    )))
             }
             glutin::event::WindowEvent::CursorMoved { position, .. } => {
                 let event = MouseEvent::Moved(position.x as f32, position.y as f32);

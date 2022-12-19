@@ -1,7 +1,10 @@
 use std::f32::consts::FRAC_PI_2;
 
 use cimvr_common::{
-    input::{ElementState, InputEvent, InputEvents, MouseButton, MouseEvent},
+    input::{
+        ElementState, InputEvent, InputEvents, KeyCode, KeyboardEvent, ModifiersState, MouseButton,
+        MouseEvent,
+    },
     nalgebra::{Point3, UnitQuaternion, Vector3, Vector4},
     render::{CameraComponent, Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
     FrameTime, Transform,
@@ -115,6 +118,7 @@ pub struct ArcBallController {
     pub last_mouse: Option<(f32, f32)>,
     pub mouse_left: bool,
     pub mouse_right: bool,
+    pub modifiers: ModifiersState,
 }
 
 impl ArcBallController {
@@ -125,9 +129,9 @@ impl ArcBallController {
                     if let Some((lx, ly)) = self.last_mouse {
                         let (dx, dy) = (x - lx, y - ly);
 
-                        if self.mouse_left {
+                        if self.mouse_left && !self.modifiers.shift {
                             self.pivot(arcball, dx, dy);
-                        } else if self.mouse_right {
+                        } else if self.mouse_right || (self.mouse_left && self.modifiers.shift) {
                             self.pan(arcball, dx, dy)
                         }
                     }
@@ -147,7 +151,10 @@ impl ArcBallController {
                 }
                 _ => (),
             },
-            InputEvent::Keyboard(keyboard) => {}
+            InputEvent::Keyboard(KeyboardEvent::Modifiers(modifiers)) => {
+                self.modifiers = *modifiers;
+            }
+            _ => (),
         }
     }
 
@@ -180,6 +187,7 @@ impl ArcBallController {
 impl Default for ArcBallController {
     fn default() -> Self {
         Self {
+            modifiers: ModifiersState::default(),
             pan_sensitivity: 0.0015,
             swivel_sensitivity: 0.005,
             zoom_sensitivity: 0.3,
