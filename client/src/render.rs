@@ -1,7 +1,9 @@
 use std::collections::HashMap;
+use std::time::Instant;
 
 use anyhow::format_err;
 use anyhow::Result;
+use cimvr_common::FrameTime;
 use cimvr_common::{render::*, Transform};
 use cimvr_engine::interface::prelude::Component;
 use cimvr_engine::{
@@ -15,6 +17,10 @@ use nalgebra::Matrix4;
 pub struct RenderPlugin {
     gl: glow::Context,
     rdr: RenderEngine,
+    /// Start time
+    start_time: Instant,
+    /// Time since last frame
+    last_frame: Instant,
 }
 
 impl RenderPlugin {
@@ -23,7 +29,12 @@ impl RenderPlugin {
 
         let rdr = RenderEngine::new(&gl)?;
 
-        Ok(Self { gl, rdr })
+        Ok(Self {
+            gl,
+            rdr,
+            start_time: Instant::now(),
+            last_frame: Instant::now(),
+        })
     }
 
     pub fn set_screen_size(&mut self, size: PhysicalSize<u32>) {
@@ -69,7 +80,20 @@ impl RenderPlugin {
             handles.push(engine.ecs().get::<Render>(entity));
         }
 
-        self.rdr.frame(&self.gl, proj, view, &transforms, &handles)
+        // Send frame timing info
+        engine.send(FrameTime {
+            delta: self.last_frame.elapsed().as_secs_f32(),
+            time: self.start_time.elapsed().as_secs_f32(),
+        });
+
+        // Draw!
+        self.rdr
+            .frame(&self.gl, proj, view, &transforms, &handles)?;
+
+        // Reset timing
+        self.last_frame = Instant::now();
+
+        Ok(())
     }
 }
 

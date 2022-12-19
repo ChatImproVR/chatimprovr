@@ -23,8 +23,6 @@ pub struct Engine {
     indices: HashMap<ChannelId, Vec<usize>>,
     /// User inboxes
     external_inbox: Inbox,
-    /// Start time
-    start_time: Instant,
 }
 
 /// Plugin management structure
@@ -63,7 +61,6 @@ impl Engine {
 
         Ok(Self {
             _wasm: wasm,
-            start_time: Instant::now(),
             indices: HashMap::new(),
             plugins,
             ecs,

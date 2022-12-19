@@ -2,7 +2,7 @@ use cimvr_common::{
     input::InputEvents,
     nalgebra::{Point3, UnitQuaternion, Vector3},
     render::{CameraComponent, Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
-    StringMessage, Transform,
+    FrameTime, Transform,
 };
 use cimvr_engine_interface::{dbg, make_app_state, prelude::*, print, println};
 
@@ -29,14 +29,7 @@ impl UserState for State {
         // Craate cube
         let cube_ent = io.create_entity();
         let cube_mesh = cube();
-        //io.add_component(cube_ent, &Transform::default());
-        io.add_component(
-            cube_ent,
-            &Transform {
-                pos: Point3::new(0., 0., 0.),
-                ..Default::default()
-            },
-        );
+        io.add_component(cube_ent, &Transform::default());
         io.add_component(
             cube_ent,
             &Render {
@@ -48,19 +41,20 @@ impl UserState for State {
 
         io.send(&cube_mesh);
 
-        /*
         // Schedule the system
         // In the future it would be super cool to do this like Bevy and be able to just infer the
         // query from the type arguments and such...
         schedule.add_system(
             SystemDescriptor {
                 stage: Stage::Input,
-                subscriptions: vec![sub::<StringMessage>(), sub::<InputEvents>()],
-                query: vec![query::<Transform>(Access::Write)],
+                subscriptions: vec![sub::<FrameTime>(), sub::<InputEvents>()],
+                query: vec![
+                    query::<Transform>(Access::Write),
+                    query::<CameraComponent>(Access::Write),
+                ],
             },
-            Self::my_system,
+            Self::camera_move,
         );
-        */
 
         Self { head }
     }
@@ -89,14 +83,14 @@ fn cube() -> RenderData {
     }
 }
 
-/*
 impl State {
-    fn my_system(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+    fn camera_move(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         // Receive messages
-        for StringMessage(txt) in io.inbox() {
-            println!("String message: {}", txt);
+        for time in io.inbox::<FrameTime>() {
+            dbg!(time);
         }
 
+        /*
         // Receive messages
         for InputEvents(txt) in io.inbox() {
             println!("Input events: {:#?}", txt);
@@ -113,6 +107,6 @@ impl State {
                 io.send(&StringMessage(txt));
             }
         }
+        */
     }
 }
-*/

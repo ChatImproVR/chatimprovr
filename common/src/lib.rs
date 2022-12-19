@@ -23,11 +23,16 @@ impl Component for Transform {
     };
 }
 
-/// Simple string message
+/// Frame information
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct StringMessage(pub String);
+pub struct FrameTime {
+    /// Delta time, in seconds
+    pub delta: f32,
+    /// Time since engine start, in seconds
+    pub time: f32,
+}
 
-impl Message for StringMessage {
+impl Message for FrameTime {
     const CHANNEL: ChannelId = ChannelId {
         // That's what I've been waitin for, that's what it's all about! Wahoo!
         id: 0x0000000_EEEAAA_BABEEE,
