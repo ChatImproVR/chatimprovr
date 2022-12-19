@@ -37,7 +37,9 @@ pub struct ComponentId {
     /// A: To easily move components around in memory
     ///
     /// Q: Is this the same as the size of the associated type?
-    /// A: Not always! std::mem::size_of<T>() where T: Component can be different than serialized_size
+    /// A: Not always! `std::mem::size_of<T>()` (`where T: Component`)
+    /// can be different than `serialized_size::<T>()`.
+    /// Layout in memory subject to change
     pub size: u16,
 }
 

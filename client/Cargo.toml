@@ -10,7 +10,7 @@ anyhow = "1"
 cimvr_engine = { path = "../engine" }
 cimvr_common = { path = "../common" }
 
-bytemuck = "1.12.1"
+bytemuck = "1.12.3"
 glutin = "0.29.1"
 nalgebra = { version = "0.31.4" }
 glow = "0.11.2"

@@ -1,3 +1,4 @@
+use bytemuck::{Pod, Zeroable};
 use cimvr_engine_interface::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -86,3 +87,6 @@ impl Vertex {
         Self { pos, uvw }
     }
 }
+
+unsafe impl Pod for Vertex {}
+unsafe impl Zeroable for Vertex {}

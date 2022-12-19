@@ -206,6 +206,7 @@ dependencies = [
 name = "cimvr_common"
 version = "0.1.0"
 dependencies = [
+ "bytemuck",
  "cimvr_engine_interface",
  "nalgebra",
  "serde",
