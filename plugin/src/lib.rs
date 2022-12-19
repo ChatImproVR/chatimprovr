@@ -4,7 +4,7 @@ use cimvr_common::{
     render::{CameraComponent, Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
     StringMessage, Transform,
 };
-use cimvr_engine_interface::{make_app_state, prelude::*, println};
+use cimvr_engine_interface::{dbg, make_app_state, prelude::*, print, println};
 
 struct State {
     head: EntityId,
@@ -16,7 +16,7 @@ impl UserState for State {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
         // Create head
         let head = io.create_entity();
-        let camera_pos = Point3::new(1., 1., 1.);
+        let camera_pos = Point3::new(3., 3., 3.);
         io.add_component(
             head,
             &Transform {

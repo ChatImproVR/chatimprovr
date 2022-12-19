@@ -52,7 +52,7 @@ impl RenderPlugin {
         // Set up camera matrices. TODO: Determine projection via plugin!
         let camera_transf = engine.ecs().get::<Transform>(camera_entity);
         let view = view_from_transform(&camera_transf);
-        let proj = Matrix4::new_perspective(1., 1., 0., 10000.);
+        let proj = Matrix4::new_perspective(1., 1., 0.01, 1000.);
 
         // Prepare data
         let entities = engine.ecs().query(&[
@@ -113,6 +113,7 @@ impl RenderEngine {
         }
     }
 
+    /// Make the given render data available to the GPU
     pub fn upload(&mut self, gl: &gl::Context, data: &RenderData) -> Result<()> {
         // TODO: Use a different mesh type? Switch for upload frequency? Hmmm..
         let gpu_mesh =
@@ -160,17 +161,16 @@ impl RenderEngine {
 
             // TODO: Literally ANY optimization
             for (transf, rdr_comp) in transforms.iter().zip(handles) {
-                let matrix = transf.to_homogeneous();
-                gl.uniform_matrix_4_f32_slice(
-                    gl.get_uniform_location(self.shader, "transf").as_ref(),
-                    false,
-                    bytemuck::cast_slice(matrix.as_ref()),
-                );
-
                 if let Some(mesh) = self.meshes.get(&rdr_comp.id) {
-                    // Draw mesh data
-                    gl.bind_vertex_array(Some(mesh.vao));
+                    // Set transform
+                    let matrix = transf.to_homogeneous();
+                    gl.uniform_matrix_4_f32_slice(
+                        gl.get_uniform_location(self.shader, "transf").as_ref(),
+                        false,
+                        bytemuck::cast_slice(matrix.as_ref()),
+                    );
 
+                    // Translate draw call
                     let primitive = match rdr_comp.primitive {
                         Primitive::Lines => gl::LINES,
                         Primitive::Points => gl::POINTS,
@@ -189,6 +189,8 @@ impl RenderEngine {
                         mesh.index_count
                     );
 
+                    // Draw mesh data
+                    gl.bind_vertex_array(Some(mesh.vao));
                     gl.draw_elements(primitive, limit, gl::UNSIGNED_SHORT, 0);
                     gl.bind_vertex_array(None);
                 } else {
