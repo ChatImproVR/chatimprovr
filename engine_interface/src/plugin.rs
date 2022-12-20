@@ -220,6 +220,7 @@ impl EngineIo {
         self.outbox.push(MessageData {
             channel: M::CHANNEL,
             data: serialize(data).expect("Failed to serialize message data"),
+            client: None,
         });
     }
 

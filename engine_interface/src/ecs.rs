@@ -2,10 +2,7 @@ use std::ops::Range;
 
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-use crate::{
-    serial::{deserialize, serialize, EcsData},
-    Locality,
-};
+use crate::serial::{deserialize, serialize, EcsData};
 
 /// A single requirement in a query
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

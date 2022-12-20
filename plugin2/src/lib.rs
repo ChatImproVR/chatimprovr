@@ -123,6 +123,5 @@ impl Component for MoveCube {
     const ID: ComponentId = ComponentId {
         id: 0xC0BE,
         size: 4,
-        locality: Locality::Local,
     };
 }

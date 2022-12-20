@@ -190,11 +190,12 @@ impl Engine {
             })
     }
 
-    /// Broadcast a message
+    /// Broadcast a local message
     pub fn send<M: Message>(&mut self, data: M) {
         self.broadcast(MessageData {
             channel: M::CHANNEL,
             data: serialize(&data).expect("Failed to serialize message"),
+            client: None,
         });
     }
 }
