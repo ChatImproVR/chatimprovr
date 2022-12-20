@@ -77,7 +77,7 @@ impl Ecs {
 
         let did_remove = self.entities.remove(&id);
         if !did_remove {
-            eprintln!("Warning: Attempted to remove non-existant entity {:#?}", id);
+            log::warn!("Attempted to remove non-existant entity {:#?}", id);
         }
     }
 

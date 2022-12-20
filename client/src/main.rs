@@ -17,6 +17,9 @@ struct Client {
 }
 
 fn main() -> Result<()> {
+    // Set up logging
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+
     // Parse args
     let args = std::env::args().skip(1);
     let paths: Vec<PathBuf> = args.map(PathBuf::from).collect();

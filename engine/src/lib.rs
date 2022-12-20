@@ -161,7 +161,7 @@ impl Engine {
                     .push(msg.clone());
             }
         } else {
-            eprintln!("Message on channel {:?} has no destination", msg.channel,);
+            log::warn!("Message on channel {:?} has no destination", msg.channel,);
         }
 
         if let Some(inbox) = self.external_inbox.get_mut(&msg.channel) {

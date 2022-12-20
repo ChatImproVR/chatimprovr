@@ -58,7 +58,7 @@ impl RenderPlugin {
         let camera_entity = match engine.ecs().find(&[CameraComponent::ID, Transform::ID]) {
             Some(c) => c,
             None => {
-                eprintln!("No Camera found! Did you attach both Transform and CameraComponent?");
+                log::warn!("No Camera found! Did you attach both Transform and CameraComponent?");
                 return Ok(());
             }
         };
@@ -159,7 +159,7 @@ impl RenderEngine {
         let ret = self.meshes.insert(data.id, gpu_mesh);
 
         if ret.is_some() {
-            eprintln!("Warning: Overwrote render data {:?}", data.id);
+            log::warn!("Warning: Overwrote render data {:?}", data.id);
         }
 
         Ok(())
@@ -236,8 +236,7 @@ impl RenderEngine {
                     gl.draw_elements(primitive, limit, gl::UNSIGNED_SHORT, 0);
                     gl.bind_vertex_array(None);
                 } else {
-                    // TODO: Use the log() crate!
-                    eprintln!(
+                    log::warn!(
                         "Warning: Attempted to access absent mesh data {:?}",
                         rdr_comp
                     );
