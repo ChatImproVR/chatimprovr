@@ -24,7 +24,9 @@ pub(crate) mod pcg;
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Locality {
+    /// Data are contained locally, and will never be transported over the network
     Local,
+    /// Data are communicated between server and client
     Remote,
 }
 

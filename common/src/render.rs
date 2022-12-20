@@ -13,7 +13,7 @@ pub struct Vertex {
     pub uvw: [f32; 3],
 }
 
-/// Unique handle to previously-sent RenderData
+/// Unique identifier for a remote RenderData resource
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct RenderHandle(pub u128);
 

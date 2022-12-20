@@ -2,7 +2,10 @@ use std::ops::Range;
 
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-use crate::serial::{deserialize, serialize, EcsData};
+use crate::{
+    serial::{deserialize, serialize, EcsData},
+    Locality,
+};
 
 /// A single requirement in a query
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -41,6 +44,9 @@ pub struct ComponentId {
     /// can be different than `serialized_size::<T>()`.
     /// Layout in memory subject to change
     pub size: u16,
+    /// Indicates if the component is forceably synchronized from server to clients
+    /// Client cannot create these!
+    pub locality: Locality,
 }
 
 /// Access level for the given component
@@ -64,10 +70,11 @@ pub trait Component: Serialize + DeserializeOwned + Copy {
 pub enum EngineCommand {
     Create(EntityId),
     Delete(EntityId),
-    // For now we're betting that the user doesn't add that many entities at once...
+    // TODO: For now we're betting that the user doesn't add that many components at once...
     AddComponent(EntityId, ComponentId, Vec<u8>),
 }
 
+/// Alias for QueryComponent::new::<T>(access)
 pub fn query<T: Component>(access: Access) -> QueryComponent {
     QueryComponent::new::<T>(access)
 }
