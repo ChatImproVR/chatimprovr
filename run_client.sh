@@ -1,1 +1,2 @@
-cargo run --release --bin cimvr_client -- ./target/wasm32-unknown-unknown/release/plugin.wasm
+base="./target/wasm32-unknown-unknown/release"
+cargo run --release --bin cimvr_client -- $base/plugin.wasm $base/plugin2.wasm
