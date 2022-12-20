@@ -1,5 +1,3 @@
-use std::f32::consts::FRAC_PI_2;
-
 use cimvr_common::{
     input::{
         ElementState, InputEvent, InputEvents, KeyCode, KeyboardEvent, ModifiersState, MouseButton,
@@ -10,29 +8,91 @@ use cimvr_common::{
     FrameTime, Transform,
 };
 use cimvr_engine_interface::{dbg, make_app_state, prelude::*, print, println};
+use serde::{Deserialize, Serialize};
+use std::f32::consts::{FRAC_PI_2, TAU};
 
 struct State {}
 
 make_app_state!(State);
 
+#[derive(Serialize, Deserialize, Clone, Copy)]
+pub struct MoveCube {
+    pub r: f32,
+}
+
 impl UserState for State {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
-        // Craate cube
-        let cube_ent = io.create_entity();
+        // Cube mesh
         let cube_mesh = cube();
-        io.add_component(cube_ent, &Transform::default());
-        io.add_component(
-            cube_ent,
-            &Render {
-                id: cube_mesh.id,
-                primitive: Primitive::Triangles,
-                limit: None,
-            },
-        );
-
+        let cube_rdr = Render {
+            id: cube_mesh.id,
+            primitive: Primitive::Triangles,
+            limit: None,
+        };
         io.send(&cube_mesh);
 
+        // Create central cube
+        let cube_ent = io.create_entity();
+        io.add_component(cube_ent, &Transform::default());
+        io.add_component(cube_ent, &cube_rdr);
+
+        // Add cubes
+        let n = 100;
+        for i in 0..n {
+            let i = i as f32 / n as f32;
+            let cube_ent = io.create_entity();
+
+            let r = i * TAU;
+
+            io.add_component(cube_ent, &Transform::default());
+            io.add_component(cube_ent, &cube_rdr);
+            io.add_component(cube_ent, &MoveCube { r });
+        }
+
+        // Schedule the system
+        schedule.add_system(
+            SystemDescriptor {
+                stage: Stage::Input,
+                subscriptions: vec![sub::<FrameTime>()],
+                query: vec![
+                    query::<Transform>(Access::Write),
+                    query::<MoveCube>(Access::Read),
+                ],
+            },
+            Self::cube_move,
+        );
+
         Self {}
+    }
+}
+
+impl State {
+    fn cube_move(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        if let Some(FrameTime { time, .. }) = io.inbox_first() {
+            for key in query.iter() {
+                let mov = query.read::<MoveCube>(key);
+
+                let theta = mov.r + time / 10.;
+                let k = 3.;
+                let v = (theta * k).sin() + 2.;
+
+                let rad = 20. * v;
+
+                let transf = Transform {
+                    pos: Point3::new(theta.cos() * rad, 0., theta.sin() * rad),
+                    orient: UnitQuaternion::face_towards(
+                        &Vector3::new(
+                            k * theta.cos() * (theta * k).cos() - theta.sin() * v,
+                            0.,
+                            k * theta.sin() * (theta * k).cos() + theta.cos() * v,
+                        ),
+                        &Vector3::y(),
+                    ),
+                };
+
+                query.write::<Transform>(key, &transf);
+            }
+        }
     }
 }
 
@@ -57,4 +117,11 @@ fn cube() -> RenderData {
         mesh: Mesh { vertices, indices },
         id: RenderHandle(3984203840),
     }
+}
+
+impl Component for MoveCube {
+    const ID: ComponentId = ComponentId {
+        id: 0xC0BE,
+        size: 4,
+    };
 }

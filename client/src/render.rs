@@ -68,7 +68,7 @@ impl RenderPlugin {
         let camera_comp = engine.ecs().get::<CameraComponent>(camera_entity);
         let proj = Matrix4::new_perspective(
             self.screen_size.width as f32 / self.screen_size.height as f32,
-            90_f32.to_radians(),
+            45_f32.to_radians(),
             0.01,
             1000.,
         );
