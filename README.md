@@ -38,3 +38,4 @@ Plugins are required to import `engine_interface`. Most plugins will need to imp
 * [ ] Loading bar for plugins
 * [ ] Support OpenXR
 * [ ] Networking!
+* [ ] Optionally-unreliable networking (faster but tradeoff packet loss, streamed instead of diff'd) 
