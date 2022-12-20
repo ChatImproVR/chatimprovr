@@ -196,6 +196,8 @@ impl RenderEngine {
                 proj.as_slice(),
             );
 
+            let transf_loc = gl.get_uniform_location(self.shader, "transf");
+
             // Draw map
             gl.use_program(Some(self.shader));
 
@@ -205,7 +207,7 @@ impl RenderEngine {
                     // Set transform
                     let matrix = transf.to_homogeneous();
                     gl.uniform_matrix_4_f32_slice(
-                        gl.get_uniform_location(self.shader, "transf").as_ref(),
+                        transf_loc.as_ref(),
                         false,
                         bytemuck::cast_slice(matrix.as_ref()),
                     );

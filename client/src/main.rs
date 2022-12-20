@@ -39,7 +39,7 @@ fn main() -> Result<()> {
     };
 
     // Set up engine and initialize plugins
-    let mut engine = Engine::new(&paths)?;
+    let engine = Engine::new(&paths)?;
 
     // Setup client code
     let mut client = Client::new(engine, gl)?;

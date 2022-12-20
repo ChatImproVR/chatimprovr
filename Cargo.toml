@@ -8,3 +8,6 @@ members = [
     "plugin",
     "plugin2",
 ]
+
+[profile.release]
+debug = true

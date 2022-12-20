@@ -37,7 +37,7 @@ impl UserState for State {
         io.add_component(cube_ent, &cube_rdr);
 
         // Add cubes
-        let n = 100;
+        let n = 100_000;
         for i in 0..n {
             let i = i as f32 / n as f32;
             let cube_ent = io.create_entity();

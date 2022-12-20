@@ -1,9 +1,9 @@
+use ahash::{HashMap, HashMapExt, HashSet, HashSetExt};
 use cimvr_engine_interface::{
     prelude::*,
     serial::{deserialize, serialize},
 };
 use rand::prelude::*;
-use std::collections::{HashMap, HashSet};
 
 // TODO: FxHash
 

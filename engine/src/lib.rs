@@ -1,6 +1,6 @@
 pub mod ecs;
 pub mod plugin;
-use std::{collections::HashMap, path::PathBuf, time::Instant};
+use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::{Ok, Result};
 pub use cimvr_engine_interface as interface;
