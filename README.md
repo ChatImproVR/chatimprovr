@@ -5,7 +5,8 @@ Crates:
 * `engine`: WASM Plugin, ECS, and messaging layer for use in implementing server and client
 * `engine_interface`: Engine interface for use within e.g. plugins
 * `common`: Interfacing data types between provided plugin, client, and server e.g. position component
-* `plugin`: An example plugin
+* `plugin`: An example plugin (currently moves the camera)
+* `plugin2`: An example plugin (currently adds and moves cubes)
 
 Plugins are required to import the `engine_interface` crate, and often import the `common` crate
 
@@ -13,6 +14,15 @@ Plugins are required to import the `engine_interface` crate, and often import th
 Make sure you have the `wasm32-unknown-unknown` target installed;
 ```sh
 rustup target add wasm32-unknown-unknown
+```
+
+# Compilation
+First, compile the plugins. Currently you must `cd` into each plugin and build it with `cargo build --release`.
+Then, from the root of the project execute `./run_client.sh`. This will bring up the plugins in the client!
+
+This is the content of `run_client.sh`, in case you're on Windows:
+```sh
+cargo run --release --bin cimvr_client -- target/wasm32-unknown-unknown/release/plugin.wasm target/wasm32-unknown-unknown/release/plugin2.wasm
 ```
 
 # Organization 
