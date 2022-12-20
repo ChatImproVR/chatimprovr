@@ -1,15 +1,11 @@
 use cimvr_common::{
-    input::{
-        ElementState, InputEvent, InputEvents, KeyCode, KeyboardEvent, ModifiersState, MouseButton,
-        MouseEvent,
-    },
-    nalgebra::{Point3, UnitQuaternion, Vector3, Vector4},
-    render::{CameraComponent, Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
+    nalgebra::{Point3, UnitQuaternion, Vector3},
+    render::{Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
     FrameTime, Transform,
 };
-use cimvr_engine_interface::{dbg, make_app_state, prelude::*, print, println};
+use cimvr_engine_interface::{make_app_state, prelude::*};
 use serde::{Deserialize, Serialize};
-use std::f32::consts::{FRAC_PI_2, TAU};
+use std::f32::consts::TAU;
 
 struct State {}
 

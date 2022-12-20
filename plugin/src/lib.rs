@@ -2,14 +2,14 @@ use std::f32::consts::FRAC_PI_2;
 
 use cimvr_common::{
     input::{
-        ElementState, InputEvent, InputEvents, KeyCode, KeyboardEvent, ModifiersState, MouseButton,
+        ElementState, InputEvent, InputEvents, KeyboardEvent, ModifiersState, MouseButton,
         MouseEvent,
     },
     nalgebra::{Point3, UnitQuaternion, Vector3, Vector4},
-    render::{CameraComponent, Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
+    render::CameraComponent,
     FrameTime, Transform,
 };
-use cimvr_engine_interface::{dbg, make_app_state, prelude::*, print, println};
+use cimvr_engine_interface::{make_app_state, prelude::*};
 
 struct State {
     arcball: ArcBall,
