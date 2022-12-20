@@ -23,7 +23,12 @@ impl UserState for State {
         // Create camera
         let camera_ent = io.create_entity();
         io.add_component(camera_ent, &Transform::default());
-        io.add_component(camera_ent, &CameraComponent);
+        io.add_component(
+            camera_ent,
+            &CameraComponent {
+                clear_color: [0.; 3],
+            },
+        );
 
         // Craate cube
         let cube_ent = io.create_entity();

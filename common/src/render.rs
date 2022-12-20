@@ -18,8 +18,11 @@ pub struct Vertex {
 pub struct RenderHandle(pub u128);
 
 /// Component denotes a camera
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub struct CameraComponent;
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
+pub struct CameraComponent {
+    /// Background color
+    pub clear_color: [f32; 3],
+}
 
 /// All information required to define a renderable mesh
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -92,7 +95,7 @@ impl Message for RenderData {
 impl Component for CameraComponent {
     const ID: ComponentId = ComponentId {
         id: 0x1337_1337_1337_1337_1337_1337_1337_1337,
-        size: 0,
+        size: 12,
     };
 }
 

@@ -24,3 +24,5 @@ Plugins are required to import `engine_interface`. Most plugins will need to imp
 * [ ] Use real UUIDs instead of these random numbers and silly ID constants
 * [ ] All of the other TODOs... `grep -ir 'todo' */src/*`
 * [ ] Loading bar for plugins
+* [ ] Support OpenXR
+* [ ] Networking!

@@ -65,6 +65,7 @@ impl RenderPlugin {
 
         // Set up camera matrices. TODO: Determine projection via plugin!
         let camera_transf = engine.ecs().get::<Transform>(camera_entity);
+        let camera_comp = engine.ecs().get::<CameraComponent>(camera_entity);
         let proj = Matrix4::new_perspective(
             self.screen_size.width as f32 / self.screen_size.height as f32,
             90_f32.to_radians(),
@@ -94,8 +95,14 @@ impl RenderPlugin {
         });
 
         // Draw!
-        self.rdr
-            .frame(&self.gl, proj, camera_transf.view(), &transforms, &handles)?;
+        self.rdr.frame(
+            &self.gl,
+            proj,
+            camera_transf.view(),
+            camera_comp.clear_color,
+            &transforms,
+            &handles,
+        )?;
 
         // Reset timing
         self.last_frame = Instant::now();
@@ -165,12 +172,14 @@ impl RenderEngine {
         gl: &gl::Context,
         proj: Matrix4<f32>,
         view: Matrix4<f32>,
+        clear_color: [f32; 3],
         transforms: &[Transform],
         handles: &[Render],
     ) -> Result<()> {
         unsafe {
             // Clear depth and color buffers
-            gl.clear_color(0.1, 0.2, 0.3, 1.0);
+            let [r, g, b] = clear_color;
+            gl.clear_color(r, g, b, 1.0);
             gl.clear_depth_f32(1.);
             gl.clear(gl::COLOR_BUFFER_BIT | gl::STENCIL_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
