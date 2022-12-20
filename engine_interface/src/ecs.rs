@@ -44,9 +44,6 @@ pub struct ComponentId {
     /// can be different than `serialized_size::<T>()`.
     /// Layout in memory subject to change
     pub size: u16,
-    /// Indicates if the component is forceably synchronized from server to clients
-    /// Client cannot create these!
-    pub locality: Locality,
 }
 
 /// Access level for the given component

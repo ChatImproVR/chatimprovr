@@ -39,3 +39,4 @@ Plugins are required to import `engine_interface`. Most plugins will need to imp
 * [ ] Support OpenXR
 * [ ] Networking!
 * [ ] Optionally-unreliable networking (faster but tradeoff packet loss, streamed instead of diff'd) 
+* [ ] Figure out how to organize code for serverside/clientside easier. Should be able to compile for both...

@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use crate::Locality;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 pub type Inbox = HashMap<ChannelId, Vec<MessageData>>;
@@ -10,8 +9,18 @@ pub type Inbox = HashMap<ChannelId, Vec<MessageData>>;
 pub struct ChannelId {
     /// Unique ID
     pub id: u128,
-    /// Locality
+    /// Destination host; local or remote
     pub locality: Locality,
+}
+
+/// Determines whether messages are sent locally or to the remote
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Locality {
+    /// Data is sent to other local plugins
+    Local,
+    /// Data is sent between client and server
+    Remote,
+    //Remote(Reliability),
 }
 
 /// A single message sent or received

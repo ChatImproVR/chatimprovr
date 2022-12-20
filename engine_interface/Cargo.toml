@@ -4,8 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-default = ["wasm-plugin"]
-wasm-plugin = []
+serverside = []
 
 [dependencies]
 bincode = "1.3.3"
