@@ -8,27 +8,24 @@ pub type Inbox = HashMap<ChannelId, Vec<MessageData>>;
 /// Channel identity, corresponds to exactly one local or remote connection
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ChannelId {
+    /// Unique ID
     pub id: u128,
+    /// Locality
     pub locality: Locality,
 }
-
-/*
-/// Anonymous identity of peer plugin, for return messages
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct AuthorId(u32);
-*/
 
 /// A single message sent or received
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MessageData {
     /// Channel ID
     pub channel: ChannelId,
-    /* TODO: Return addresses
-    /// Return-address of message author. Always `Some()` when received,
-    /// `None` will send to all potential recipients,
-    /// `Some(id)` will send to just the given author. Useful for return messages
-    pub author: Option<AuthorId>,
-    */
+    /// Client ID
+    /// * Will always be None for Locality::Local messages
+    /// * Will always be None clientside
+    /// * When received on server, contains ID of the client which sent it
+    /// * When sent on a server, contains destination client ID if Some
+    /// * Else broadcast to all if None
+    pub client: Option<ChannelId>,
     /// Message content
     pub data: Vec<u8>,
 }

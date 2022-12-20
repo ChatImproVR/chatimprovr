@@ -19,6 +19,9 @@ pub mod channels;
 /// Systems and scheduling
 pub mod system;
 
+/// Networking
+pub mod network;
+
 /// PCG algorithm for generating random universally-unique entity IDs
 pub(crate) mod pcg;
 
@@ -28,7 +31,23 @@ pub enum Locality {
     Local,
     /// Data are communicated between server and client
     Remote,
+    //Remote(Reliability),
 }
+
+/*
+pub enum Reliability {
+    /// UDP-like
+    Unreliable,
+    /// TCP-like
+    Reliable
+}
+
+impl Default for Reliability {
+    fn default() -> Self {
+        Reliability::Reliable
+    }
+}
+*/
 
 /// Convenience imports for the lazy
 pub mod prelude {
