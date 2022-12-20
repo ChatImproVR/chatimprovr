@@ -82,6 +82,7 @@ impl Component for Render {
     const ID: ComponentId = ComponentId {
         id: 0xDD05,
         size: 7,
+        locality: Locality::Local,
     };
 }
 
@@ -96,6 +97,7 @@ impl Component for CameraComponent {
     const ID: ComponentId = ComponentId {
         id: 0x1337_1337_1337_1337_1337_1337_1337_1337,
         size: 12,
+        locality: Locality::Local,
     };
 }
 

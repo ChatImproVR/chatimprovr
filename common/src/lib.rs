@@ -20,6 +20,7 @@ impl Component for Transform {
         // steakhouse
         id: 0xDEAD_BEEF_CAFE,
         size: 30,
+        locality: Locality::Local,
     };
 }
 
