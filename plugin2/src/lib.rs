@@ -7,9 +7,12 @@ use cimvr_engine_interface::{make_app_state, prelude::*};
 use serde::{Deserialize, Serialize};
 use std::f32::consts::TAU;
 
-struct ClientState {}
+struct ServerState;
+struct ClientState;
 
-make_app_state!(ClientState, DummyUserState);
+make_app_state!(ClientState, ServerState);
+
+const CUBE_HANDLE: RenderHandle = RenderHandle(3984203840);
 
 #[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct MoveCube {
@@ -17,20 +20,26 @@ pub struct MoveCube {
 }
 
 impl UserState for ClientState {
+    fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
+        io.send(&cube());
+        Self
+    }
+}
+
+impl UserState for ServerState {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
         // Cube mesh
-        let cube_mesh = cube();
         let cube_rdr = Render {
-            id: cube_mesh.id,
+            id: CUBE_HANDLE,
             primitive: Primitive::Triangles,
             limit: None,
         };
-        io.send(&cube_mesh);
 
         // Create central cube
         let cube_ent = io.create_entity();
         io.add_component(cube_ent, &Transform::default());
         io.add_component(cube_ent, &cube_rdr);
+        io.add_component(cube_ent, &Synchronized);
 
         // Add cubes
         let n = 100_000;
@@ -42,6 +51,7 @@ impl UserState for ClientState {
 
             io.add_component(cube_ent, &Transform::default());
             io.add_component(cube_ent, &cube_rdr);
+            io.add_component(cube_ent, &Synchronized);
             io.add_component(cube_ent, &MoveCube { r });
         }
 
@@ -58,11 +68,11 @@ impl UserState for ClientState {
             Self::cube_move,
         );
 
-        Self {}
+        Self
     }
 }
 
-impl ClientState {
+impl ServerState {
     fn cube_move(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         if let Some(FrameTime { time, .. }) = io.inbox_first() {
             for key in query.iter() {
@@ -111,7 +121,7 @@ fn cube() -> RenderData {
 
     RenderData {
         mesh: Mesh { vertices, indices },
-        id: RenderHandle(3984203840),
+        id: CUBE_HANDLE,
     }
 }
 

@@ -31,7 +31,7 @@ cargo run --release --bin cimvr_client -- target/wasm32-unknown-unknown/release/
 Plugins are required to import `engine_interface`. Most plugins will need to import `common`, as it provides interfacing with the provided client and server. The `engine` and `engine_interface` crates are all that are needed to set up arbitrary new platforms...
 
 # TODO
-* [ ] Use the `log` crate for errors and warnings host-size
+* [x] Use the `log` crate for errors and warnings host-size
 * [ ] Display plugin names along with print. Should happen in log...
 * [ ] Use real UUIDs instead of these random numbers and silly ID constants
 * [ ] All of the other TODOs... `grep -ir 'todo' */src/*`

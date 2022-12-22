@@ -26,6 +26,7 @@ pub(crate) mod pcg;
 pub mod prelude {
     pub use super::channels::*;
     pub use super::ecs::*;
+    pub use super::network::*;
     pub use super::plugin::*;
     pub use super::stdout::*;
     pub use super::system::*;
