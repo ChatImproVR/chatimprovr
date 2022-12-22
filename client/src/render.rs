@@ -120,8 +120,8 @@ struct RenderEngine {
 
 struct GpuMesh {
     vao: gl::VertexArray,
-    _vbo: gl::NativeBuffer,
-    _ebo: gl::NativeBuffer,
+    vbo: gl::NativeBuffer,
+    ebo: gl::NativeBuffer,
     index_count: i32,
 }
 
@@ -154,12 +154,12 @@ impl RenderEngine {
     /// Make the given render data available to the GPU
     pub fn upload(&mut self, gl: &gl::Context, data: &RenderData) -> Result<()> {
         // TODO: Use a different mesh type? Switch for upload frequency? Hmmm..
-        let gpu_mesh =
-            upload_mesh(gl, gl::DYNAMIC_DRAW, &data.mesh).expect("Failed to upload mesh");
-        let ret = self.meshes.insert(data.id, gpu_mesh);
-
-        if ret.is_some() {
-            log::warn!("Warning: Overwrote render data {:?}", data.id);
+        if let Some(buf) = self.meshes.get(&data.id) {
+            update_mesh(gl, buf, &data.mesh);
+        } else {
+            let gpu_mesh =
+                upload_mesh(gl, gl::DYNAMIC_DRAW, &data.mesh).expect("Failed to upload mesh");
+            self.meshes.insert(data.id, gpu_mesh);
         }
 
         Ok(())
@@ -233,7 +233,7 @@ impl RenderEngine {
 
                     // Draw mesh data
                     gl.bind_vertex_array(Some(mesh.vao));
-                    gl.draw_elements(primitive, limit, gl::UNSIGNED_SHORT, 0);
+                    gl.draw_elements(primitive, limit, gl::UNSIGNED_INT, 0);
                     gl.bind_vertex_array(None);
                 } else {
                     log::warn!(
@@ -352,9 +352,27 @@ fn upload_mesh(gl: &gl::Context, usage: u32, mesh: &Mesh) -> Result<GpuMesh, Str
 
         Ok(GpuMesh {
             vao,
-            _vbo: vbo,
-            _ebo: ebo,
+            vbo,
+            ebo,
             index_count: mesh.indices.len() as i32,
         })
+    }
+}
+
+fn update_mesh(gl: &gl::Context, buf: &GpuMesh, mesh: &Mesh) {
+    unsafe {
+        gl.bind_buffer(glow::ARRAY_BUFFER, Some(buf.vbo));
+        gl.buffer_data_u8_slice(
+            glow::ARRAY_BUFFER,
+            bytemuck::cast_slice(&mesh.vertices),
+            glow::DYNAMIC_DRAW,
+        );
+
+        gl.bind_buffer(glow::ARRAY_BUFFER, Some(buf.ebo));
+        gl.buffer_data_u8_slice(
+            glow::ARRAY_BUFFER,
+            bytemuck::cast_slice(&mesh.indices),
+            glow::DYNAMIC_DRAW,
+        );
     }
 }

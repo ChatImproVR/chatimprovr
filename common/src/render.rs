@@ -31,12 +31,12 @@ pub struct RenderData {
     pub id: RenderHandle,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Mesh {
     /// Vertices. An empty list indicates procedurally generated vertex data
     pub vertices: Vec<Vertex>,
     /// Indices. An empty list indicates sequential vertex buffer usage
-    pub indices: Vec<u16>,
+    pub indices: Vec<u32>,
 }
 
 /// Render component
