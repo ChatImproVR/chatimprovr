@@ -42,7 +42,7 @@ fn main() -> Result<()> {
     };
 
     // Set up engine and initialize plugins
-    let engine = Engine::new(&paths)?;
+    let engine = Engine::new(&paths, false)?;
 
     // Setup client code
     let mut client = Client::new(engine, gl)?;

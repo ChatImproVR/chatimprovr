@@ -25,6 +25,8 @@ pub struct ReceiveBuf {
     pub ecs: EcsData,
     /// Message inbox
     pub inbox: Inbox,
+    /// True if plugin is server-side
+    pub is_server: bool,
     /*
     /// Message buffers, in the same order as the subscribed channels
     pub messages: Vec<Vec<Message>>,

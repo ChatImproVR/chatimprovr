@@ -11,14 +11,14 @@ use cimvr_common::{
 };
 use cimvr_engine_interface::{make_app_state, prelude::*};
 
-struct State {
+struct ClientState {
     arcball: ArcBall,
     arcball_control: ArcBallController,
 }
 
-make_app_state!(State);
+make_app_state!(ClientState, DummyUserState);
 
-impl UserState for State {
+impl UserState for ClientState {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
         // Create camera
         let camera_ent = io.create_entity();
@@ -52,7 +52,7 @@ impl UserState for State {
     }
 }
 
-impl State {
+impl ClientState {
     fn camera_move(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         // Handle input events
         if let Some(InputEvents(events)) = io.inbox_first() {

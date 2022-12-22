@@ -1,7 +1,9 @@
 use crate::{
     pcg::Pcg,
     prelude::*,
-    serial::{deserialize, serialize, serialize_into, serialized_size, ReceiveBuf, SendBuf},
+    serial::{
+        deserialize, serialize, serialize_into, serialized_size, EcsData, ReceiveBuf, SendBuf,
+    },
 };
 pub use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
@@ -11,30 +13,49 @@ pub trait UserState: Sized {
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self;
 }
 
+/// I'm dummy
+/// Useful if you want client state but don't care about server state or vice versa
+pub struct DummyUserState;
+
 /// Full plugin context, contains user state and engine IO buffers
-pub struct Context<U> {
+pub struct Context<C, S> {
     /// User-defined state
-    user: Option<U>,
+    user: Option<ClientOrServerState<C, S>>,
     /// Buffer for communication with host
     buf: Vec<u8>, // TODO: SAFETY: Make this buffer volatile?! Host writes to it externally...
+}
+
+/// Stores client or server specific state, callbacks
+struct PluginState<U> {
     /// Callbacks for systems and their associated subscription parameters
     sched: EngineSchedule<U>,
+    /// User state
+    user: U,
 }
 
 /// System callable by the engine  
 pub type Callback<U> = fn(&mut U, &mut EngineIo, &mut QueryResult);
 
+/// User state tracking
+enum ClientOrServerState<ClientState, ServerState> {
+    Client(PluginState<ClientState>),
+    Server(PluginState<ServerState>),
+}
+
 /// Basically main() for plugins; allows a struct implementing AppState to be the state and entry
 /// point for the plugin
+/// Syntax is `make_app_state(ClientState, ServerState)`
+/// Use an empty struct or enum if you have no need for server state!
 #[macro_export]
 macro_rules! make_app_state {
-    ($AppState:ident) => {
+    ($ClientState:ident, $ServerState:ident) => {
         mod _ctx {
             // TODO: This is a stupid hack
-            use super::$AppState;
+            use super::{$ClientState, $ServerState};
             use cimvr_engine_interface::plugin::{Context, Lazy};
             use std::sync::Mutex;
-            static CTX: Lazy<Mutex<Context<$AppState>>> = Lazy::new(|| Mutex::new(Context::new()));
+            static CTX: Lazy<Mutex<Context<$ClientState, $ServerState>>> =
+                Lazy::new(|| Mutex::new(Context::new()));
 
             /// Reserve internal memory for external writes
             #[no_mangle]
@@ -94,7 +115,31 @@ impl<U> EngineSchedule<U> {
     }
 }
 
-impl<U: UserState> Context<U> {
+impl<U: UserState> PluginState<U> {
+    fn dispatch(&mut self, io: &mut EngineIo, ecs: EcsData, system_idx: usize) {
+        // Call system function with user data
+        let system = self.sched.callbacks[system_idx];
+
+        // Get query results
+        let query = self.sched.systems[system_idx].query.clone();
+        let mut query_result = QueryResult::new(ecs, query);
+
+        // Run the user's system
+        system(&mut self.user, io, &mut query_result);
+
+        io.commands.extend(query_result.commands);
+    }
+}
+
+impl<U: UserState> PluginState<U> {
+    fn new(io: &mut EngineIo) -> Self {
+        let mut sched = EngineSchedule::new();
+        let user = U::new(io, &mut sched);
+        Self { user, sched }
+    }
+}
+
+impl<C: UserState, S: UserState> Context<C, S> {
     /// Creates context, but don't set up usercode yet since we're not in _dispatch(),
     /// and that means that the engine would never see our output.
     /// Called from _reserve() oddly enough, because this structure manages memory.
@@ -103,7 +148,6 @@ impl<U: UserState> Context<U> {
 
         Self {
             user: None,
-            sched: EngineSchedule::new(),
             buf: vec![],
         }
     }
@@ -116,32 +160,33 @@ impl<U: UserState> Context<U> {
 
         let mut io = EngineIo::new(recv.inbox);
 
-        if let Some(system_idx) = recv.system {
-            // Call system function with user data
-            let user = self
-                .user
-                .as_mut()
-                .expect("Attempted to call system before initialization");
-            let system = self.sched.callbacks[system_idx];
-
-            // Get query results
-            let query = self.sched.systems[system_idx].query.clone();
-            let mut query_result = QueryResult::new(recv.ecs, query);
-
-            // Run the user's system
-            system(user, &mut io, &mut query_result);
-
-            io.commands.extend(query_result.commands);
+        if let (Some(sys_idx), Some(user)) = (recv.system, self.user.as_mut()) {
+            // Dispatch plugin code
+            match (recv.is_server, user) {
+                (true, ClientOrServerState::Server(s)) => s.dispatch(&mut io, recv.ecs, sys_idx),
+                (false, ClientOrServerState::Client(s)) => s.dispatch(&mut io, recv.ecs, sys_idx),
+                _ => panic!("Are we a client or server plugin? Choose one!"),
+            }
         } else {
             // Initialize plugin internals
-            self.user = Some(U::new(&mut io, &mut self.sched));
+            let user = match recv.is_server {
+                true => ClientOrServerState::Server(PluginState::new(&mut io)),
+                false => ClientOrServerState::Client(PluginState::new(&mut io)),
+            };
+            self.user = Some(user);
         }
+
+        // Gather systems (should never change after init!)
+        let systems = match self.user.as_ref().unwrap() {
+            ClientOrServerState::Client(c) => c.sched.systems.clone(),
+            ClientOrServerState::Server(s) => s.sched.systems.clone(),
+        };
 
         // Write return state
         let send = SendBuf {
             commands: std::mem::take(&mut io.commands),
             outbox: std::mem::take(&mut io.outbox),
-            systems: self.sched.systems.clone(),
+            systems,
         };
         let len: u32 = serialized_size(&send).expect("Failed to get size of host message") as u32;
 
@@ -229,5 +274,12 @@ impl EngineIo {
         self.inbox.entry(M::CHANNEL).or_default().first().map(|m| {
             deserialize(std::io::Cursor::new(&m.data)).expect("Failed to deserialize message")
         })
+    }
+}
+
+impl UserState for DummyUserState {
+    fn new(_: &mut EngineIo, _: &mut EngineSchedule<Self>) -> Self {
+        crate::println!("I'm dummy :3");
+        Self
     }
 }

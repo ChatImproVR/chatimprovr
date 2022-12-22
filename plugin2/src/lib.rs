@@ -7,16 +7,16 @@ use cimvr_engine_interface::{make_app_state, prelude::*};
 use serde::{Deserialize, Serialize};
 use std::f32::consts::TAU;
 
-struct State {}
+struct ClientState {}
 
-make_app_state!(State);
+make_app_state!(ClientState, DummyUserState);
 
 #[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct MoveCube {
     pub r: f32,
 }
 
-impl UserState for State {
+impl UserState for ClientState {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
         // Cube mesh
         let cube_mesh = cube();
@@ -62,7 +62,7 @@ impl UserState for State {
     }
 }
 
-impl State {
+impl ClientState {
     fn cube_move(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         if let Some(FrameTime { time, .. }) = io.inbox_first() {
             for key in query.iter() {

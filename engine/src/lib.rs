@@ -23,6 +23,8 @@ pub struct Engine {
     indices: HashMap<ChannelId, Vec<usize>>,
     /// User inboxes
     external_inbox: Inbox,
+    /// Am I a server?
+    is_server: bool,
 }
 
 /// Plugin management structure
@@ -51,7 +53,7 @@ impl PluginState {
 
 impl Engine {
     /// Load plugins at the given paths
-    pub fn new(plugins: &[PathBuf]) -> Result<Self> {
+    pub fn new(plugins: &[PathBuf], is_server: bool) -> Result<Self> {
         let wasm = wasmtime::Engine::new(&Default::default())?;
         let plugins: Vec<PluginState> = plugins
             .iter()
@@ -65,6 +67,7 @@ impl Engine {
             plugins,
             ecs,
             external_inbox: HashMap::new(),
+            is_server,
         })
     }
 
@@ -79,6 +82,7 @@ impl Engine {
                 system: None,
                 inbox: std::mem::take(&mut plugin.inbox),
                 ecs: EcsData::default(),
+                is_server: self.is_server,
             };
             let recv = plugin.code.dispatch(&send)?;
 
@@ -120,6 +124,7 @@ impl Engine {
                 let recv_buf = ReceiveBuf {
                     system: Some(system_idx),
                     inbox: std::mem::take(&mut plugin.inbox),
+                    is_server: self.is_server,
                     ecs,
                 };
 
