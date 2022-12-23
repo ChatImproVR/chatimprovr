@@ -1,7 +1,9 @@
 use anyhow::Result;
 use cimvr_common::FrameTime;
 use cimvr_engine::ecs::{query_ecs_data, Ecs};
-use cimvr_engine::interface::prelude::{query, Access, EntityId, Synchronized};
+use cimvr_engine::interface::prelude::{
+    query, Access, ClientId, Connections, EntityId, Synchronized,
+};
 use cimvr_engine::interface::serial::{
     deserialize, serialize, serialize_into, serialized_size, EcsData,
 };
@@ -76,6 +78,7 @@ struct Connection {
     stream: TcpStream,
     addr: SocketAddr,
     msg_buf: AsyncBufferedReceiver,
+    id: ClientId,
 }
 
 struct Server {
@@ -84,6 +87,7 @@ struct Server {
     conns: Vec<Connection>,
     start_time: Instant,
     last_frame: Instant,
+    id_counter: u32,
 }
 
 impl Server {
@@ -94,6 +98,7 @@ impl Server {
             start_time: Instant::now(),
             conn_rx,
             conns: vec![],
+            id_counter: 0,
         }
     }
 
@@ -108,7 +113,9 @@ impl Server {
                 msg_buf: AsyncBufferedReceiver::new(),
                 stream,
                 addr,
+                id: ClientId(self.id_counter),
             });
+            self.id_counter += 1;
         }
 
         // Read client messages
@@ -141,6 +148,11 @@ impl Server {
         self.engine.send(FrameTime {
             time: self.start_time.elapsed().as_secs_f32(),
             delta: self.last_frame.elapsed().as_secs_f32(),
+        });
+
+        // Send connection list
+        self.engine.send(Connections {
+            clients: conns_tmp.iter().map(|c| dbg!(c.id)).collect(),
         });
 
         // Execute update steps

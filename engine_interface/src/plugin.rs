@@ -269,6 +269,15 @@ impl EngineIo {
         });
     }
 
+    /// Send a message to a specific client
+    pub fn send_to_client<M: Message>(&mut self, data: &M, client: ClientId) {
+        self.outbox.push(MessageData {
+            channel: M::CHANNEL,
+            data: serialize(data).expect("Failed to serialize message data"),
+            client: Some(client),
+        });
+    }
+
     /// Get the first message on this channel, or return None
     pub fn inbox_first<M: Message>(&mut self) -> Option<M> {
         self.inbox.entry(M::CHANNEL).or_default().first().map(|m| {

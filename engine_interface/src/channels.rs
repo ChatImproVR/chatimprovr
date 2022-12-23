@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
+use crate::network::ClientId;
+
 pub type Inbox = HashMap<ChannelId, Vec<MessageData>>;
 
 /// Channel identity, corresponds to exactly one local or remote connection
@@ -34,7 +36,7 @@ pub struct MessageData {
     /// * When received on server, contains ID of the client which sent it
     /// * When sent on a server, contains destination client ID if Some
     /// * Else broadcast to all if None
-    pub client: Option<ChannelId>,
+    pub client: Option<ClientId>,
     /// Message content
     pub data: Vec<u8>,
 }

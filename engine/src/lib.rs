@@ -17,11 +17,14 @@ use plugin::Plugin;
 
 /// Plugin state, plugin code, ECS state, messaging machinery, and more
 pub struct Engine {
+    /// WASM engine
     _wasm: wasmtime::Engine,
+    /// Plugin states
     plugins: Vec<PluginState>,
+    /// Entity and Component data
     ecs: Ecs,
-    /// Message distribution indices, maps channel id -> plugin indices
-    indices: HashMap<ChannelId, Vec<usize>>,
+    /// Message distribution indices, maps (channel id) -> (plugin index, system index)
+    indices: HashMap<ChannelId, Vec<(usize, usize)>>,
     /// Host inboxes
     external_inbox: Inbox,
     /// Network inbox; messages to be sent from plugins to the remote(s)
@@ -36,8 +39,8 @@ struct PluginState {
     code: Plugin,
     /// Systems on this plugin
     systems: Vec<SystemDescriptor>,
-    /// Message inbox
-    inbox: HashMap<ChannelId, Vec<MessageData>>,
+    /// Message inboxes, one for each system
+    inbox: Vec<HashMap<ChannelId, Vec<MessageData>>>,
     // TODO: Make this Vec<Arc<Message>>? Faster! (No unnecessary copying)
     /// Message outbox
     outbox: Vec<MessageData>,
@@ -49,7 +52,7 @@ impl PluginState {
             code,
             outbox: vec![],
             systems: vec![],
-            inbox: HashMap::default(),
+            inbox: Default::default(),
         }
     }
 }
@@ -84,7 +87,7 @@ impl Engine {
             // Dispatch init signal
             let send = ReceiveBuf {
                 system: None,
-                inbox: std::mem::take(&mut plugin.inbox),
+                inbox: Default::default(),
                 ecs: EcsData::default(),
                 is_server: self.is_server,
             };
@@ -93,11 +96,18 @@ impl Engine {
             // Apply ECS commands
             apply_ecs_commands(&mut self.ecs, &recv.commands)?;
 
-            // Setup message indices
-            for sys in &recv.systems {
+            // Setup message indices for each system
+            for (sys_idx, sys) in recv.systems.iter().enumerate() {
+                // Set up lookup table
                 for &channel in &sys.subscriptions {
-                    self.indices.entry(channel).or_default().push(plugin_idx);
+                    self.indices
+                        .entry(channel)
+                        .or_default()
+                        .push((plugin_idx, sys_idx));
                 }
+
+                // Initialize system's inbox
+                plugin.inbox.push(HashMap::new());
             }
 
             // Set up schedule, send first messages
@@ -127,7 +137,7 @@ impl Engine {
                 // Write input data
                 let recv_buf = ReceiveBuf {
                     system: Some(system_idx),
-                    inbox: std::mem::take(&mut plugin.inbox),
+                    inbox: std::mem::take(&mut plugin.inbox[system_idx]),
                     is_server: self.is_server,
                     ecs: ecs_data,
                 };
@@ -165,9 +175,8 @@ impl Engine {
         match msg.channel.locality {
             Locality::Local => {
                 if let Some(destinations) = self.indices.get(&msg.channel) {
-                    for j in destinations {
-                        self.plugins[*j]
-                            .inbox
+                    for (plugin_idx, system_idx) in destinations {
+                        self.plugins[*plugin_idx].inbox[*system_idx]
                             .entry(msg.channel)
                             .or_default()
                             .push(msg.clone());

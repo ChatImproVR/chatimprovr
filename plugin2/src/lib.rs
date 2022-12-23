@@ -55,7 +55,7 @@ impl UserState for ServerState {
             io.add_component(cube_ent, &MoveCube { r });
         }
 
-        // Schedule the system
+        // Schedule the systems
         schedule.add_system(
             SystemDescriptor {
                 stage: Stage::Update,
@@ -68,11 +68,24 @@ impl UserState for ServerState {
             Self::cube_move,
         );
 
+        schedule.add_system(
+            SystemDescriptor {
+                stage: Stage::Update,
+                subscriptions: vec![sub::<Connections>()],
+                query: vec![],
+            },
+            Self::report_clients,
+        );
+
         Self
     }
 }
 
 impl ServerState {
+    fn report_clients(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
+        dbg!(io.inbox_first::<Connections>());
+    }
+
     fn cube_move(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         if let Some(FrameTime { time, .. }) = io.inbox_first() {
             for key in query.iter() {
