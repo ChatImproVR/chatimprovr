@@ -37,7 +37,7 @@ pub struct ReceiveBuf {
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct SendBuf {
     /// Commands to be sent to server
-    pub commands: Vec<EngineCommand>,
+    pub commands: Vec<EcsCommand>,
     /*
     /// Messages to be sent to other plugins
     pub messages: Vec<Message>,

@@ -235,6 +235,7 @@ dependencies = [
  "cimvr_engine_interface",
  "log",
  "rand",
+ "serde",
  "wasmtime",
 ]
 

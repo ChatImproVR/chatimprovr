@@ -1,13 +1,14 @@
 pub mod ecs;
+pub mod network;
 pub mod plugin;
 use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::{Ok, Result};
 pub use cimvr_engine_interface as interface;
-use ecs::Ecs;
+use ecs::{apply_ecs_commands, query_ecs_data, Ecs};
 use interface::{
     prelude::*,
-    serial::{deserialize, serialize, EcsData, ReceiveBuf, SendBuf},
+    serial::{deserialize, serialize, EcsData, ReceiveBuf},
     system::Stage,
 };
 use plugin::Plugin;
@@ -21,8 +22,10 @@ pub struct Engine {
     ecs: Ecs,
     /// Message distribution indices, maps channel id -> plugin indices
     indices: HashMap<ChannelId, Vec<usize>>,
-    /// User inboxes
+    /// Host inboxes
     external_inbox: Inbox,
+    /// Network inbox; messages to be sent from plugins to the remote(s)
+    network_inbox: Vec<MessageData>,
     /// Am I a server?
     is_server: bool,
 }
@@ -67,6 +70,7 @@ impl Engine {
             plugins,
             ecs,
             external_inbox: HashMap::new(),
+            network_inbox: vec![],
             is_server,
         })
     }
@@ -87,7 +91,7 @@ impl Engine {
             let recv = plugin.code.dispatch(&send)?;
 
             // Apply ECS commands
-            apply_ecs_updates(&mut self.ecs, &recv)?;
+            apply_ecs_commands(&mut self.ecs, &recv.commands)?;
 
             // Setup message indices
             for sys in &recv.systems {
@@ -118,14 +122,14 @@ impl Engine {
                 }
 
                 // Query ECS
-                let ecs = query_ecs(&mut self.ecs, &system.query)?;
+                let ecs_data = query_ecs_data(&mut self.ecs, &system.query)?;
 
                 // Write input data
                 let recv_buf = ReceiveBuf {
                     system: Some(system_idx),
                     inbox: std::mem::take(&mut plugin.inbox),
                     is_server: self.is_server,
-                    ecs,
+                    ecs: ecs_data,
                 };
 
                 // Run plugin
@@ -133,7 +137,7 @@ impl Engine {
 
                 // Write back to ECS
                 // TODO: Defer this? It's currently in Arbitrary order!
-                apply_ecs_updates(&mut self.ecs, &ret)?;
+                apply_ecs_commands(&mut self.ecs, &ret.commands)?;
 
                 // Receive outbox
                 plugin.outbox = ret.outbox;
@@ -157,20 +161,27 @@ impl Engine {
 
     /// Broadcast message to relevant destinations
     fn broadcast(&mut self, msg: MessageData) {
-        if let Some(destinations) = self.indices.get(&msg.channel) {
-            for j in destinations {
-                self.plugins[*j]
-                    .inbox
-                    .entry(msg.channel)
-                    .or_default()
-                    .push(msg.clone());
-            }
-        } else {
-            log::warn!("Message on channel {:?} has no destination", msg.channel,);
-        }
+        match msg.channel.locality {
+            Locality::Local => {
+                if let Some(destinations) = self.indices.get(&msg.channel) {
+                    for j in destinations {
+                        self.plugins[*j]
+                            .inbox
+                            .entry(msg.channel)
+                            .or_default()
+                            .push(msg.clone());
+                    }
+                } else {
+                    log::warn!("Message on channel {:?} has no destination", msg.channel,);
+                }
 
-        if let Some(inbox) = self.external_inbox.get_mut(&msg.channel) {
-            inbox.push(msg.clone());
+                if let Some(inbox) = self.external_inbox.get_mut(&msg.channel) {
+                    inbox.push(msg.clone());
+                }
+            }
+            Locality::Remote => {
+                self.network_inbox.push(msg);
+            }
         }
     }
 
@@ -203,36 +214,4 @@ impl Engine {
             client: None,
         });
     }
-}
-
-fn query_ecs(ecs: &mut Ecs, query: &Query) -> Result<EcsData> {
-    let entities = ecs.query(query).into_iter().collect();
-    let mut components = vec![vec![]; query.len()];
-
-    for &entity in &entities {
-        for (term, comp) in query.iter().zip(&mut components) {
-            comp.extend_from_slice(ecs.get_raw(entity, term.component));
-        }
-    }
-
-    Ok(EcsData {
-        entities,
-        components,
-    })
-}
-
-fn apply_ecs_updates(ecs: &mut Ecs, send: &SendBuf) -> Result<()> {
-    // Apply commands
-    for command in &send.commands {
-        // TODO: Throw error on modification of non-queried data...
-        match command {
-            EngineCommand::Create(id) => ecs.import_entity(*id),
-            EngineCommand::Delete(id) => ecs.remove_entity(*id),
-            EngineCommand::AddComponent(entity, component, data) => {
-                ecs.add_component_raw(*entity, *component, data)
-            }
-        }
-    }
-
-    Ok(())
 }

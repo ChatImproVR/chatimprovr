@@ -83,7 +83,7 @@ pub struct EngineIo {
     #[serde(skip)]
     pub(crate) pcg: Pcg,
     /// Sent commands
-    pub(crate) commands: Vec<EngineCommand>,
+    pub(crate) commands: Vec<EcsCommand>,
     /// Sent messages
     pub(crate) outbox: Vec<MessageData>,
     /// Inbox
@@ -222,7 +222,7 @@ impl EngineIo {
     /// Create an entity
     pub fn create_entity(&mut self) -> EntityId {
         let id = EntityId(self.pcg.gen_u128());
-        self.commands.push(EngineCommand::Create(id));
+        self.commands.push(EcsCommand::Create(id));
         id
     }
 
@@ -240,12 +240,12 @@ impl EngineIo {
         );
 
         self.commands
-            .push(EngineCommand::AddComponent(entity, C::ID, data));
+            .push(EcsCommand::AddComponent(entity, C::ID, data));
     }
 
     /// Delete an entity and all of it's components
     pub fn remove_entity(&mut self, id: EntityId) {
-        self.commands.push(EngineCommand::Delete(id));
+        self.commands.push(EcsCommand::Delete(id));
     }
 
     /// Generate a pseudorandom number

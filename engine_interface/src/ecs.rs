@@ -61,7 +61,7 @@ pub trait Component: Serialize + DeserializeOwned + Copy {
 
 /// Single command to be sent to engine
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum EngineCommand {
+pub enum EcsCommand {
     Create(EntityId),
     Delete(EntityId),
     // TODO: For now we're betting that the user doesn't add that many components at once...
@@ -85,7 +85,7 @@ impl QueryComponent {
 /// Read and write ECS data relevant to a query
 pub struct QueryResult {
     /// For modifications. TODO: Use a faster method of update xfer...
-    pub(crate) commands: Vec<EngineCommand>,
+    pub(crate) commands: Vec<EcsCommand>,
     /// ECS data from host
     ecs: EcsData,
     /// The original query, for reference
@@ -165,7 +165,7 @@ impl QueryResult {
 
         // Write host command
         self.commands
-            .push(EngineCommand::AddComponent(entity, T::ID, data))
+            .push(EcsCommand::AddComponent(entity, T::ID, data))
     }
 
     // TODO: This is dreadfully slow but there's no way around that

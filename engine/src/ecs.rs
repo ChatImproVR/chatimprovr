@@ -1,7 +1,8 @@
 use ahash::{HashMap, HashMapExt, HashSet, HashSetExt};
+use anyhow::Result;
 use cimvr_engine_interface::{
     prelude::*,
-    serial::{deserialize, serialize},
+    serial::{deserialize, serialize, EcsData},
 };
 use rand::prelude::*;
 
@@ -213,6 +214,40 @@ impl Ecs {
         }
     }
     */
+}
+
+/// Query the given ECS and serialize into ECSData
+pub fn query_ecs_data(ecs: &mut Ecs, query: &Query) -> Result<EcsData> {
+    let entities = ecs.query(query).into_iter().collect();
+    let mut components = vec![vec![]; query.len()];
+
+    for &entity in &entities {
+        for (term, comp) in query.iter().zip(&mut components) {
+            comp.extend_from_slice(ecs.get_raw(entity, term.component));
+        }
+    }
+
+    Ok(EcsData {
+        entities,
+        components,
+    })
+}
+
+/// Apply the given commands to the given ecs
+pub fn apply_ecs_commands(ecs: &mut Ecs, commands: &[EcsCommand]) -> Result<()> {
+    // Apply commands
+    for command in commands {
+        // TODO: Throw error on modification of non-queried data...
+        match command {
+            EcsCommand::Create(id) => ecs.import_entity(*id),
+            EcsCommand::Delete(id) => ecs.remove_entity(*id),
+            EcsCommand::AddComponent(entity, component, data) => {
+                ecs.add_component_raw(*entity, *component, data)
+            }
+        }
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]
