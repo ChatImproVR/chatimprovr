@@ -1,4 +1,5 @@
 use anyhow::Result;
+use cimvr_common::FrameTime;
 use cimvr_engine::ecs::{query_ecs_data, Ecs};
 use cimvr_engine::interface::prelude::{query, Access, EntityId, Synchronized};
 use cimvr_engine::interface::serial::{
@@ -49,7 +50,7 @@ fn main() -> Result<()> {
     std::thread::spawn(move || connection_listener(bind_addr, conn_tx));
 
     let mut server = Server::new(conn_rx, engine);
-    let target = Duration::from_millis(50);
+    let target = Duration::from_millis(25);
 
     loop {
         let start = Instant::now();
@@ -81,12 +82,16 @@ struct Server {
     engine: Engine,
     conn_rx: Receiver<(TcpStream, SocketAddr)>,
     conns: Vec<Connection>,
+    start_time: Instant,
+    last_frame: Instant,
 }
 
 impl Server {
     fn new(conn_rx: Receiver<(TcpStream, SocketAddr)>, engine: Engine) -> Self {
         Self {
             engine,
+            last_frame: Instant::now(),
+            start_time: Instant::now(),
             conn_rx,
             conns: vec![],
         }
@@ -132,6 +137,12 @@ impl Server {
             };
         }
 
+        // Send frame timing
+        self.engine.send(FrameTime {
+            time: self.start_time.elapsed().as_secs_f32(),
+            delta: self.last_frame.elapsed().as_secs_f32(),
+        });
+
         // Execute update steps
         self.engine.dispatch(Stage::PreUpdate)?;
         self.engine.dispatch(Stage::Update)?;
@@ -165,6 +176,8 @@ impl Server {
                 },
             }
         }
+
+        self.last_frame = Instant::now();
 
         Ok(())
     }

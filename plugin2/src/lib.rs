@@ -3,7 +3,7 @@ use cimvr_common::{
     render::{Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
     FrameTime, Transform,
 };
-use cimvr_engine_interface::{make_app_state, prelude::*};
+use cimvr_engine_interface::{dbg, make_app_state, prelude::*};
 use serde::{Deserialize, Serialize};
 use std::f32::consts::TAU;
 
@@ -42,7 +42,7 @@ impl UserState for ServerState {
         io.add_component(cube_ent, &Synchronized);
 
         // Add cubes
-        let n = 100;
+        let n = 3;
         for i in 0..n {
             let i = i as f32 / n as f32;
             let cube_ent = io.create_entity();
