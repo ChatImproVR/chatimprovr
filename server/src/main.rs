@@ -32,7 +32,7 @@ struct Opt {
 
 fn main() -> Result<()> {
     // Parse args
-    let mut args = Opt::from_args();
+    let args = Opt::from_args();
     let bind_addr = args.bind.clone();
     println!("Binding to {}", bind_addr);
 
@@ -49,7 +49,7 @@ fn main() -> Result<()> {
 
     let mut server = Server::new(conn_rx, engine);
     loop {
-        server.update();
+        server.update()?;
     }
 }
 
@@ -98,9 +98,7 @@ impl Server {
                 });
             }
 
-            let mut any_update = false;
-
-            // Update head positions
+            // Read client messages
             for mut conn in self.conns.drain(..) {
                 match conn.msg_buf.read(&mut conn.stream)? {
                     ReadState::Disconnected => {
@@ -125,6 +123,11 @@ impl Server {
                     }
                 };
             }
+
+            // Execute update steps
+            self.engine.dispatch(Stage::PreUpdate)?;
+            self.engine.dispatch(Stage::Update)?;
+            self.engine.dispatch(Stage::PostUpdate)?;
 
             // Gather current synchronized state
             let state = ServerToClient {

@@ -102,14 +102,14 @@ impl Client {
     pub fn frame(&mut self) -> Result<()> {
         // Input stage
         self.engine.send(self.input.get_history());
-        self.engine.dispatch(Stage::Input)?;
+        self.engine.dispatch(Stage::PreUpdate)?;
 
         // Physics stage
-        self.engine.dispatch(Stage::Physics)?;
+        self.engine.dispatch(Stage::PostUpdate)?;
 
         // Media stage
         self.render.frame(&mut self.engine)?;
-        self.engine.dispatch(Stage::Media)?;
+        self.engine.dispatch(Stage::PostUpdate)?;
 
         Ok(())
     }

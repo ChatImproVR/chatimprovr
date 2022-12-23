@@ -35,7 +35,7 @@ impl UserState for ClientState {
         // query from the type arguments and such...
         schedule.add_system(
             SystemDescriptor {
-                stage: Stage::Input,
+                stage: Stage::PreUpdate,
                 subscriptions: vec![sub::<FrameTime>(), sub::<InputEvents>()],
                 query: vec![
                     query::<Transform>(Access::Write),

@@ -23,17 +23,17 @@ pub struct SystemDescriptor {
 /// * Send messages to server
 #[derive(Clone, Copy, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Stage {
-    /// Keyboard and other Input is received in this stage
-    Input,
-    /// Physics data is processed in this stage
-    Physics,
-    /// Graphics and Sound are processsed in this stage
-    Media,
+    /// Keyboard and other Input is received before
+    PreUpdate,
+    /// Physics data is processed before this stage
+    Update,
+    /// Graphics and Sound are processsed before this stage
+    PostUpdate,
 }
 
 impl Default for Stage {
     fn default() -> Self {
-        Self::Input
+        Self::PreUpdate
     }
 }
 
