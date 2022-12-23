@@ -58,7 +58,7 @@ impl UserState for ServerState {
         // Schedule the system
         schedule.add_system(
             SystemDescriptor {
-                stage: Stage::PreUpdate,
+                stage: Stage::Update,
                 subscriptions: vec![sub::<FrameTime>()],
                 query: vec![
                     query::<Transform>(Access::Write),

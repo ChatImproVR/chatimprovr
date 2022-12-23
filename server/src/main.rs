@@ -6,6 +6,7 @@ use cimvr_engine::interface::serial::{
 };
 use cimvr_engine::{interface::system::Stage, network::*, Engine};
 
+use std::time::Instant;
 use std::{
     io::{self, Write},
     net::{SocketAddr, TcpListener, TcpStream},
@@ -48,8 +49,16 @@ fn main() -> Result<()> {
     std::thread::spawn(move || connection_listener(bind_addr, conn_tx));
 
     let mut server = Server::new(conn_rx, engine);
+    let target = Duration::from_millis(50);
+
     loop {
+        let start = Instant::now();
         server.update()?;
+        let elap = start.elapsed();
+
+        if let Some(wait_time) = target.checked_sub(elap) {
+            std::thread::sleep(wait_time);
+        }
     }
 }
 
@@ -86,77 +95,77 @@ impl Server {
     fn update(&mut self) -> Result<()> {
         let mut conns_tmp = vec![];
 
-        loop {
-            // Check for new connections
-            for (stream, addr) in self.conn_rx.try_iter() {
-                stream.set_nonblocking(true)?;
-                log::info!("{} Connected", addr);
-                self.conns.push(Connection {
-                    msg_buf: AsyncBufferedReceiver::new(),
-                    stream,
-                    addr,
-                });
-            }
+        // Check for new connections
+        for (stream, addr) in self.conn_rx.try_iter() {
+            stream.set_nonblocking(true)?;
+            log::info!("{} Connected", addr);
+            self.conns.push(Connection {
+                msg_buf: AsyncBufferedReceiver::new(),
+                stream,
+                addr,
+            });
+        }
 
-            // Read client messages
-            for mut conn in self.conns.drain(..) {
-                match conn.msg_buf.read(&mut conn.stream)? {
-                    ReadState::Disconnected => {
-                        log::info!("{} Disconnected", conn.addr);
-                    }
-                    ReadState::Complete(buf) => {
-                        let msgs: ClientToServer =
-                            deserialize(std::io::Cursor::new(buf)).expect("Malformed message");
-                        // Broadcast from client to server modules
-                        for msg in msgs.messages {
-                            self.engine.broadcast(msg);
-                        }
-
-                        conns_tmp.push(conn);
-                    }
-                    ReadState::Invalid => {
-                        log::error!("Invalid data on connection");
-                        conns_tmp.push(conn);
-                    }
-                    ReadState::Incomplete => {
-                        conns_tmp.push(conn);
-                    }
-                };
-            }
-
-            // Execute update steps
-            self.engine.dispatch(Stage::PreUpdate)?;
-            self.engine.dispatch(Stage::Update)?;
-            self.engine.dispatch(Stage::PostUpdate)?;
-
-            // Gather current synchronized state
-            let state = ServerToClient {
-                ecs: self
-                    .engine
-                    .ecs()
-                    .export(&[query::<Synchronized>(Access::Read)]),
-                messages: self.engine.network_inbox(),
-            };
-
-            // Write header and serialize message
-            let mut msg = vec![];
-            length_delmit_message(&state, std::io::Cursor::new(&mut msg))?;
-
-            // Broadcast to clients
-            for mut conn in conns_tmp.drain(..) {
-                match conn.stream.write_all(&msg) {
-                    Ok(_) => self.conns.push(conn),
-                    Err(e) => match e.kind() {
-                        io::ErrorKind::WouldBlock => self.conns.push(conn),
-                        io::ErrorKind::BrokenPipe
-                        | io::ErrorKind::ConnectionReset
-                        | io::ErrorKind::ConnectionAborted => {
-                            log::info!("{} Disconnected", conn.addr);
-                        }
-                        _ => return Err(e.into()),
-                    },
+        // Read client messages
+        for mut conn in self.conns.drain(..) {
+            match conn.msg_buf.read(&mut conn.stream)? {
+                ReadState::Disconnected => {
+                    log::info!("{} Disconnected", conn.addr);
                 }
+                ReadState::Complete(buf) => {
+                    let msgs: ClientToServer =
+                        deserialize(std::io::Cursor::new(buf)).expect("Malformed message");
+                    // Broadcast from client to server modules
+                    for msg in msgs.messages {
+                        self.engine.broadcast(msg);
+                    }
+
+                    conns_tmp.push(conn);
+                }
+                ReadState::Invalid => {
+                    log::error!("Invalid data on connection");
+                    conns_tmp.push(conn);
+                }
+                ReadState::Incomplete => {
+                    conns_tmp.push(conn);
+                }
+            };
+        }
+
+        // Execute update steps
+        self.engine.dispatch(Stage::PreUpdate)?;
+        self.engine.dispatch(Stage::Update)?;
+        self.engine.dispatch(Stage::PostUpdate)?;
+
+        // Gather current synchronized state
+        let state = ServerToClient {
+            ecs: self
+                .engine
+                .ecs()
+                .export(&[query::<Synchronized>(Access::Read)]),
+            messages: self.engine.network_inbox(),
+        };
+
+        // Write header and serialize message
+        let mut msg = vec![];
+        length_delmit_message(&state, std::io::Cursor::new(&mut msg))?;
+
+        // Broadcast to clients
+        for mut conn in conns_tmp.drain(..) {
+            match conn.stream.write_all(&msg) {
+                Ok(_) => self.conns.push(conn),
+                Err(e) => match e.kind() {
+                    io::ErrorKind::WouldBlock => self.conns.push(conn),
+                    io::ErrorKind::BrokenPipe
+                    | io::ErrorKind::ConnectionReset
+                    | io::ErrorKind::ConnectionAborted => {
+                        log::info!("{} Disconnected; {:?}", conn.addr, e);
+                    }
+                    _ => return Err(e.into()),
+                },
             }
         }
+
+        Ok(())
     }
 }
