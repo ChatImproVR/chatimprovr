@@ -139,10 +139,8 @@ impl Server {
             };
 
             // Write header and serialize message
-            let len = serialized_size(&state)?;
-            let header = (len as u32).to_le_bytes();
-            let mut msg = header.to_vec();
-            serialize_into(&mut msg, &state)?;
+            let mut msg = vec![];
+            length_delmit_message(&state, std::io::Cursor::new(&mut msg))?;
 
             // Broadcast to clients
             for mut conn in conns_tmp.drain(..) {

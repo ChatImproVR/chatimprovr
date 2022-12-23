@@ -1,6 +1,6 @@
 use cimvr_engine_interface::{
     prelude::{ComponentId, EntityId, MessageData},
-    serial::EcsData,
+    serial::{serialize_into, serialized_size, EcsData},
 };
 use serde::{Deserialize, Serialize};
 use std::io::{self, Read, Write};
@@ -101,4 +101,11 @@ impl AsyncBufferedReceiver {
             },
         }
     }
+}
+
+pub fn length_delmit_message<W: Write, T: Serialize>(obj: &T, mut w: W) -> anyhow::Result<()> {
+    let size = serialized_size(obj)?;
+    let header = (size as u32).to_le_bytes();
+    w.write_all(&header)?;
+    Ok(serialize_into(w, obj)?)
 }

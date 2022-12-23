@@ -1,19 +1,44 @@
 extern crate glow as gl;
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
+use cimvr_engine::interface::prelude::{query, Access, Synchronized};
+use cimvr_engine::interface::serial::deserialize;
+use cimvr_engine::network::{
+    length_delmit_message, AsyncBufferedReceiver, ClientToServer, ReadState, ServerToClient,
+};
 use cimvr_engine::{interface::system::Stage, Engine};
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
 use input::UserInputHandler;
 use render::RenderPlugin;
+use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
 
 mod input;
 mod render;
 
+use std::path::PathBuf;
+use structopt::StructOpt;
+
+#[derive(Debug, StructOpt)]
+#[structopt(
+    name = "ChatImproVR client",
+    about = "Client application for experiencing the ChatImproVR metaverse"
+)]
+struct Opt {
+    /// Remote host address, defaults to local server
+    #[structopt(short, long, default_value = "127.0.0.1:5031")]
+    connect: SocketAddr,
+
+    /// Plugins
+    plugins: Vec<PathBuf>,
+}
+
 struct Client {
     engine: Engine,
     render: RenderPlugin,
     input: UserInputHandler,
+    recv_buf: AsyncBufferedReceiver,
+    conn: TcpStream,
 }
 
 fn main() -> Result<()> {
@@ -21,8 +46,11 @@ fn main() -> Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
     // Parse args
-    let args = std::env::args().skip(1);
-    let paths: Vec<PathBuf> = args.map(PathBuf::from).collect();
+    let args = Opt::from_args();
+
+    // Connect to remote host
+    let tcp_stream = TcpStream::connect(args.connect)?;
+    tcp_stream.set_nonblocking(true)?;
 
     // Set up window
     let event_loop = glutin::event_loop::EventLoop::new();
@@ -42,10 +70,10 @@ fn main() -> Result<()> {
     };
 
     // Set up engine and initialize plugins
-    let engine = Engine::new(&paths, false)?;
+    let engine = Engine::new(&args.plugins, false)?;
 
     // Setup client code
-    let mut client = Client::new(engine, gl)?;
+    let mut client = Client::new(engine, gl, tcp_stream)?;
 
     // Run event loop
     event_loop.run(move |event, _, control_flow| {
@@ -77,7 +105,7 @@ fn main() -> Result<()> {
 }
 
 impl Client {
-    pub fn new(mut engine: Engine, gl: gl::Context) -> Result<Self> {
+    pub fn new(mut engine: Engine, gl: gl::Context, conn: TcpStream) -> Result<Self> {
         let render = RenderPlugin::new(gl, &mut engine).context("Setting up render engine")?;
         let input = UserInputHandler::new();
 
@@ -85,6 +113,8 @@ impl Client {
         engine.init_plugins()?;
 
         Ok(Self {
+            conn,
+            recv_buf: AsyncBufferedReceiver::new(),
             engine,
             render,
             input,
@@ -100,16 +130,43 @@ impl Client {
     }
 
     pub fn frame(&mut self) -> Result<()> {
-        // Input stage
+        // Synchronize
+        match self.recv_buf.read(&mut self.conn)? {
+            ReadState::Invalid => {
+                log::error!("Failed to parse invalid message");
+            }
+            ReadState::Incomplete => (),
+            ReadState::Disconnected => {
+                bail!("Disconnected");
+            }
+            ReadState::Complete(buf) => {
+                // Update state!
+                let recv: ServerToClient = deserialize(std::io::Cursor::new(buf))?;
+                for msg in recv.messages {
+                    self.engine.broadcast(msg);
+                }
+                self.engine
+                    .ecs()
+                    .import(&[query::<Synchronized>(Access::Read)], recv.ecs);
+            }
+        }
+
+        // Pre-update
         self.engine.send(self.input.get_history());
         self.engine.dispatch(Stage::PreUpdate)?;
 
-        // Physics stage
-        self.engine.dispatch(Stage::PostUpdate)?;
+        // Update
+        self.engine.dispatch(Stage::Update)?;
 
-        // Media stage
+        // Post-update
         self.render.frame(&mut self.engine)?;
         self.engine.dispatch(Stage::PostUpdate)?;
+
+        // Send message to server
+        let msg = ClientToServer {
+            messages: self.engine.network_inbox(),
+        };
+        length_delmit_message(&msg, self.conn)?;
 
         Ok(())
     }

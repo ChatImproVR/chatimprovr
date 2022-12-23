@@ -214,6 +214,7 @@ dependencies = [
  "glutin",
  "log",
  "nalgebra",
+ "structopt",
 ]
 
 [[package]]
