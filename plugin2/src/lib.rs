@@ -42,7 +42,7 @@ impl UserState for ServerState {
         io.add_component(cube_ent, &Synchronized);
 
         // Add cubes
-        let n = 100_000;
+        let n = 100;
         for i in 0..n {
             let i = i as f32 / n as f32;
             let cube_ent = io.create_entity();

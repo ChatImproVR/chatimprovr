@@ -90,7 +90,7 @@ impl Server {
             // Check for new connections
             for (stream, addr) in self.conn_rx.try_iter() {
                 stream.set_nonblocking(true)?;
-                eprintln!("{} Connected", addr);
+                log::info!("{} Connected", addr);
                 self.conns.push(Connection {
                     msg_buf: AsyncBufferedReceiver::new(),
                     stream,
@@ -151,7 +151,7 @@ impl Server {
                         io::ErrorKind::BrokenPipe
                         | io::ErrorKind::ConnectionReset
                         | io::ErrorKind::ConnectionAborted => {
-                            eprintln!("{} Disconnected", conn.addr);
+                            log::info!("{} Disconnected", conn.addr);
                         }
                         _ => return Err(e.into()),
                     },

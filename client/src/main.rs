@@ -16,7 +16,6 @@ use std::path::PathBuf;
 mod input;
 mod render;
 
-use std::path::PathBuf;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -140,6 +139,7 @@ impl Client {
                 bail!("Disconnected");
             }
             ReadState::Complete(buf) => {
+                dbg!(buf.len());
                 // Update state!
                 let recv: ServerToClient = deserialize(std::io::Cursor::new(buf))?;
                 for msg in recv.messages {
@@ -166,7 +166,7 @@ impl Client {
         let msg = ClientToServer {
             messages: self.engine.network_inbox(),
         };
-        length_delmit_message(&msg, self.conn)?;
+        length_delmit_message(&msg, &mut self.conn)?;
 
         Ok(())
     }
