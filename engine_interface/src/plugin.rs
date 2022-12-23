@@ -260,6 +260,21 @@ impl EngineIo {
         })
     }
 
+    /// Read inbox for this message type, along with client sender information
+    pub fn inbox_clients<M: Message>(&mut self) -> impl Iterator<Item = (ClientId, M)> + '_ {
+        assert_eq!(
+            M::CHANNEL.locality,
+            Locality::Remote,
+            "It makes no sense to use this method for local messages!"
+        );
+
+        self.inbox.entry(M::CHANNEL).or_default().iter().map(|m| {
+            let data =
+                deserialize(std::io::Cursor::new(&m.data)).expect("Failed to deserialize message");
+            (m.client.unwrap(), data)
+        })
+    }
+
     /// Send a message
     pub fn send<M: Message>(&mut self, data: &M) {
         self.outbox.push(MessageData {

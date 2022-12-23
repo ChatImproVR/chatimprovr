@@ -128,8 +128,10 @@ impl Server {
                     let msgs: ClientToServer =
                         deserialize(std::io::Cursor::new(buf)).expect("Malformed message");
                     // Broadcast from client to server modules
-                    for msg in msgs.messages {
-                        self.engine.broadcast(msg);
+                    for mut msg in msgs.messages {
+                        // Set the client ID for each message(!)
+                        msg.client = Some(conn.id);
+                        self.engine.broadcast_local(msg);
                     }
 
                     conns_tmp.push(conn);
@@ -152,7 +154,7 @@ impl Server {
 
         // Send connection list
         self.engine.send(Connections {
-            clients: conns_tmp.iter().map(|c| dbg!(c.id)).collect(),
+            clients: conns_tmp.iter().map(|c| c.id).collect(),
         });
 
         // Execute update steps
@@ -170,11 +172,21 @@ impl Server {
         };
 
         // Write header and serialize message
-        let mut msg = vec![];
-        length_delmit_message(&state, std::io::Cursor::new(&mut msg))?;
 
         // Broadcast to clients
         for mut conn in conns_tmp.drain(..) {
+            // TODO: This is a dumb, slow way to do this lol
+            // Only send message to the clients which they are destined for
+            let mut state = state.clone();
+            state.messages.retain(|m| match m.client {
+                None => true,
+                Some(outgoing) => outgoing == conn.id,
+            });
+
+            // Serialize message
+            let mut msg = vec![];
+            length_delmit_message(&state, std::io::Cursor::new(&mut msg))?;
+
             match conn.stream.write_all(&msg) {
                 Ok(_) => self.conns.push(conn),
                 Err(e) => match e.kind() {

@@ -14,15 +14,49 @@ make_app_state!(ClientState, ServerState);
 
 const CUBE_HANDLE: RenderHandle = RenderHandle(3984203840);
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct MyMessage {
+    hewwo: String,
+}
+
+impl Message for MyMessage {
+    const CHANNEL: ChannelId = ChannelId {
+        id: 0xB0000F,
+        locality: Locality::Remote,
+    };
+}
+
 #[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct MoveCube {
     pub r: f32,
 }
 
 impl UserState for ClientState {
-    fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
+    fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         io.send(&cube());
+
+        io.send(&MyMessage {
+            hewwo: "I'm a client!".to_string(),
+        });
+
+        sched.add_system(
+            SystemDescriptor {
+                stage: Stage::Update,
+                subscriptions: vec![sub::<MyMessage>()],
+                query: vec![],
+            },
+            Self::recv_server_msg,
+        );
+
         Self
+    }
+}
+
+impl ClientState {
+    fn recv_server_msg(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
+        for msg in io.inbox::<MyMessage>() {
+            dbg!(msg);
+        }
     }
 }
 
@@ -71,7 +105,7 @@ impl UserState for ServerState {
         schedule.add_system(
             SystemDescriptor {
                 stage: Stage::Update,
-                subscriptions: vec![sub::<Connections>()],
+                subscriptions: vec![sub::<MyMessage>()],
                 query: vec![],
             },
             Self::report_clients,
@@ -83,7 +117,16 @@ impl UserState for ServerState {
 
 impl ServerState {
     fn report_clients(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
-        dbg!(io.inbox_first::<Connections>());
+        let msgs: Vec<_> = io.inbox_clients::<MyMessage>().collect();
+        for (client, msg) in msgs {
+            dbg!(&msg);
+            io.send(&MyMessage {
+                hewwo: format!(
+                    "Haiiiii :3 I'm the server and you're {:?}. You said {}",
+                    client, msg.hewwo
+                ),
+            });
+        }
     }
 
     fn cube_move(&mut self, io: &mut EngineIo, query: &mut QueryResult) {

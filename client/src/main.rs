@@ -142,7 +142,7 @@ impl Client {
                 // Update state!
                 let recv: ServerToClient = deserialize(std::io::Cursor::new(buf))?;
                 for msg in recv.messages {
-                    self.engine.broadcast(msg);
+                    self.engine.broadcast_local(msg);
                 }
                 self.engine
                     .ecs()

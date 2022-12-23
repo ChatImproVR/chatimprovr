@@ -169,26 +169,29 @@ impl Engine {
         }
     }
 
+    /// Broadcast the message locally, without checkint to see if it's marked with local locality
+    pub fn broadcast_local(&mut self, msg: MessageData) {
+        if let Some(destinations) = self.indices.get(&msg.channel) {
+            for (plugin_idx, system_idx) in destinations {
+                self.plugins[*plugin_idx].inbox[*system_idx]
+                    .entry(msg.channel)
+                    .or_default()
+                    .push(msg.clone());
+            }
+        } else {
+            //log::warn!("Message on channel {:?} has no destination", msg.channel,);
+        }
+
+        if let Some(inbox) = self.external_inbox.get_mut(&msg.channel) {
+            inbox.push(msg.clone());
+        }
+    }
+
     // TODO: Find a better name for this
     /// Broadcast message to relevant destinations
     pub fn broadcast(&mut self, msg: MessageData) {
         match msg.channel.locality {
-            Locality::Local => {
-                if let Some(destinations) = self.indices.get(&msg.channel) {
-                    for (plugin_idx, system_idx) in destinations {
-                        self.plugins[*plugin_idx].inbox[*system_idx]
-                            .entry(msg.channel)
-                            .or_default()
-                            .push(msg.clone());
-                    }
-                } else {
-                    log::warn!("Message on channel {:?} has no destination", msg.channel,);
-                }
-
-                if let Some(inbox) = self.external_inbox.get_mut(&msg.channel) {
-                    inbox.push(msg.clone());
-                }
-            }
+            Locality::Local => self.broadcast_local(msg),
             Locality::Remote => {
                 self.network_inbox.push(msg);
             }
