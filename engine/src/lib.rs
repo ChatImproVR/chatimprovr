@@ -159,8 +159,9 @@ impl Engine {
         }
     }
 
+    // TODO: Find a better name for this
     /// Broadcast message to relevant destinations
-    fn broadcast(&mut self, msg: MessageData) {
+    pub fn broadcast(&mut self, msg: MessageData) {
         match msg.channel.locality {
             Locality::Local => {
                 if let Some(destinations) = self.indices.get(&msg.channel) {
@@ -204,6 +205,11 @@ impl Engine {
             .map(|msg| {
                 deserialize(std::io::Cursor::new(msg.data)).expect("Failed to decode message")
             })
+    }
+
+    /// Drain all network messages
+    pub fn network_inbox(&mut self) -> Vec<MessageData> {
+        std::mem::take(&mut self.network_inbox)
     }
 
     /// Broadcast a local message

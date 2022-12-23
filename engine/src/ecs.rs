@@ -8,8 +8,8 @@ use rand::prelude::*;
 
 // TODO: FxHash
 
-type ComponentData = Vec<u8>;
-type EcsMap = HashMap<ComponentId, HashMap<EntityId, ComponentData>>;
+pub type ComponentData = Vec<u8>;
+pub type EcsMap = HashMap<ComponentId, HashMap<EntityId, ComponentData>>;
 
 /// Rather poor ECS implementation for prototyping
 pub struct Ecs {
@@ -214,6 +214,37 @@ impl Ecs {
         }
     }
     */
+
+    pub fn export(&mut self, query: &[QueryComponent]) -> EcsMap {
+        let entities: Vec<EntityId> = self.query(query).into_iter().collect();
+
+        let mut exp = EcsMap::new();
+        for (id, comp) in &mut self.map {
+            let map = exp.entry(*id).or_default();
+            for ent in &entities {
+                if let Some(data) = comp.get(ent) {
+                    map.insert(*ent, data.clone());
+                }
+            }
+        }
+
+        exp
+    }
+
+    pub fn import(&mut self, query: &[QueryComponent], imported: EcsMap) {
+        let entities: Vec<EntityId> = self.query(query).into_iter().collect();
+
+        for id in entities {
+            self.remove_entity(id);
+        }
+
+        for (id, import_comp) in imported {
+            let my_comp = self.map.entry(id).or_default();
+            for (ent, data) in import_comp {
+                my_comp.insert(ent, data);
+            }
+        }
+    }
 }
 
 /// Query the given ECS and serialize into ECSData

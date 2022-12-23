@@ -10,3 +10,5 @@ anyhow = "1"
 cimvr_engine = { path = "../engine" }
 cimvr_common = { path = "../common" }
 env_logger = "0.10.0"
+structopt = { version = "0.3", default-features = false }
+log = "0.4.17"
