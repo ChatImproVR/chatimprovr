@@ -32,6 +32,7 @@ Plugins are required to import `engine_interface`. Most plugins will need to imp
 
 # TODO
 * [x] Use the `log` crate for errors and warnings host-size
+* [ ] Interface for server-client messaging
 * [ ] Display plugin names along with print. Should happen in log...
 * [ ] Use real UUIDs instead of these random numbers and silly ID constants
 * [ ] All of the other TODOs... `grep -ir 'todo' */src/*`

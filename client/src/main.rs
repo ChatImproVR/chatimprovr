@@ -139,7 +139,6 @@ impl Client {
                 bail!("Disconnected");
             }
             ReadState::Complete(buf) => {
-                dbg!(buf.len());
                 // Update state!
                 let recv: ServerToClient = deserialize(std::io::Cursor::new(buf))?;
                 for msg in recv.messages {
