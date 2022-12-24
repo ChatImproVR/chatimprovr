@@ -11,9 +11,17 @@ use interface::{
     serial::{deserialize, serialize, EcsData, ReceiveBuf},
     system::Stage,
 };
+use notify::{RecommendedWatcher, RecursiveMode, Result, Watcher};
 use plugin::Plugin;
 
 // Keep the ECS in an Arc, so that it may be read simultaneously
+pub struct Config {
+    /// Run server-side plugins
+    pub is_server: bool,
+    /// Watch and hotload plugins?
+    pub hotload: bool,
+    // /// Full list of plugins
+}
 
 /// Plugin state, plugin code, ECS state, messaging machinery, and more
 pub struct Engine {
@@ -29,12 +37,14 @@ pub struct Engine {
     external_inbox: Inbox,
     /// Network inbox; messages to be sent from plugins to the remote(s)
     network_inbox: Vec<MessageData>,
-    /// Am I a server?
-    is_server: bool,
+    /// Configuration we were constructed with
+    cfg: EngineConfig,
 }
 
 /// Plugin management structure
 struct PluginState {
+    /// Path to this plugin's source code
+    path: PathBuf,
     /// Plugin code and interface
     code: Plugin,
     /// Systems on this plugin
@@ -59,7 +69,7 @@ impl PluginState {
 
 impl Engine {
     /// Load plugins at the given paths
-    pub fn new(plugins: &[PathBuf], is_server: bool) -> Result<Self> {
+    pub fn new(plugins: &[PathBuf], cf: bool) -> Result<Self> {
         let wasm = wasmtime::Engine::new(&Default::default())?;
         let plugins: Vec<PluginState> = plugins
             .iter()
