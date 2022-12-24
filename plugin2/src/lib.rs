@@ -3,7 +3,7 @@ use cimvr_common::{
     render::{Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
     FrameTime, Transform,
 };
-use cimvr_engine_interface::{dbg, make_app_state, prelude::*};
+use cimvr_engine_interface::{dbg, make_app_state, prelude::*, println};
 use serde::{Deserialize, Serialize};
 use std::f32::consts::TAU;
 
@@ -62,6 +62,8 @@ impl ClientState {
 
 impl UserState for ServerState {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
+        println!("HWWO");
+
         // Cube mesh
         let cube_rdr = Render {
             id: CUBE_HANDLE,

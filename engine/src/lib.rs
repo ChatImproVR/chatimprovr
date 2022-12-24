@@ -1,4 +1,5 @@
 pub mod ecs;
+pub mod hotload;
 pub mod network;
 pub mod plugin;
 use std::{collections::HashMap, path::PathBuf};
@@ -11,22 +12,18 @@ use interface::{
     serial::{deserialize, serialize, EcsData, ReceiveBuf},
     system::Stage,
 };
-use notify::{RecommendedWatcher, RecursiveMode, Result, Watcher};
 use plugin::Plugin;
 
 // Keep the ECS in an Arc, so that it may be read simultaneously
 pub struct Config {
     /// Run server-side plugins
     pub is_server: bool,
-    /// Watch and hotload plugins?
-    pub hotload: bool,
-    // /// Full list of plugins
 }
 
 /// Plugin state, plugin code, ECS state, messaging machinery, and more
 pub struct Engine {
     /// WASM engine
-    _wasm: wasmtime::Engine,
+    wasm: wasmtime::Engine,
     /// Plugin states
     plugins: Vec<PluginState>,
     /// Entity and Component data
@@ -38,7 +35,7 @@ pub struct Engine {
     /// Network inbox; messages to be sent from plugins to the remote(s)
     network_inbox: Vec<MessageData>,
     /// Configuration we were constructed with
-    cfg: EngineConfig,
+    cfg: Config,
 }
 
 /// Plugin management structure
@@ -57,34 +54,40 @@ struct PluginState {
 }
 
 impl PluginState {
-    pub fn new(code: Plugin) -> Self {
-        PluginState {
+    pub fn new(path: PathBuf, wasm: &wasmtime::Engine) -> Result<Self> {
+        let code = Plugin::new(wasm, &path)?;
+        Ok(PluginState {
+            path,
             code,
             outbox: vec![],
             systems: vec![],
             inbox: Default::default(),
-        }
+        })
+    }
+
+    pub fn name(&self) -> String {
+        self.path.file_name().unwrap().to_str().unwrap().to_string()
     }
 }
 
 impl Engine {
     /// Load plugins at the given paths
-    pub fn new(plugins: &[PathBuf], cf: bool) -> Result<Self> {
+    pub fn new(plugins: &[PathBuf], cfg: Config) -> Result<Self> {
         let wasm = wasmtime::Engine::new(&Default::default())?;
         let plugins: Vec<PluginState> = plugins
             .iter()
-            .map(|p| Plugin::new(&wasm, p).map(PluginState::new))
+            .map(|p| PluginState::new(p.clone(), &wasm))
             .collect::<Result<_>>()?;
         let ecs = Ecs::new();
 
         Ok(Self {
-            _wasm: wasm,
+            wasm,
             indices: HashMap::new(),
             plugins,
             ecs,
             external_inbox: HashMap::new(),
             network_inbox: vec![],
-            is_server,
+            cfg,
         })
     }
 
@@ -93,40 +96,47 @@ impl Engine {
     /// and init errors, and also to allow you to decide when plugin code actually begins executing.
     pub fn init_plugins(&mut self) -> Result<()> {
         // Dispatch all plugins
-        for (plugin_idx, plugin) in self.plugins.iter_mut().enumerate() {
-            // Dispatch init signal
-            let send = ReceiveBuf {
-                system: None,
-                inbox: Default::default(),
-                ecs: EcsData::default(),
-                is_server: self.is_server,
-            };
-            let recv = plugin.code.dispatch(&send)?;
-
-            // Apply ECS commands
-            apply_ecs_commands(&mut self.ecs, &recv.commands)?;
-
-            // Setup message indices for each system
-            for (sys_idx, sys) in recv.systems.iter().enumerate() {
-                // Set up lookup table
-                for &channel in &sys.subscriptions {
-                    self.indices
-                        .entry(channel)
-                        .or_default()
-                        .push((plugin_idx, sys_idx));
-                }
-
-                // Initialize system's inbox
-                plugin.inbox.push(HashMap::new());
-            }
-
-            // Set up schedule, send first messages
-            plugin.systems = recv.systems;
-            plugin.outbox = recv.outbox;
+        for plugin_idx in 0..self.plugins.len() {
+            self.init_plugin(plugin_idx)?;
         }
 
         // Distribute messages
         self.propagate();
+
+        Ok(())
+    }
+
+    fn init_plugin(&mut self, plugin_idx: usize) -> Result<()> {
+        log::info!("Initializing {}", self.plugins[plugin_idx].name());
+        // Dispatch init signal
+        let send = ReceiveBuf {
+            system: None,
+            inbox: Default::default(),
+            ecs: EcsData::default(),
+            is_server: self.cfg.is_server,
+        };
+        let recv = self.plugins[plugin_idx].code.dispatch(&send)?;
+
+        // Apply ECS commands
+        apply_ecs_commands(&mut self.ecs, &recv.commands)?;
+
+        // Setup message indices for each system
+        for (sys_idx, sys) in recv.systems.iter().enumerate() {
+            // Set up lookup table
+            for &channel in &sys.subscriptions {
+                self.indices
+                    .entry(channel)
+                    .or_default()
+                    .push((plugin_idx, sys_idx));
+            }
+
+            // Initialize system's inbox
+            self.plugins[plugin_idx].inbox.push(HashMap::new());
+        }
+
+        // Set up schedule, send first messages
+        self.plugins[plugin_idx].systems = recv.systems;
+        self.plugins[plugin_idx].outbox = recv.outbox;
 
         Ok(())
     }
@@ -148,7 +158,7 @@ impl Engine {
                 let recv_buf = ReceiveBuf {
                     system: Some(system_idx),
                     inbox: std::mem::take(&mut plugin.inbox[system_idx]),
-                    is_server: self.is_server,
+                    is_server: self.cfg.is_server,
                     ecs: ecs_data,
                 };
 
@@ -241,5 +251,20 @@ impl Engine {
             data: serialize(&data).expect("Failed to serialize message"),
             client: None,
         });
+    }
+
+    /// Reload the plugin at the given path
+    pub fn reload(&mut self, path: PathBuf) -> Result<()> {
+        let i = self
+            .plugins
+            .iter_mut()
+            .position(|p| p.path.canonicalize().unwrap() == path.canonicalize().unwrap())
+            .expect("Requested plugin is not loaded");
+
+        let new_plugin = PluginState::new(path, &self.wasm)?;
+        _ = std::mem::replace(&mut self.plugins[i], new_plugin);
+        self.init_plugin(i)?;
+
+        Ok(())
     }
 }

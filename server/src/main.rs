@@ -1,12 +1,14 @@
 use anyhow::Result;
 use cimvr_common::FrameTime;
 use cimvr_engine::ecs::{query_ecs_data, Ecs};
+use cimvr_engine::hotload::Hotloader;
 use cimvr_engine::interface::prelude::{
     query, Access, ClientId, Connections, EntityId, Synchronized,
 };
 use cimvr_engine::interface::serial::{
     deserialize, serialize, serialize_into, serialized_size, EcsData,
 };
+use cimvr_engine::Config;
 use cimvr_engine::{interface::system::Stage, network::*, Engine};
 
 use std::time::Instant;
@@ -44,14 +46,15 @@ fn main() -> Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
     // Set up engine and initialize plugins
-    let mut engine = Engine::new(&args.plugins, true)?;
+    let hotload = Hotloader::new(&args.plugins)?;
+    let mut engine = Engine::new(&args.plugins, Config { is_server: true })?;
     engine.init_plugins()?;
 
     // Create a new thread for the connection listener
     let (conn_tx, conn_rx) = mpsc::channel();
     std::thread::spawn(move || connection_listener(bind_addr, conn_tx));
 
-    let mut server = Server::new(conn_rx, engine);
+    let mut server = Server::new(conn_rx, engine, hotload);
     let target = Duration::from_millis(25);
 
     loop {
@@ -85,14 +88,16 @@ struct Server {
     engine: Engine,
     conn_rx: Receiver<(TcpStream, SocketAddr)>,
     conns: Vec<Connection>,
+    hotload: Hotloader,
     start_time: Instant,
     last_frame: Instant,
     id_counter: u32,
 }
 
 impl Server {
-    fn new(conn_rx: Receiver<(TcpStream, SocketAddr)>, engine: Engine) -> Self {
+    fn new(conn_rx: Receiver<(TcpStream, SocketAddr)>, engine: Engine, hotload: Hotloader) -> Self {
         Self {
+            hotload,
             engine,
             last_frame: Instant::now(),
             start_time: Instant::now(),
@@ -103,6 +108,12 @@ impl Server {
     }
 
     fn update(&mut self) -> Result<()> {
+        // Check for hotloaded plugins
+        for path in self.hotload.hotload()? {
+            log::info!("Reloading {}", path.display());
+            self.engine.reload(path)?;
+        }
+
         let mut conns_tmp = vec![];
 
         // Check for new connections
