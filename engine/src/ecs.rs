@@ -102,10 +102,12 @@ impl Ecs {
     /// Add component to entity, or overwrite existing data
     pub fn add_component_raw(&mut self, entity: EntityId, component: ComponentId, data: &[u8]) {
         assert_eq!(data.len(), component.size as usize, "");
-        assert!(
-            self.entities.contains(&entity),
-            "Entity not found, cannot add component"
-        );
+        if !self.entities.contains(&entity) {
+            return log::error!(
+                "Failed to remove component; entity {:?} does not exist",
+                entity
+            );
+        }
 
         // Get the component
         let comp = self.map.entry(component).or_default();
@@ -119,35 +121,65 @@ impl Ecs {
     }
 
     /// Remove the given component from the given entity
-    pub fn remove_component(&mut self, entity: EntityId, component: ComponentId) -> Vec<u8> {
-        self.map
-            .get_mut(&component)
-            .expect("Missing entity")
-            .remove(&entity)
-            .expect("Entity missing component")
+    pub fn remove_component(&mut self, entity: EntityId, component: ComponentId) {
+        let Some(component) = self.map.get_mut(&component) else {
+            return log::error!("Component {:?} does not exist", component);
+        };
+
+        let comp = component.remove(&entity);
+
+        if comp.is_none() {
+            log::error!(
+                "Entity {:?} does not have component {:?}",
+                entity,
+                component
+            );
+        }
     }
 
     /// Convenient get function
     pub fn get<C: Component>(&self, entity: EntityId) -> C {
-        deserialize(self.get_raw(entity, C::ID)).expect("Failed to deserialize component")
+        deserialize(self.get_raw(entity, C::ID).unwrap()).expect("Failed to deserialize component")
     }
 
     /// Get data associated with a component
-    pub fn get_raw(&self, entity: EntityId, component: ComponentId) -> &[u8] {
-        self.map
-            .get(&component)
-            .expect("Missing entity")
-            .get(&entity)
-            .expect("Entity missing component")
+    pub fn get_raw(&self, entity: EntityId, component: ComponentId) -> Option<&[u8]> {
+        let Some(component) = self.map.get(&component) else {
+            log::error!("Component {:?} does not exist", component);
+            return None;
+        };
+
+        let comp = component.get(&entity);
+
+        if comp.is_none() {
+            log::error!(
+                "Entity {:?} does not have component {:?}",
+                entity,
+                component
+            );
+        }
+
+        comp.map(|s| s.as_slice())
     }
 
     /// Get data associated with a component
-    pub fn get_mut(&mut self, entity: EntityId, component: ComponentId) -> &mut [u8] {
-        self.map
-            .get_mut(&component)
-            .expect("Missing entity")
-            .get_mut(&entity)
-            .expect("Entity missing component")
+    pub fn get_mut(&mut self, entity: EntityId, component: ComponentId) -> Option<&mut [u8]> {
+        let Some(column) = self.map.get_mut(&component) else {
+            log::error!("Component {:?} does not exist", component);
+            return None;
+        };
+
+        let comp = column.get_mut(&entity);
+
+        if comp.is_none() {
+            log::error!(
+                "Entity {:?} does not have component {:?}",
+                entity,
+                component
+            );
+        }
+
+        comp.map(|s| s.as_mut_slice())
     }
 
     /// Get all entities and data associated with the given component
@@ -254,7 +286,9 @@ pub fn query_ecs_data(ecs: &mut Ecs, query: &Query) -> Result<EcsData> {
 
     for &entity in &entities {
         for (term, comp) in query.iter().zip(&mut components) {
-            comp.extend_from_slice(ecs.get_raw(entity, term.component));
+            if let Some(v) = ecs.get_raw(entity, term.component) {
+                comp.extend_from_slice(v);
+            }
         }
     }
 

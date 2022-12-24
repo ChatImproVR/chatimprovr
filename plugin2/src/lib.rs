@@ -78,7 +78,7 @@ impl UserState for ServerState {
         io.add_component(cube_ent, &Synchronized);
 
         // Add cubes
-        let n = 10;
+        let n = 100;
         for i in 0..n {
             let i = i as f32 / n as f32;
             let cube_ent = io.create_entity();
@@ -143,11 +143,11 @@ impl ServerState {
                 let rad = 20. * v;
 
                 let transf = Transform {
-                    pos: Point3::new(theta.cos() * rad, 0., theta.sin() * rad),
+                    pos: Point3::new(theta.cos() * rad, rad.cos() * 3., theta.sin() * rad),
                     orient: UnitQuaternion::face_towards(
                         &Vector3::new(
                             k * theta.cos() * (theta * k).cos() - theta.sin() * v,
-                            0.,
+                            -rad.sin() * 3.,
                             k * theta.sin() * (theta * k).cos() + theta.cos() * v,
                         ),
                         &Vector3::y(),
@@ -162,7 +162,7 @@ impl ServerState {
 
 fn cube() -> RenderData {
     let vertices = vec![
-        Vertex::new([-1.0, -1.0, -1.0], [0.0, 1.0, 1.0]),
+        Vertex::new([-1.0, -1.0, -10.0], [0.0, 1.0, 1.0]),
         Vertex::new([1.0, -1.0, -1.0], [1.0, 0.0, 1.0]),
         Vertex::new([1.0, 1.0, -1.0], [1.0, 1.0, 0.0]),
         Vertex::new([-1.0, 1.0, -1.0], [0.0, 1.0, 1.0]),
