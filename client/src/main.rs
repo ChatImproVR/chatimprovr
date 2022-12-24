@@ -1,10 +1,12 @@
 extern crate glow as gl;
 use anyhow::{bail, Context, Result};
+use cimvr_engine::hotload::Hotloader;
 use cimvr_engine::interface::prelude::{query, Access, Synchronized};
 use cimvr_engine::interface::serial::deserialize;
 use cimvr_engine::network::{
     length_delmit_message, AsyncBufferedReceiver, ClientToServer, ReadState, ServerToClient,
 };
+use cimvr_engine::Config;
 use cimvr_engine::{interface::system::Stage, Engine};
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
@@ -38,6 +40,7 @@ struct Client {
     input: UserInputHandler,
     recv_buf: AsyncBufferedReceiver,
     conn: TcpStream,
+    hotload: Hotloader,
 }
 
 fn main() -> Result<()> {
@@ -68,11 +71,14 @@ fn main() -> Result<()> {
         gl::Context::from_loader_function(|s| glutin_ctx.get_proc_address(s) as *const _)
     };
 
+    // Set up hotloading
+    let hotload = Hotloader::new(&args.plugins)?;
+
     // Set up engine and initialize plugins
-    let engine = Engine::new(&args.plugins, false)?;
+    let engine = Engine::new(&args.plugins, Config { is_server: false })?;
 
     // Setup client code
-    let mut client = Client::new(engine, gl, tcp_stream)?;
+    let mut client = Client::new(engine, gl, tcp_stream, hotload)?;
 
     // Run event loop
     event_loop.run(move |event, _, control_flow| {
@@ -104,7 +110,12 @@ fn main() -> Result<()> {
 }
 
 impl Client {
-    pub fn new(mut engine: Engine, gl: gl::Context, conn: TcpStream) -> Result<Self> {
+    pub fn new(
+        mut engine: Engine,
+        gl: gl::Context,
+        conn: TcpStream,
+        hotload: Hotloader,
+    ) -> Result<Self> {
         let render = RenderPlugin::new(gl, &mut engine).context("Setting up render engine")?;
         let input = UserInputHandler::new();
 
@@ -112,6 +123,7 @@ impl Client {
         engine.init_plugins()?;
 
         Ok(Self {
+            hotload,
             conn,
             recv_buf: AsyncBufferedReceiver::new(),
             engine,
@@ -129,6 +141,12 @@ impl Client {
     }
 
     pub fn frame(&mut self) -> Result<()> {
+        // Check for hotloaded plugins
+        for path in self.hotload.hotload()? {
+            log::info!("Reloading {}", path.display());
+            self.engine.reload(path)?;
+        }
+
         // Synchronize
         match self.recv_buf.read(&mut self.conn)? {
             ReadState::Invalid => {

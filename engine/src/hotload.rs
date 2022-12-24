@@ -48,7 +48,7 @@ impl Hotloader {
         Ok(self
             .rx
             .try_iter()
-            .map(|p| p.canonicalize().expect("Path cannot cannonicalize"))
+            .filter_map(|p| p.canonicalize().ok())
             .filter(|p| self.paths.contains(p))
             .collect())
     }

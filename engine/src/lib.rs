@@ -255,15 +255,22 @@ impl Engine {
 
     /// Reload the plugin at the given path
     pub fn reload(&mut self, path: PathBuf) -> Result<()> {
+        // Find old plugin
         let i = self
             .plugins
             .iter_mut()
             .position(|p| p.path.canonicalize().unwrap() == path.canonicalize().unwrap())
             .expect("Requested plugin is not loaded");
 
+        // Replace old plugin
         let new_plugin = PluginState::new(path, &self.wasm)?;
         _ = std::mem::replace(&mut self.plugins[i], new_plugin);
+
+        // Initialize new plugin
         self.init_plugin(i)?;
+
+        // Propagate startup messages
+        self.propagate();
 
         Ok(())
     }
