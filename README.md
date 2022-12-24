@@ -41,3 +41,11 @@ Plugins are required to import `engine_interface`. Most plugins will need to imp
 * [ ] Networking!
 * [ ] Optionally-unreliable networking (faster but tradeoff packet loss, streamed instead of diff'd) 
 * [ ] Figure out how to organize code for serverside/clientside easier. Should be able to compile for both...
+* [ ] Hot-reloading
+* [ ] Trigger hot reload on wasm file change
+
+Access components:
+* `Synchronized`: Object is sent from server to client periodically
+* `Saved`: Entity and associated components written to disk 
+    * Different owners? Like clients' loaded plugins should be able to retrieve data on exit
+    * 'Guest' plugins alongside client and server...
