@@ -103,6 +103,9 @@ impl Engine {
         // Distribute messages
         self.propagate();
 
+        // Run PostInit stage
+        self.dispatch(Stage::PostInit)?;
+
         Ok(())
     }
 
@@ -271,6 +274,9 @@ impl Engine {
 
         // Propagate startup messages
         self.propagate();
+
+        // Run PostInit stage
+        self.dispatch(Stage::PostInit)?;
 
         Ok(())
     }

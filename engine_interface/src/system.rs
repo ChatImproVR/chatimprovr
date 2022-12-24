@@ -23,7 +23,9 @@ pub struct SystemDescriptor {
 /// * Send messages to server
 #[derive(Clone, Copy, Debug, Hash, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Stage {
-    /// Keyboard and other Input is received before
+    /// Plugins are initialized before this stage. Runs every time *any* plugin is initialized
+    PostInit,
+    /// Keyboard and other Input is received before this stage
     PreUpdate,
     /// Physics data is processed before this stage
     Update,

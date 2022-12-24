@@ -62,34 +62,7 @@ impl ClientState {
 
 impl UserState for ServerState {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
-        println!("HEWWO");
-
-        // Cube mesh
-        let cube_rdr = Render {
-            id: CUBE_HANDLE,
-            primitive: Primitive::Triangles,
-            limit: None,
-        };
-
-        // Create central cube
-        let cube_ent = io.create_entity();
-        io.add_component(cube_ent, &Transform::default());
-        io.add_component(cube_ent, &cube_rdr);
-        io.add_component(cube_ent, &Synchronized);
-
-        // Add cubes
-        let n = 100;
-        for i in 0..n {
-            let i = i as f32 / n as f32;
-            let cube_ent = io.create_entity();
-
-            let r = i * TAU;
-
-            io.add_component(cube_ent, &Transform::default());
-            io.add_component(cube_ent, &cube_rdr);
-            io.add_component(cube_ent, &Synchronized);
-            io.add_component(cube_ent, &MoveCube { r });
-        }
+        println!("HEWO");
 
         // Schedule the systems
         schedule.add_system(
@@ -113,11 +86,53 @@ impl UserState for ServerState {
             Self::report_clients,
         );
 
+        schedule.add_system(
+            SystemDescriptor {
+                stage: Stage::PostInit,
+                subscriptions: vec![],
+                query: vec![query::<MoveCube>(Access::Read)],
+            },
+            Self::startup,
+        );
+
         Self
     }
 }
 
 impl ServerState {
+    fn startup(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        for k in query.iter() {
+            io.remove_entity(k.entity());
+        }
+
+        // Cube mesh
+        let cube_rdr = Render {
+            id: CUBE_HANDLE,
+            primitive: Primitive::Lines,
+            limit: None,
+        };
+
+        // Create central cube
+        let cube_ent = io.create_entity();
+        io.add_component(cube_ent, &Transform::default());
+        io.add_component(cube_ent, &cube_rdr);
+        io.add_component(cube_ent, &Synchronized);
+
+        // Add cubes
+        let n = 100;
+        for i in 0..n {
+            let i = i as f32 / n as f32;
+            let cube_ent = io.create_entity();
+
+            let r = i * TAU;
+
+            io.add_component(cube_ent, &Transform::default());
+            io.add_component(cube_ent, &cube_rdr);
+            io.add_component(cube_ent, &Synchronized);
+            io.add_component(cube_ent, &MoveCube { r });
+        }
+    }
+
     fn report_clients(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
         let msgs: Vec<_> = io.inbox_clients::<MyMessage>().collect();
         for (client, msg) in msgs {
@@ -143,11 +158,11 @@ impl ServerState {
                 let rad = 20. * v;
 
                 let transf = Transform {
-                    pos: Point3::new(theta.cos() * rad, rad.cos() * 3., theta.sin() * rad),
+                    pos: Point3::new(theta.cos() * rad, rad.cos() * 1., theta.sin() * rad),
                     orient: UnitQuaternion::face_towards(
                         &Vector3::new(
                             k * theta.cos() * (theta * k).cos() - theta.sin() * v,
-                            -rad.sin() * 3.,
+                            -rad.sin() * 1.,
                             k * theta.sin() * (theta * k).cos() + theta.cos() * v,
                         ),
                         &Vector3::y(),
