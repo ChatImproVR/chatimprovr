@@ -154,7 +154,7 @@ impl RenderEngine {
     /// Make the given render data available to the GPU
     pub fn upload(&mut self, gl: &gl::Context, data: &RenderData) -> Result<()> {
         // TODO: Use a different mesh type? Switch for upload frequency? Hmmm..
-        if let Some(buf) = self.meshes.get(&data.id) {
+        if let Some(buf) = self.meshes.get_mut(&data.id) {
             update_mesh(gl, buf, &data.mesh);
         } else {
             let gpu_mesh =
@@ -359,7 +359,7 @@ fn upload_mesh(gl: &gl::Context, usage: u32, mesh: &Mesh) -> Result<GpuMesh, Str
     }
 }
 
-fn update_mesh(gl: &gl::Context, buf: &GpuMesh, mesh: &Mesh) {
+fn update_mesh(gl: &gl::Context, buf: &mut GpuMesh, mesh: &Mesh) {
     unsafe {
         gl.bind_buffer(glow::ARRAY_BUFFER, Some(buf.vbo));
         gl.buffer_data_u8_slice(
@@ -374,5 +374,7 @@ fn update_mesh(gl: &gl::Context, buf: &GpuMesh, mesh: &Mesh) {
             bytemuck::cast_slice(&mesh.indices),
             glow::DYNAMIC_DRAW,
         );
+
+        buf.index_count = mesh.indices.len() as i32;
     }
 }
