@@ -15,9 +15,11 @@ use input::UserInputHandler;
 use render::RenderPlugin;
 use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
+use ui::OverlayUi;
 
 mod input;
 mod render;
+mod ui;
 
 use structopt::StructOpt;
 
@@ -43,7 +45,7 @@ struct Client {
     conn: TcpStream,
     hotload: Hotloader,
     egui_glow: EguiGlow,
-    test: [f32; 3],
+    ui: OverlayUi,
 }
 
 fn main() -> Result<()> {
@@ -126,15 +128,16 @@ impl Client {
     ) -> Result<Self> {
         let render = RenderPlugin::new(gl, &mut engine).context("Setting up render engine")?;
         let input = UserInputHandler::new();
+        let ui = OverlayUi::new();
 
         // Initialize plugins AFTER we set up our plugins
         engine.init_plugins()?;
 
         Ok(Self {
-            test: [1.; 3],
             egui_glow,
             hotload,
             conn,
+            ui,
             recv_buf: AsyncBufferedReceiver::new(),
             engine,
             render,
@@ -198,15 +201,7 @@ impl Client {
         self.engine.dispatch(Stage::Update)?;
 
         // UI updates
-        self.egui_glow.run(window, |egui_ctx| {
-            egui::SidePanel::left("my_side_panel").show(egui_ctx, |ui| {
-                ui.heading("Hello World!");
-                if ui.button("Quit").clicked() {
-                    dbg!("Nuh uh");
-                }
-                ui.color_edit_button_rgb(&mut self.test);
-            });
-        });
+        self.egui_glow.run(window, |ctx| self.ui.run(ctx));
 
         // Render game, then egui
         self.render.frame(&mut self.engine)?;
