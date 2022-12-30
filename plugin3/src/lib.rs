@@ -28,6 +28,15 @@ impl UserState for ClientState {
             Self::ui_update,
         );
 
+        sched.add_system(
+            SystemDescriptor {
+                stage: Stage::Update,
+                subscriptions: vec![],
+                query: vec![query::<Transform>(Access::Write)],
+            },
+            Self::move_up,
+        );
+
         let schmeal = ui.add(
             io,
             "Thing".into(),
@@ -61,6 +70,15 @@ impl ClientState {
             //if val[1] == (State::Button { clicked: true }) {
             dbg!(val);
             //}
+        }
+    }
+
+    fn move_up(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        let val = self.ui.read(self.schmeal);
+        let State::DragValue { value } = val[2] else { panic!() };
+
+        for key in query.iter() {
+            query.modify::<Transform>(key, |v| v.pos.y += value);
         }
     }
 }
