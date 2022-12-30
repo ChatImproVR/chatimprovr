@@ -128,7 +128,7 @@ impl Client {
     ) -> Result<Self> {
         let render = RenderPlugin::new(gl, &mut engine).context("Setting up render engine")?;
         let input = UserInputHandler::new();
-        let ui = OverlayUi::new();
+        let ui = OverlayUi::new(&mut engine);
 
         // Initialize plugins AFTER we set up our plugins
         engine.init_plugins()?;
@@ -201,6 +201,7 @@ impl Client {
         self.engine.dispatch(Stage::Update)?;
 
         // UI updates
+        self.ui.update(&mut self.engine);
         self.egui_glow
             .run(window, |ctx| self.ui.run(ctx, &mut self.engine));
 

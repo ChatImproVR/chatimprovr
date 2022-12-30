@@ -15,7 +15,8 @@ struct Element {
 }
 
 impl OverlayUi {
-    pub fn new() -> Self {
+    pub fn new(engine: &mut Engine) -> Self {
+        engine.subscribe::<UiRequest>();
         Self {
             elements: HashMap::new(),
         }
