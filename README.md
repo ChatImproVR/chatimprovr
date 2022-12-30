@@ -32,18 +32,19 @@ Plugins are required to import `engine_interface`. Most plugins will need to imp
 
 # TODO
 * [x] Use the `log` crate for errors and warnings host-size
-* [ ] Interface for server-client messaging
+* [x] Interface for server-client messaging
 * [ ] Display plugin names along with print. Should happen in log...
 * [ ] Use real UUIDs instead of these random numbers and silly ID constants
 * [ ] All of the other TODOs... `grep -ir 'todo' */src/*`
 * [ ] Loading bar for plugins
-* [ ] Support OpenXR
-* [ ] Networking!
+* [x] Networking!
 * [ ] Optionally-unreliable networking (faster but tradeoff packet loss, streamed instead of diff'd) 
-* [ ] Figure out how to organize code for serverside/clientside easier. Should be able to compile for both...
-* [ ] Hot-reloading
-* [ ] Trigger hot reload on wasm file change
+* [x] Figure out how to organize code for serverside/clientside easier. Should be able to compile for both...
+* [x] Hot-reloading
+* [x] Trigger hot reload on wasm file change
 * [ ] Limits on plugin resources; execution time, message and component sizes, etc
+* [ ] VR support (OpenXR)
+* [ ] VR support for GUI (OpenXR keyboard?)
 
 Access components:
 * `Synchronized`: Object is sent from server to client periodically
