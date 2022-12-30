@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use cimvr_common::ui::*;
 use cimvr_engine::Engine;
-use egui::{Context, Response, TextEdit, Ui};
+use egui::{Context, DragValue, Response, TextEdit, Ui};
 
 pub struct OverlayUi {
     elements: HashMap<UiHandle, Element>,
@@ -114,6 +114,17 @@ fn show(ui: &mut Ui, schema: &Schema, state: &mut State) -> bool {
             *clicked = ui.button(text).clicked();
             *clicked
         }
-        _ => todo!(),
+        (Schema::DragValue { min, max }, State::DragValue { value }) => {
+            let range = min.unwrap_or(f32::MIN)..=max.unwrap_or(f32::MAX);
+            ui.add(DragValue::new(value).clamp_range(range)).changed()
+        }
+        (schema, state) => {
+            log::error!(
+                "Invalid UI schema and state combo: {:?} {:?}",
+                schema,
+                state
+            );
+            false
+        }
     }
 }

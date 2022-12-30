@@ -36,10 +36,15 @@ impl UserState for ClientState {
                 Schema::Button {
                     text: "BIG Schmeal".into(),
                 },
+                Schema::DragValue {
+                    min: Some(-100.),
+                    max: Some(420.0),
+                },
             ],
             vec![
                 State::TextInput { text: "no".into() },
                 State::Button { clicked: false },
+                State::DragValue { value: 0. },
             ],
         );
 
