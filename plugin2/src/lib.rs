@@ -61,7 +61,7 @@ impl ClientState {
 }
 
 impl UserState for ServerState {
-    fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
+    fn new(_io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
         println!("HEWO");
 
         // Schedule the systems

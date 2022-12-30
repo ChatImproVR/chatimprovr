@@ -192,6 +192,17 @@ impl Engine {
         }
     }
 
+    // TODO: Find a better name for this
+    /// Broadcast message to relevant destinations
+    pub fn broadcast(&mut self, msg: MessageData) {
+        match msg.channel.locality {
+            Locality::Local => self.broadcast_local(msg),
+            Locality::Remote => {
+                self.network_inbox.push(msg);
+            }
+        }
+    }
+
     /// Broadcast the message locally, without checkint to see if it's marked with local locality
     pub fn broadcast_local(&mut self, msg: MessageData) {
         if let Some(destinations) = self.indices.get(&msg.channel) {
@@ -202,22 +213,11 @@ impl Engine {
                     .push(msg.clone());
             }
         } else {
-            //log::warn!("Message on channel {:?} has no destination", msg.channel,);
+            log::trace!("Message on channel {:?} has no destination", msg.channel,);
         }
 
         if let Some(inbox) = self.external_inbox.get_mut(&msg.channel) {
             inbox.push(msg.clone());
-        }
-    }
-
-    // TODO: Find a better name for this
-    /// Broadcast message to relevant destinations
-    pub fn broadcast(&mut self, msg: MessageData) {
-        match msg.channel.locality {
-            Locality::Local => self.broadcast_local(msg),
-            Locality::Remote => {
-                self.network_inbox.push(msg);
-            }
         }
     }
 
@@ -231,7 +231,7 @@ impl Engine {
         self.external_inbox.entry(M::CHANNEL).or_default();
     }
 
-    /// Drain messages from the given channel
+    /// Drain messages from the given channel (external inbox)
     pub fn inbox<M: Message>(&mut self) -> impl Iterator<Item = M> + '_ {
         self.external_inbox
             .get_mut(&M::CHANNEL)
@@ -242,7 +242,7 @@ impl Engine {
             })
     }
 
-    /// Drain all network messages
+    /// Drain all outgoing network messages
     pub fn network_inbox(&mut self) -> Vec<MessageData> {
         std::mem::take(&mut self.network_inbox)
     }
