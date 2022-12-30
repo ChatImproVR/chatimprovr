@@ -178,21 +178,26 @@ impl RenderEngine {
     ) -> Result<()> {
         unsafe {
             // Clear depth and color buffers
-            gl.enable(gl::CULL_FACE);
             gl.disable(gl::BLEND);
-
             gl.disable(gl::SCISSOR_TEST);
-            gl.enable(glow::DEPTH_TEST);
-            gl.depth_func(glow::LESS);
-            gl.depth_mask(true);
+            gl.disable(gl::STENCIL_TEST);
+            gl.disable(gl::FRAMEBUFFER_SRGB);
 
-            gl.depth_range_f32(0., 1.);
-            gl.clear_depth_f32(1.0);
+            gl.enable(gl::CULL_FACE);
+            gl.enable(glow::DEPTH_TEST);
 
             let [r, g, b] = clear_color;
             gl.clear_color(r, g, b, 1.0);
+            gl.depth_func(glow::LESS);
+            gl.depth_mask(true);
+            gl.depth_range_f32(0., 1.);
+            gl.clear_depth_f32(1.0);
 
             gl.clear(gl::COLOR_BUFFER_BIT | gl::STENCIL_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+
+            // Draw map
+            // Must bind program before setting uniforms!!!
+            gl.use_program(Some(self.shader));
 
             // Set camera matrix
             gl.uniform_matrix_4_f32_slice(
@@ -208,11 +213,6 @@ impl RenderEngine {
             );
 
             let transf_loc = gl.get_uniform_location(self.shader, "transf");
-
-            // Draw map
-            gl.use_program(Some(self.shader));
-            /*
-             */
 
             // TODO: Literally ANY optimization
             for (transf, rdr_comp) in transforms.iter().zip(handles) {
@@ -247,7 +247,7 @@ impl RenderEngine {
                     // Draw mesh data
                     gl.bind_vertex_array(Some(mesh.vao));
                     gl.draw_elements(primitive, limit, gl::UNSIGNED_INT, 0);
-                    gl.bind_vertex_array(None);
+                    //gl.bind_vertex_array(None);
                 } else {
                     log::warn!(
                         "Warning: Attempted to access absent mesh data {:?}",
@@ -255,6 +255,8 @@ impl RenderEngine {
                     );
                 }
             }
+
+            gl.use_program(None);
 
             Ok(())
         }
