@@ -43,6 +43,7 @@ struct Client {
     conn: TcpStream,
     hotload: Hotloader,
     egui_glow: EguiGlow,
+    test: [f32; 3],
 }
 
 fn main() -> Result<()> {
@@ -130,6 +131,7 @@ impl Client {
         engine.init_plugins()?;
 
         Ok(Self {
+            test: [1.; 3],
             egui_glow,
             hotload,
             conn,
@@ -143,8 +145,9 @@ impl Client {
     pub fn handle_event(&mut self, event: &Event<()>) {
         match event {
             Event::WindowEvent { event, .. } => {
-                self.input.handle_winit_event(event);
-                self.egui_glow.on_event(&event);
+                if !self.egui_glow.on_event(&event) {
+                    self.input.handle_winit_event(event);
+                }
                 match event {
                     WindowEvent::Resized(physical_size) => {
                         self.render.set_screen_size(*physical_size)
@@ -201,13 +204,15 @@ impl Client {
                 if ui.button("Quit").clicked() {
                     dbg!("Nuh uh");
                 }
-                //ui.color_edit_button_rgb(&mut clear_color);
+                ui.color_edit_button_rgb(&mut self.test);
             });
         });
+
+        // Render game, then egui
+        self.render.frame(&mut self.engine)?;
         self.egui_glow.paint(window);
 
         // Post-update
-        //self.render.frame(&mut self.engine)?;
         self.engine.dispatch(Stage::PostUpdate)?;
 
         // Send message to server

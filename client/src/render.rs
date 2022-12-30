@@ -178,9 +178,20 @@ impl RenderEngine {
     ) -> Result<()> {
         unsafe {
             // Clear depth and color buffers
+            gl.enable(gl::CULL_FACE);
+            gl.disable(gl::BLEND);
+
+            gl.disable(gl::SCISSOR_TEST);
+            gl.enable(glow::DEPTH_TEST);
+            gl.depth_func(glow::LESS);
+            gl.depth_mask(true);
+
+            gl.depth_range_f32(0., 1.);
+            gl.clear_depth_f32(1.0);
+
             let [r, g, b] = clear_color;
             gl.clear_color(r, g, b, 1.0);
-            gl.clear_depth_f32(1.);
+
             gl.clear(gl::COLOR_BUFFER_BIT | gl::STENCIL_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
             // Set camera matrix
@@ -200,6 +211,8 @@ impl RenderEngine {
 
             // Draw map
             gl.use_program(Some(self.shader));
+            /*
+             */
 
             // TODO: Literally ANY optimization
             for (transf, rdr_comp) in transforms.iter().zip(handles) {
