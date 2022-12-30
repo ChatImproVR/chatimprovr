@@ -30,7 +30,8 @@ pub struct ComponentId {
     /// Preemptive FAQ:
     /// Q: What? How do I get this number?
     /// A: Just put any ol number in and use it in `add_component()` once.
-    /// A: Or just use `engine_interface::serial::serialized_size()`
+    /// The resulting crash will inform you of the size
+    /// A: Or just use `engine_interface::serial::serialized_size()` at runtime
     ///
     /// Q: Why do you need this?
     /// A: So the engine can check that it's right
@@ -40,6 +41,10 @@ pub struct ComponentId {
     /// A: Not always! `std::mem::size_of<T>()` (`where T: Component`)
     /// can be different than `serialized_size::<T>()`.
     /// Layout in memory subject to change
+    ///
+    /// Q: Why is this u16?
+    /// A: Are you kidding? Components >64k? Are you outta your mind?!
+    /// A: Honestly this should be u8 but I was merciful.
     pub size: u16,
 }
 
