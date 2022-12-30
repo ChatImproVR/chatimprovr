@@ -26,10 +26,10 @@ impl OverlayUi {
         egui::SidePanel::left("my_side_panel").show(ctx, |ui| {
             for (id, elem) in self.elements.iter_mut() {
                 if elem.show(ui) {
-                    engine.send(UiUpdate {
+                    engine.send(dbg!(UiUpdate {
                         id: *id,
                         state: elem.state.clone(),
-                    });
+                    }));
                 }
             }
         });
@@ -80,7 +80,7 @@ impl Element {
         self.schema
             .iter()
             .zip(&mut self.state)
-            .all(|(h, t)| show(ui, h, t).changed())
+            .any(|(h, t)| show(ui, h, t).changed())
     }
 }
 
