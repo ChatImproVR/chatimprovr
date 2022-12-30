@@ -49,10 +49,15 @@ impl UserState for ClientState {
                     min: Some(-100.),
                     max: Some(420.0),
                 },
+                Schema::DragValue {
+                    min: Some(-100.),
+                    max: Some(420.0),
+                },
             ],
             vec![
                 State::TextInput { text: "no".into() },
                 State::Button { clicked: false },
+                State::DragValue { value: 0. },
                 State::DragValue { value: 0. },
             ],
         );
@@ -76,6 +81,10 @@ impl ClientState {
     fn move_up(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         let val = self.ui.read(self.schmeal);
         let State::DragValue { value } = val[2] else { panic!() };
+
+        self.ui.modify(io, self.schmeal, |s| {
+            s[3] = State::DragValue { value: value + 8.8 }
+        });
 
         for key in query.iter() {
             query.modify::<Transform>(key, |v| v.pos.y += value);
