@@ -177,7 +177,7 @@ impl ServerState {
 
 fn cube() -> RenderData {
     let vertices = vec![
-        Vertex::new([-1.0, -1.0, -10.0], [0.0, 1.0, 1.0]),
+        Vertex::new([-1.0, -1.0, -1.0], [0.0, 1.0, 1.0]),
         Vertex::new([1.0, -1.0, -1.0], [1.0, 0.0, 1.0]),
         Vertex::new([1.0, 1.0, -1.0], [1.0, 1.0, 0.0]),
         Vertex::new([-1.0, 1.0, -1.0], [0.0, 1.0, 1.0]),

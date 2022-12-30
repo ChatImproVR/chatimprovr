@@ -249,8 +249,8 @@ impl EngineIo {
     }
 
     /// Generate a pseudorandom number
-    pub fn random(&mut self) -> u32 {
-        self.pcg.gen_u32()
+    pub fn random(&mut self) -> u128 {
+        self.pcg.gen_u128()
     }
 
     /// Read inbox for this message type

@@ -43,6 +43,7 @@ Plugins are required to import `engine_interface`. Most plugins will need to imp
 * [ ] Figure out how to organize code for serverside/clientside easier. Should be able to compile for both...
 * [ ] Hot-reloading
 * [ ] Trigger hot reload on wasm file change
+* [ ] Limits on plugin resources; execution time, message and component sizes, etc
 
 Access components:
 * `Synchronized`: Object is sent from server to client periodically

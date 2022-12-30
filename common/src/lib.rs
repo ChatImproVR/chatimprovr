@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod input;
 pub mod render;
+pub mod ui;
 
 /// Component representing positino and orientation
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
