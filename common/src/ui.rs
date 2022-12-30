@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-
-use cimvr_engine_interface::prelude::{ChannelId, EngineIo, Locality, Message};
+use cimvr_engine_interface::dbg;
+use cimvr_engine_interface::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 // TODO: Create a derive macro which generates Vec<Schema> and Vec<State>, and consumes Vec<State>
 // to do two-way data bindings for data structures. This could be implemented on components!
@@ -79,6 +79,8 @@ impl UiStateHelper {
     ) -> UiHandle {
         let id = UiHandle(io.random());
 
+        self.map.insert(id, init_state.clone());
+
         let op = UiOperation::Create {
             name: name.to_string(),
             schema,
@@ -88,6 +90,12 @@ impl UiStateHelper {
         io.send(&UiRequest { id, op });
 
         id
+    }
+
+    pub fn read(&self, id: UiHandle) -> &[State] {
+        self.map
+            .get(&id)
+            .expect("Attempted to read invalid UI handle")
     }
 
     pub fn modify<F: FnMut(&mut [State])>(&mut self, io: &mut EngineIo, id: UiHandle, mut f: F) {
@@ -118,6 +126,14 @@ impl UiStateHelper {
 
         let op = UiOperation::Delete;
         io.send(&UiRequest { id, op });
+    }
+
+    pub fn download(&mut self, io: &mut EngineIo) {
+        for msg in io.inbox::<UiUpdate>() {
+            if let Some(state) = self.map.get_mut(&msg.id) {
+                *state = msg.state;
+            }
+        }
     }
 }
 

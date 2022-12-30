@@ -2,6 +2,7 @@
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 
+// TODO: Builder pattern for this!
 /// A description of a system within this plugin
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct SystemDescriptor {
