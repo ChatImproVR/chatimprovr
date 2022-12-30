@@ -108,7 +108,7 @@ fn show(ui: &mut Ui, schema: &Schema, state: &mut State) -> bool {
     match (schema, state) {
         (Schema::Label { text }, State::Label) => ui.label(text).changed(),
         (Schema::TextInput, State::TextInput { text }) => {
-            ui.add(TextEdit::singleline(text)).clicked()
+            ui.add(TextEdit::singleline(text)).changed()
         }
         (Schema::Button { text }, State::Button { clicked }) => {
             *clicked = ui.button(text).clicked();

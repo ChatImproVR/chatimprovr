@@ -51,9 +51,11 @@ impl ClientState {
     fn ui_update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
         self.ui.download(io);
 
-        let val = self.ui.read(self.schmeal);
-        if val[1] == (State::Button { clicked: true }) {
+        if io.inbox::<UiUpdate>().next().is_some() {
+            let val = self.ui.read(self.schmeal);
+            //if val[1] == (State::Button { clicked: true }) {
             dbg!(val);
+            //}
         }
     }
 }
