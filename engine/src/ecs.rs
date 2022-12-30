@@ -78,7 +78,7 @@ impl Ecs {
 
         let did_remove = self.entities.remove(&id);
         if !did_remove {
-            //log::warn!("Attempted to remove non-existant entity {:#?}", id);
+            log::warn!("Attempted to remove non-existant entity {:#?}", id);
         }
     }
 
@@ -265,16 +265,18 @@ impl Ecs {
     }
 
     pub fn import(&mut self, query: &[QueryComponent], imported: EcsMap) {
+        // Remove existing entities in the given query
         let entities: Vec<EntityId> = self.query(query).into_iter().collect();
-
         for id in entities {
             self.remove_entity(id);
         }
 
+        // Add component data from import
         for (id, import_comp) in imported {
             let my_comp = self.map.entry(id).or_default();
             for (ent, data) in import_comp {
                 my_comp.insert(ent, data);
+                self.entities.insert(ent);
             }
         }
     }
