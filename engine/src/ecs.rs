@@ -104,7 +104,8 @@ impl Ecs {
         assert_eq!(data.len(), component.size as usize, "");
         if !self.entities.contains(&entity) {
             return log::error!(
-                "Failed to remove component; entity {:?} does not exist",
+                "Failed to add component {:X?}; entity {:?} does not exist",
+                component,
                 entity
             );
         }
