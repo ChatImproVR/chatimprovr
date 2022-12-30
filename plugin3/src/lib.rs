@@ -32,14 +32,14 @@ impl UserState for ClientState {
             io,
             "Thing".into(),
             vec![
-                Schema::Button {
-                    text: "Schmeal".into(),
-                },
                 Schema::TextInput,
+                Schema::Button {
+                    text: "BIG Schmeal".into(),
+                },
             ],
             vec![
-                State::Button { clicked: false },
                 State::TextInput { text: "no".into() },
+                State::Button { clicked: false },
             ],
         );
 

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use cimvr_common::ui::*;
 use cimvr_engine::Engine;
-use egui::{Context, Ui};
+use egui::{Context, Response, TextEdit, Ui};
 
 pub struct OverlayUi {
     elements: HashMap<UiHandle, Element>,
@@ -77,6 +77,23 @@ impl OverlayUi {
 impl Element {
     /// Returns `true` if the given state updated
     pub fn show(&mut self, ui: &mut Ui) -> bool {
-        todo!()
+        self.schema
+            .iter()
+            .zip(&mut self.state)
+            .all(|(h, t)| show(ui, h, t).changed())
+    }
+}
+
+fn show(ui: &mut Ui, schema: &Schema, state: &mut State) -> Response {
+    dbg!(schema);
+    match (schema, state) {
+        (Schema::Label { text }, State::Label) => ui.label(text),
+        (Schema::TextInput, State::TextInput { text }) => ui.add(TextEdit::singleline(text)),
+        (Schema::Button { text }, State::Button { clicked }) => {
+            let resp = ui.button(text);
+            *clicked = resp.clicked();
+            resp
+        }
+        _ => todo!(),
     }
 }
