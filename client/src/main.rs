@@ -201,7 +201,8 @@ impl Client {
         self.engine.dispatch(Stage::Update)?;
 
         // UI updates
-        self.egui_glow.run(window, |ctx| self.ui.run(ctx));
+        self.egui_glow
+            .run(window, |ctx| self.ui.run(ctx, &mut self.engine));
 
         // Render game, then egui
         self.render.frame(&mut self.engine)?;
