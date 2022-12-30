@@ -1,6 +1,3 @@
-use std::collections::HashMap;
-use std::time::Instant;
-
 use anyhow::format_err;
 use anyhow::Result;
 use cimvr_common::FrameTime;
@@ -13,9 +10,12 @@ use cimvr_engine::{
 use gl::HasContext;
 use glutin::dpi::PhysicalSize;
 use nalgebra::Matrix4;
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::time::Instant;
 
 pub struct RenderPlugin {
-    gl: glow::Context,
+    gl: Arc<glow::Context>,
     rdr: RenderEngine,
     /// Start time
     start_time: Instant,
@@ -25,7 +25,7 @@ pub struct RenderPlugin {
 }
 
 impl RenderPlugin {
-    pub fn new(gl: gl::Context, engine: &mut Engine) -> Result<Self> {
+    pub fn new(gl: Arc<gl::Context>, engine: &mut Engine) -> Result<Self> {
         engine.subscribe::<RenderData>();
 
         let rdr = RenderEngine::new(&gl)?;

@@ -1,4 +1,3 @@
-/*
 extern crate glow as gl;
 use anyhow::{bail, Context, Result};
 use cimvr_engine::hotload::Hotloader;
@@ -9,6 +8,7 @@ use cimvr_engine::network::{
 };
 use cimvr_engine::Config;
 use cimvr_engine::{interface::system::Stage, Engine};
+use egui_glow::EguiGlow;
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
 use input::UserInputHandler;
@@ -42,9 +42,10 @@ struct Client {
     recv_buf: AsyncBufferedReceiver,
     conn: TcpStream,
     hotload: Hotloader,
+    egui_glow: EguiGlow,
 }
 
-fn pmain() -> Result<()> {
+fn main() -> Result<()> {
     // Set up logging
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
@@ -71,6 +72,7 @@ fn pmain() -> Result<()> {
     let gl = unsafe {
         gl::Context::from_loader_function(|s| glutin_ctx.get_proc_address(s) as *const _)
     };
+    let gl = std::sync::Arc::new(gl);
 
     // Set up hotloading
     let hotload = Hotloader::new(&args.plugins)?;
@@ -78,12 +80,16 @@ fn pmain() -> Result<()> {
     // Set up engine and initialize plugins
     let engine = Engine::new(&args.plugins, Config { is_server: false })?;
 
+    // Set up egui
+    let egui_glow = egui_glow::EguiGlow::new(&event_loop, gl.clone());
+
     // Setup client code
-    let mut client = Client::new(engine, gl, tcp_stream, hotload)?;
+    let mut client = Client::new(engine, gl, tcp_stream, hotload, egui_glow)?;
 
     // Run event loop
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
+        client.handle_event(&event);
         match event {
             Event::LoopDestroyed => {
                 return;
@@ -92,19 +98,18 @@ fn pmain() -> Result<()> {
                 glutin_ctx.window().request_redraw();
             }
             Event::RedrawRequested(_) => {
-                client.frame().expect("Frame returned error");
+                client
+                    .frame(glutin_ctx.window())
+                    .expect("Frame returned error");
                 glutin_ctx.swap_buffers().unwrap();
             }
-            Event::WindowEvent { ref event, .. } => {
-                client.handle_event(event);
-                match event {
-                    WindowEvent::Resized(physical_size) => {
-                        glutin_ctx.resize(*physical_size);
-                    }
-                    WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                    _ => (),
+            Event::WindowEvent { ref event, .. } => match event {
+                WindowEvent::Resized(physical_size) => {
+                    glutin_ctx.resize(*physical_size);
                 }
-            }
+                WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                _ => (),
+            },
             _ => (),
         }
     });
@@ -113,9 +118,10 @@ fn pmain() -> Result<()> {
 impl Client {
     pub fn new(
         mut engine: Engine,
-        gl: gl::Context,
+        gl: std::sync::Arc<gl::Context>,
         conn: TcpStream,
         hotload: Hotloader,
+        egui_glow: EguiGlow,
     ) -> Result<Self> {
         let render = RenderPlugin::new(gl, &mut engine).context("Setting up render engine")?;
         let input = UserInputHandler::new();
@@ -124,6 +130,7 @@ impl Client {
         engine.init_plugins()?;
 
         Ok(Self {
+            egui_glow,
             hotload,
             conn,
             recv_buf: AsyncBufferedReceiver::new(),
@@ -133,15 +140,26 @@ impl Client {
         })
     }
 
-    pub fn handle_event(&mut self, event: &WindowEvent) {
-        self.input.handle_winit_event(event);
+    pub fn handle_event(&mut self, event: &Event<()>) {
         match event {
-            WindowEvent::Resized(physical_size) => self.render.set_screen_size(*physical_size),
+            Event::WindowEvent { event, .. } => {
+                self.input.handle_winit_event(event);
+                self.egui_glow.on_event(&event);
+                match event {
+                    WindowEvent::Resized(physical_size) => {
+                        self.render.set_screen_size(*physical_size)
+                    }
+                    _ => (),
+                }
+            }
+            Event::LoopDestroyed => {
+                self.egui_glow.destroy();
+            }
             _ => (),
         }
     }
 
-    pub fn frame(&mut self) -> Result<()> {
+    pub fn frame(&mut self, window: &glutin::window::Window) -> Result<()> {
         // Check for hotloaded plugins
         for path in self.hotload.hotload()? {
             log::info!("Reloading {}", path.display());
@@ -176,8 +194,20 @@ impl Client {
         // Update
         self.engine.dispatch(Stage::Update)?;
 
+        // UI updates
+        self.egui_glow.run(window, |egui_ctx| {
+            egui::SidePanel::left("my_side_panel").show(egui_ctx, |ui| {
+                ui.heading("Hello World!");
+                if ui.button("Quit").clicked() {
+                    dbg!("Nuh uh");
+                }
+                //ui.color_edit_button_rgb(&mut clear_color);
+            });
+        });
+        self.egui_glow.paint(window);
+
         // Post-update
-        self.render.frame(&mut self.engine)?;
+        //self.render.frame(&mut self.engine)?;
         self.engine.dispatch(Stage::PostUpdate)?;
 
         // Send message to server
@@ -189,35 +219,17 @@ impl Client {
         Ok(())
     }
 }
-*/
 
-//! Example how to use pure `egui_glow`.
-
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
-#![allow(unsafe_code)]
-
-fn main() {
+/*
+fn pmain() {
     let mut clear_color = [0.1, 0.1, 0.1];
 
     let event_loop = glutin::event_loop::EventLoopBuilder::with_user_event().build();
     let (gl_window, gl) = create_display(&event_loop);
-    let gl = std::sync::Arc::new(gl);
-
-    let mut egui_glow = egui_glow::EguiGlow::new(&event_loop, gl.clone());
 
     event_loop.run(move |event, _, control_flow| {
         let mut redraw = || {
             let mut quit = false;
-
-            let repaint_after = egui_glow.run(gl_window.window(), |egui_ctx| {
-                egui::SidePanel::left("my_side_panel").show(egui_ctx, |ui| {
-                    ui.heading("Hello World!");
-                    if ui.button("Quit").clicked() {
-                        quit = true;
-                    }
-                    ui.color_edit_button_rgb(&mut clear_color);
-                });
-            });
 
             *control_flow = if quit {
                 glutin::event_loop::ControlFlow::Exit
@@ -272,8 +284,6 @@ fn main() {
                     gl_window.resize(**new_inner_size);
                 }
 
-                egui_glow.on_event(&event);
-
                 gl_window.window().request_redraw(); // TODO(emilk): ask egui if the events warrants a repaint instead
             }
             glutin::event::Event::LoopDestroyed => {
@@ -289,34 +299,4 @@ fn main() {
         }
     });
 }
-
-fn create_display(
-    event_loop: &glutin::event_loop::EventLoop<()>,
-) -> (
-    glutin::WindowedContext<glutin::PossiblyCurrent>,
-    glow::Context,
-) {
-    let window_builder = glutin::window::WindowBuilder::new()
-        .with_resizable(true)
-        .with_inner_size(glutin::dpi::LogicalSize {
-            width: 800.0,
-            height: 600.0,
-        })
-        .with_title("egui_glow example");
-
-    let gl_window = unsafe {
-        glutin::ContextBuilder::new()
-            .with_depth_buffer(0)
-            .with_srgb(true)
-            .with_stencil_buffer(0)
-            .with_vsync(true)
-            .build_windowed(window_builder, event_loop)
-            .unwrap()
-            .make_current()
-            .unwrap()
-    };
-
-    let gl = unsafe { glow::Context::from_loader_function(|s| gl_window.get_proc_address(s)) };
-
-    (gl_window, gl)
-}
+*/
