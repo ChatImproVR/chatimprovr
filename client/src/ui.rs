@@ -26,10 +26,10 @@ impl OverlayUi {
         egui::SidePanel::left("my_side_panel").show(ctx, |ui| {
             for (id, elem) in self.elements.iter_mut() {
                 if elem.show(ui) {
-                    engine.send(dbg!(UiUpdate {
+                    engine.send(UiUpdate {
                         id: *id,
                         state: elem.state.clone(),
-                    }));
+                    });
                 }
             }
         });
@@ -39,6 +39,26 @@ impl OverlayUi {
         // Process requests
         for req in engine.inbox::<UiRequest>() {
             self.process_request(req);
+        }
+
+        // Handle button declicks
+        for (id, elem) in &mut self.elements {
+            let mut any = false;
+            for state in &mut elem.state {
+                if let State::Button { clicked } = state {
+                    if *clicked {
+                        *clicked = false;
+                        any = true;
+                    }
+                }
+            }
+
+            if any {
+                engine.send(UiUpdate {
+                    id: *id,
+                    state: elem.state.clone(),
+                });
+            }
         }
     }
 
@@ -80,19 +100,19 @@ impl Element {
         self.schema
             .iter()
             .zip(&mut self.state)
-            .any(|(h, t)| show(ui, h, t).changed())
+            .any(|(h, t)| show(ui, h, t))
     }
 }
 
-fn show(ui: &mut Ui, schema: &Schema, state: &mut State) -> Response {
-    dbg!(schema);
+fn show(ui: &mut Ui, schema: &Schema, state: &mut State) -> bool {
     match (schema, state) {
-        (Schema::Label { text }, State::Label) => ui.label(text),
-        (Schema::TextInput, State::TextInput { text }) => ui.add(TextEdit::singleline(text)),
+        (Schema::Label { text }, State::Label) => ui.label(text).changed(),
+        (Schema::TextInput, State::TextInput { text }) => {
+            ui.add(TextEdit::singleline(text)).clicked()
+        }
         (Schema::Button { text }, State::Button { clicked }) => {
-            let resp = ui.button(text);
-            *clicked = resp.clicked();
-            resp
+            *clicked = ui.button(text).clicked();
+            *clicked
         }
         _ => todo!(),
     }

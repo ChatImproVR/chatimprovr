@@ -51,6 +51,9 @@ impl ClientState {
     fn ui_update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
         self.ui.download(io);
 
-        dbg!(self.ui.read(self.schmeal));
+        let val = self.ui.read(self.schmeal);
+        if val[1] == (State::Button { clicked: true }) {
+            dbg!(val);
+        }
     }
 }
