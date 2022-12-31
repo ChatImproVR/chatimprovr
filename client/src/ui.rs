@@ -99,10 +99,11 @@ impl OverlayUi {
 impl Element {
     /// Returns `true` if the given state updated
     pub fn show(&mut self, ui: &mut Ui) -> bool {
-        self.schema
-            .iter()
-            .zip(&mut self.state)
-            .any(|(h, t)| show(ui, h, t))
+        let mut needs_update = false;
+        for (schema, state) in self.schema.iter().zip(&mut self.state) {
+            needs_update |= show(ui, schema, state);
+        }
+        needs_update
     }
 }
 
