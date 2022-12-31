@@ -173,7 +173,7 @@ impl Engine {
                 apply_ecs_commands(&mut self.ecs, &ret.commands)?;
 
                 // Receive outbox
-                plugin.outbox = ret.outbox;
+                plugin.outbox.extend(ret.outbox);
             }
         }
 
