@@ -11,6 +11,7 @@ use std::f32::consts::TAU;
 struct ClientState {
     ui: UiStateHelper,
     schmeal: UiHandle,
+    moonch: UiHandle,
 }
 
 make_app_state!(ClientState, DummyUserState);
@@ -39,11 +40,11 @@ impl UserState for ClientState {
 
         let schmeal = ui.add(
             io,
-            "Thing".into(),
+            "Schmeal".into(),
             vec![
                 Schema::TextInput,
                 Schema::Button {
-                    text: "BIG Schmeal".into(),
+                    text: "Hehe butt on".into(),
                 },
                 Schema::DragValue {
                     min: Some(-100.),
@@ -62,7 +63,28 @@ impl UserState for ClientState {
             ],
         );
 
-        Self { ui, schmeal }
+        let moonch = ui.add(
+            io,
+            "Moonch".into(),
+            vec![
+                Schema::TextInput,
+                Schema::Button {
+                    text: "button,".into(),
+                },
+            ],
+            vec![
+                State::TextInput {
+                    text: "Tegst inpud".into(),
+                },
+                State::Button { clicked: false },
+            ],
+        );
+
+        Self {
+            ui,
+            schmeal,
+            moonch,
+        }
     }
 }
 
@@ -70,12 +92,24 @@ impl ClientState {
     fn ui_update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
         self.ui.download(io);
 
+        let ret = self.ui.read(self.schmeal);
+        if ret[1] == (State::Button { clicked: true }) {
+            dbg!(ret);
+        }
+
+        let ret = self.ui.read(self.moonch);
+        if ret[1] == (State::Button { clicked: true }) {
+            dbg!(ret);
+        }
+
+        /*
         if io.inbox::<UiUpdate>().next().is_some() {
             let val = self.ui.read(self.schmeal);
             //if val[1] == (State::Button { clicked: true }) {
             dbg!(val);
             //}
         }
+        */
     }
 
     fn move_up(&mut self, io: &mut EngineIo, query: &mut QueryResult) {

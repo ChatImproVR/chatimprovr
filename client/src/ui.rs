@@ -25,12 +25,14 @@ impl OverlayUi {
     pub fn run(&mut self, ctx: &Context, engine: &mut Engine) {
         egui::SidePanel::left("my_side_panel").show(ctx, |ui| {
             for (id, elem) in self.elements.iter_mut() {
+                ui.label(&elem.name);
                 if elem.show(ui) {
                     engine.send(UiUpdate {
                         id: *id,
                         state: elem.state.clone(),
                     });
                 }
+                ui.add_space(10.);
             }
         });
     }
@@ -116,7 +118,8 @@ fn show(ui: &mut Ui, schema: &Schema, state: &mut State) -> bool {
         }
         (Schema::DragValue { min, max }, State::DragValue { value }) => {
             let range = min.unwrap_or(f32::MIN)..=max.unwrap_or(f32::MAX);
-            ui.add(DragValue::new(value).clamp_range(range)).changed()
+            let dv = DragValue::new(value).clamp_range(range);
+            ui.add(dv).changed()
         }
         (schema, state) => {
             log::error!(
