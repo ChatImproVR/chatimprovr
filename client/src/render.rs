@@ -3,10 +3,8 @@ use anyhow::Result;
 use cimvr_common::FrameTime;
 use cimvr_common::{render::*, Transform};
 use cimvr_engine::interface::prelude::Component;
-use cimvr_engine::{
-    interface::prelude::{query, Access},
-    Engine,
-};
+use cimvr_engine::interface::prelude::QueryComponent;
+use cimvr_engine::{interface::prelude::Access, Engine};
 use gl::HasContext;
 use glutin::dpi::PhysicalSize;
 use nalgebra::Matrix4;
@@ -75,8 +73,8 @@ impl RenderPlugin {
 
         // Prepare data
         let entities = engine.ecs().query(&[
-            query::<Render>(Access::Read),
-            query::<Transform>(Access::Read),
+            QueryComponent::new::<Render>(Access::Read),
+            QueryComponent::new::<Transform>(Access::Read),
         ]);
 
         // TODO: Don't allocate here smh

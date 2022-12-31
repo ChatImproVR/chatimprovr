@@ -40,12 +40,8 @@ impl UserState for ClientState {
         });
 
         sched.add_system(
-            SystemDescriptor {
-                stage: Stage::Update,
-                subscriptions: vec![sub::<MyMessage>()],
-                query: vec![],
-            },
             Self::recv_server_msg,
+            SystemDescriptor::new(Stage::Update).subscribe::<MyMessage>(),
         );
 
         Self
@@ -66,33 +62,21 @@ impl UserState for ServerState {
 
         // Schedule the systems
         schedule.add_system(
-            SystemDescriptor {
-                stage: Stage::Update,
-                subscriptions: vec![sub::<FrameTime>()],
-                query: vec![
-                    query::<Transform>(Access::Write),
-                    query::<MoveCube>(Access::Read),
-                ],
-            },
             Self::cube_move,
+            SystemDescriptor::new(Stage::Update)
+                .subscribe::<FrameTime>()
+                .query::<Transform>(Access::Write)
+                .query::<MoveCube>(Access::Read),
         );
 
         schedule.add_system(
-            SystemDescriptor {
-                stage: Stage::Update,
-                subscriptions: vec![sub::<MyMessage>()],
-                query: vec![],
-            },
             Self::report_clients,
+            SystemDescriptor::new(Stage::Update).subscribe::<MyMessage>(),
         );
 
         schedule.add_system(
-            SystemDescriptor {
-                stage: Stage::PostInit,
-                subscriptions: vec![],
-                query: vec![query::<MoveCube>(Access::Read)],
-            },
             Self::startup,
+            SystemDescriptor::new(Stage::PostInit).query::<MoveCube>(Access::Read),
         );
 
         Self

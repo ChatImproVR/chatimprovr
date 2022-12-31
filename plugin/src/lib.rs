@@ -34,15 +34,12 @@ impl UserState for ClientState {
         // In the future it would be super cool to do this like Bevy and be able to just infer the
         // query from the type arguments and such...
         schedule.add_system(
-            SystemDescriptor {
-                stage: Stage::PreUpdate,
-                subscriptions: vec![sub::<FrameTime>(), sub::<InputEvents>()],
-                query: vec![
-                    query::<Transform>(Access::Write),
-                    query::<CameraComponent>(Access::Read),
-                ],
-            },
             Self::camera_move,
+            SystemDescriptor::new(Stage::PreUpdate)
+                .subscribe::<FrameTime>()
+                .subscribe::<InputEvents>()
+                .query::<Transform>(Access::Write)
+                .query::<CameraComponent>(Access::Read),
         );
 
         Self {

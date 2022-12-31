@@ -109,7 +109,7 @@ impl<U> EngineSchedule<U> {
     // TODO: Decide whether ECS data is flushed to the engine in between!
     /// Contract: Systems within the same stage are executed in the order in which they are added
     /// by this function.
-    pub fn add_system(&mut self, desc: SystemDescriptor, cb: Callback<U>) {
+    pub fn add_system(&mut self, cb: Callback<U>, desc: SystemDescriptor) {
         self.systems.push(desc);
         self.callbacks.push(cb);
     }

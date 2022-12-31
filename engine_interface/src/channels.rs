@@ -46,8 +46,3 @@ pub trait Message: Serialize + DeserializeOwned + Sized {
     /// Channel ID
     const CHANNEL: ChannelId;
 }
-
-/// Subscribe to the given channel
-pub fn sub<M: Message>() -> ChannelId {
-    M::CHANNEL
-}

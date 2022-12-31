@@ -21,21 +21,13 @@ impl UserState for ClientState {
         let mut ui = UiStateHelper::new();
 
         sched.add_system(
-            SystemDescriptor {
-                stage: Stage::Update,
-                subscriptions: vec![sub::<UiUpdate>()],
-                query: vec![],
-            },
             Self::ui_update,
+            SystemDescriptor::new(Stage::Update).subscribe::<UiUpdate>(),
         );
 
         sched.add_system(
-            SystemDescriptor {
-                stage: Stage::Update,
-                subscriptions: vec![],
-                query: vec![query::<Transform>(Access::Write)],
-            },
             Self::move_up,
+            SystemDescriptor::new(Stage::Update).query::<Transform>(Access::Write),
         );
 
         let schmeal = ui.add(

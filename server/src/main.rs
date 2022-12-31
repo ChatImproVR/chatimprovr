@@ -3,7 +3,7 @@ use cimvr_common::FrameTime;
 use cimvr_engine::ecs::{query_ecs_data, Ecs};
 use cimvr_engine::hotload::Hotloader;
 use cimvr_engine::interface::prelude::{
-    query, Access, ClientId, Connections, EntityId, Synchronized,
+    Access, ClientId, Connections, EntityId, QueryComponent, Synchronized,
 };
 use cimvr_engine::interface::serial::{
     deserialize, serialize, serialize_into, serialized_size, EcsData,
@@ -178,7 +178,7 @@ impl Server {
             ecs: self
                 .engine
                 .ecs()
-                .export(&[query::<Synchronized>(Access::Read)]),
+                .export(&[QueryComponent::new::<Synchronized>(Access::Read)]),
             messages: self.engine.network_inbox(),
         };
 

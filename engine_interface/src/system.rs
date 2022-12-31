@@ -40,11 +40,25 @@ impl Default for Stage {
     }
 }
 
-/*
-/// Plugins may only be executed before
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
-pub enum Adjacency {
-    Before,
-    After,
+impl SystemDescriptor {
+    /// Create a new system descriptor for the given system
+    pub fn new(stage: Stage) -> Self {
+        Self {
+            stage,
+            subscriptions: vec![],
+            query: vec![],
+        }
+    }
+
+    /// Query the given component
+    pub fn query<T: Component>(mut self, access: Access) -> Self {
+        self.query.push(QueryComponent::new::<T>(access));
+        self
+    }
+
+    /// Subscribe to the given channel
+    pub fn subscribe<M: Message>(mut self) -> Self {
+        self.subscriptions.push(M::CHANNEL);
+        self
+    }
 }
-*/

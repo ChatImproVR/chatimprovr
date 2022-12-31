@@ -73,11 +73,6 @@ pub enum EcsCommand {
     AddComponent(EntityId, ComponentId, Vec<u8>),
 }
 
-/// Alias for QueryComponent::new::<T>(access)
-pub fn query<T: Component>(access: Access) -> QueryComponent {
-    QueryComponent::new::<T>(access)
-}
-
 impl QueryComponent {
     pub fn new<T: Component>(access: Access) -> Self {
         Self {

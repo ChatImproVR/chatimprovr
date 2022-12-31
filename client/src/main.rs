@@ -1,7 +1,7 @@
 extern crate glow as gl;
 use anyhow::{bail, Context, Result};
 use cimvr_engine::hotload::Hotloader;
-use cimvr_engine::interface::prelude::{query, Access, Synchronized};
+use cimvr_engine::interface::prelude::{Access, QueryComponent, Synchronized};
 use cimvr_engine::interface::serial::deserialize;
 use cimvr_engine::network::{
     length_delmit_message, AsyncBufferedReceiver, ClientToServer, ReadState, ServerToClient,
@@ -187,9 +187,10 @@ impl Client {
                 for msg in recv.messages {
                     self.engine.broadcast_local(msg);
                 }
-                self.engine
-                    .ecs()
-                    .import(&[query::<Synchronized>(Access::Read)], recv.ecs);
+                self.engine.ecs().import(
+                    &[QueryComponent::new::<Synchronized>(Access::Read)],
+                    recv.ecs,
+                );
             }
         }
 
