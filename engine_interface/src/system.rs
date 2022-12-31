@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 // TODO: Builder pattern for this!
 /// A description of a system within this plugin
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SystemDescriptor {
     /// The stage controls when this system is executed relative to engine functions
     pub stage: Stage,
@@ -32,12 +32,6 @@ pub enum Stage {
     Update,
     /// Graphics and Sound are processsed before this stage
     PostUpdate,
-}
-
-impl Default for Stage {
-    fn default() -> Self {
-        Self::PreUpdate
-    }
 }
 
 impl SystemDescriptor {
