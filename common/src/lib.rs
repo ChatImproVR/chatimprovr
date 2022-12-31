@@ -20,7 +20,7 @@ impl Component for Transform {
     const ID: ComponentId = ComponentId {
         // steakhouse
         id: 0xDEAD_BEEF_CAFE,
-        size: 30,
+        size: 44,
     };
 }
 

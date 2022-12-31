@@ -234,7 +234,8 @@ impl EngineIo {
         assert_eq!(
             data.len(),
             usize::from(C::ID.size),
-            "Component size mismatch; ComponentId prescribes {} but serialize reports {}",
+            "Component size mismatch; ComponentId for {} prescribes {} but serialize reports {}",
+            std::any::type_name::<C>(),
             C::ID.size,
             data.len(),
         );
