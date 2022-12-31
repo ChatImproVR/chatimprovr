@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use cimvr_common::ui::*;
 use cimvr_engine::Engine;
-use egui::{Context, DragValue, Response, ScrollArea, TextEdit, Ui};
+use egui::{Context, DragValue, ScrollArea, TextEdit, Ui};
 
 pub struct OverlayUi {
     elements: HashMap<UiHandle, Element>,

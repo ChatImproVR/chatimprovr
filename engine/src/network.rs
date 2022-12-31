@@ -1,11 +1,11 @@
 use cimvr_engine_interface::{
-    prelude::{ComponentId, EntityId, MessageData},
-    serial::{serialize_into, serialized_size, EcsData},
+    prelude::MessageData,
+    serial::{serialize_into, serialized_size},
 };
 use serde::{Deserialize, Serialize};
 use std::io::{self, Read, Write};
 
-use crate::ecs::{ComponentData, EcsMap};
+use crate::ecs::EcsMap;
 
 /// Message packet sent from server to client(s)
 #[derive(Clone, Serialize, Deserialize)]

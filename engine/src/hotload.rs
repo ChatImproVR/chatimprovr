@@ -1,7 +1,6 @@
-use crate::Engine;
 use ahash::HashSet;
 use anyhow::Result;
-use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::{
     path::PathBuf,
     sync::mpsc::{channel, Receiver},

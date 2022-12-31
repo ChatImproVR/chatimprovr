@@ -1,12 +1,8 @@
 use cimvr_common::{
-    nalgebra::{Point3, UnitQuaternion, Vector3},
-    render::{Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
     ui::{Schema, State, UiHandle, UiStateHelper, UiUpdate},
-    FrameTime, Transform,
+    Transform,
 };
-use cimvr_engine_interface::{dbg, make_app_state, prelude::*, println};
-use serde::{Deserialize, Serialize};
-use std::f32::consts::TAU;
+use cimvr_engine_interface::{dbg, make_app_state, prelude::*};
 
 struct ClientState {
     ui: UiStateHelper,
