@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use cimvr_common::ui::*;
 use cimvr_engine::Engine;
-use egui::{Context, DragValue, Response, TextEdit, Ui};
+use egui::{Context, DragValue, Response, ScrollArea, TextEdit, Ui};
 
 pub struct OverlayUi {
     elements: HashMap<UiHandle, Element>,
@@ -24,16 +24,18 @@ impl OverlayUi {
 
     pub fn run(&mut self, ctx: &Context, engine: &mut Engine) {
         egui::SidePanel::left("my_side_panel").show(ctx, |ui| {
-            for (id, elem) in self.elements.iter_mut() {
-                ui.label(&elem.name);
-                if elem.show(ui) {
-                    engine.send(UiUpdate {
-                        id: *id,
-                        state: elem.state.clone(),
-                    });
+            ScrollArea::vertical().show(ui, |ui| {
+                for (id, elem) in self.elements.iter_mut() {
+                    ui.label(&elem.name);
+                    if elem.show(ui) {
+                        engine.send(UiUpdate {
+                            id: *id,
+                            state: elem.state.clone(),
+                        });
+                    }
+                    ui.add_space(10.);
                 }
-                ui.add_space(10.);
-            }
+            });
         });
     }
 

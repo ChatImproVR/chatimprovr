@@ -80,6 +80,25 @@ impl UserState for ClientState {
             ],
         );
 
+        for _ in 0..1000 {
+            ui.add(
+                io,
+                "Moonch".into(),
+                vec![
+                    Schema::TextInput,
+                    Schema::Button {
+                        text: "button,".into(),
+                    },
+                ],
+                vec![
+                    State::TextInput {
+                        text: "Tegst inpud".into(),
+                    },
+                    State::Button { clicked: false },
+                ],
+            );
+        }
+
         Self {
             ui,
             schmeal,
