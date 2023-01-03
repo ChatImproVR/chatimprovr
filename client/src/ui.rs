@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use cimvr_common::ui::*;
 use cimvr_engine::Engine;
-use egui::{Context, DragValue, ScrollArea, TextEdit, Ui};
+use egui::{color_picker::color_edit_button_rgb, Context, DragValue, ScrollArea, TextEdit, Ui};
 
 pub struct OverlayUi {
     elements: HashMap<UiHandle, Element>,
@@ -123,6 +123,9 @@ fn show(ui: &mut Ui, schema: &Schema, state: &mut State) -> bool {
             let range = min.unwrap_or(f32::MIN)..=max.unwrap_or(f32::MAX);
             let dv = DragValue::new(value).clamp_range(range);
             ui.add(dv).changed()
+        }
+        (Schema::ColorPicker, State::ColorPicker { rgb }) => {
+            color_edit_button_rgb(ui, rgb).changed()
         }
         (schema, state) => {
             log::error!(
