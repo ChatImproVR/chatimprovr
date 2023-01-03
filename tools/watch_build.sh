@@ -1,1 +1,1 @@
-cargo watch -s 'cargo b --release'
+cargo watch -s 'clear' -s 'cargo build --release'
