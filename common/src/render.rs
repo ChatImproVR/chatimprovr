@@ -81,7 +81,7 @@ impl Message for Screen {
 impl Component for Render {
     const ID: ComponentId = ComponentId {
         id: 0xDD05,
-        size: 21,
+        size: 25,
     };
 }
 

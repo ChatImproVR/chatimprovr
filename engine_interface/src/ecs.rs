@@ -156,13 +156,7 @@ impl QueryResult {
         // Serialize data
         // TODO: Never allocate in hot loops!
         let data = serialize(data).expect("Failed to serialize component for writing");
-
-        assert!(
-            data.len() == usize::from(C::ID.size),
-            "Component size ({}) does not match it's ID's size ({})",
-            data.len(),
-            C::ID.size
-        );
+        C::ID.check_data_size(data.len());
 
         // Write back to ECS storage for possible later modification. This is never read by the
         // host, but MAY be read by us!
@@ -181,5 +175,18 @@ impl QueryResult {
         let mut val = self.read(key);
         f(&mut val);
         self.write(key, &mut val);
+    }
+}
+
+impl ComponentId {
+    /// Check that the given data size is compatible with this component
+    /// For now, the data size must be less than or equal to the prescribed size
+    pub fn check_data_size(&self, size: usize) {
+        assert!(
+            size <= usize::from(self.size),
+            "Component data ({} bytes) must be less than or equal to the ID's size ({} bytes)",
+            size,
+            self.size,
+        );
     }
 }

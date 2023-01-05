@@ -6,4 +6,4 @@ function term() {
 term plugin/ 'bash ../tools/watch_build.sh'
 term plugin2/ 'bash ../tools/watch_build.sh'
 term plugin3/ 'bash ../tools/watch_build.sh'
-term ./ bash
+#term ./ bash

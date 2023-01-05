@@ -101,7 +101,7 @@ impl Ecs {
 
     /// Add component to entity, or overwrite existing data
     pub fn add_component_raw(&mut self, entity: EntityId, component: ComponentId, data: &[u8]) {
-        assert_eq!(data.len(), component.size as usize, "");
+        component.check_data_size(data.len());
         if !self.entities.contains(&entity) {
             return log::error!(
                 "Failed to add component {:X?}; entity {:?} does not exist",
@@ -114,10 +114,15 @@ impl Ecs {
         let comp = self.map.entry(component).or_default();
 
         // Set the data on the component
+        // We ensure that the field is always the size of the component, and the remainder is
+        // zeroed
         if let Some(buf) = comp.get_mut(&entity) {
+            buf.fill(0);
             buf.copy_from_slice(data);
         } else {
-            comp.insert(entity, data.to_vec());
+            let mut v = data.to_vec();
+            v.resize(usize::from(component.size), 0);
+            comp.insert(entity, v);
         }
     }
 

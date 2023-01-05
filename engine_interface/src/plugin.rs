@@ -231,14 +231,7 @@ impl EngineIo {
         let data = serialize(data).expect("Failed to serialize component data");
 
         // Sanity check
-        assert_eq!(
-            data.len(),
-            usize::from(C::ID.size),
-            "Component size mismatch; ComponentId for {} prescribes {} but serialize reports {}",
-            std::any::type_name::<C>(),
-            C::ID.size,
-            data.len(),
-        );
+        C::ID.check_data_size(data.len());
 
         self.commands
             .push(EcsCommand::AddComponent(entity, C::ID, data));

@@ -50,7 +50,9 @@ pub struct SendBuf {
 
 fn bincode_opts() -> impl Options {
     // NOTE: This is actually different from the default bincode serialize() function!!
-    bincode::DefaultOptions::new().with_fixint_encoding()
+    bincode::DefaultOptions::new()
+        .with_fixint_encoding()
+        .allow_trailing_bytes()
 }
 
 pub fn serialize<T: Serialize>(val: &T) -> bincode::Result<Vec<u8>> {
