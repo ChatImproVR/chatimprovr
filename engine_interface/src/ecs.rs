@@ -36,6 +36,7 @@ pub struct ComponentId {
     /// Q: Why do you need this?
     /// A: So the engine can check that it's right
     /// A: To easily move components around in memory
+    /// A: To help uniquely identify the database key with it's data type
     ///
     /// Q: Is this the same as the size of the associated type?
     /// A: Not always! `std::mem::size_of<T>()` (`where T: Component`)
