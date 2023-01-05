@@ -1,5 +1,5 @@
 use cimvr_common::{
-    render::{Mesh, RenderData, RenderHandle, Vertex},
+    render::{Mesh, Render, RenderData, RenderHandle, Vertex},
     ui::{Schema, State, UiHandle, UiStateHelper, UiUpdate},
     Transform,
 };
@@ -18,6 +18,7 @@ struct ServerState {
 struct ClientState {
     ui: UiStateHelper,
     test_element: UiHandle,
+    val: f32,
 }
 
 /*
@@ -58,6 +59,11 @@ impl UserState for ClientState {
             SystemDescriptor::new(Stage::Update).subscribe::<UiUpdate>(),
         );
 
+        sched.add_system(
+            Self::change_limit,
+            SystemDescriptor::new(Stage::Update).query::<Render>(Access::Write),
+        );
+
         let test_element = ui.add(
             io,
             "Properties".into(),
@@ -80,7 +86,11 @@ impl UserState for ClientState {
             ],
         );
 
-        Self { ui, test_element }
+        Self {
+            ui,
+            test_element,
+            val: 0.,
+        }
     }
 }
 
@@ -93,9 +103,22 @@ impl ClientState {
             dbg!(ret);
         }
 
-        if io.inbox::<UiUpdate>().next().is_some() {
-            let val = self.ui.read(self.test_element);
-            dbg!(val);
+        if let State::DragValue { value } = ret[2] {
+            self.val = value;
+        }
+
+        //if io.inbox::<UiUpdate>().next().is_some() {
+        //let val = self.ui.read(self.test_element);
+        //dbg!(val);
+        //}
+    }
+
+    fn change_limit(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        for key in query.iter() {
+            dbg!(self.val);
+            if self.val > 0. {
+                query.modify::<Render>(key, |r| r.limit = Some(self.val as u32))
+            }
         }
     }
 }
