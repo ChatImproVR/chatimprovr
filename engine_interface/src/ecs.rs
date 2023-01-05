@@ -151,21 +151,28 @@ impl QueryResult {
     }
 
     /// Write the given data to the component
-    pub fn write<T: Component>(&mut self, key: Key, data: &T) {
+    pub fn write<C: Component>(&mut self, key: Key, data: &C) {
         let entity = self.ecs.entities[key.idx];
         // Serialize data
         // TODO: Never allocate in hot loops!
         let data = serialize(data).expect("Failed to serialize component for writing");
 
+        assert!(
+            data.len() == usize::from(C::ID.size),
+            "Component size ({}) does not match it's ID's size ({})",
+            data.len(),
+            C::ID.size
+        );
+
         // Write back to ECS storage for possible later modification. This is never read by the
         // host, but MAY be read by us!
-        let (component_idx, range) = self.indices::<T>(key);
+        let (component_idx, range) = self.indices::<C>(key);
         let dense = &mut self.ecs.components[component_idx];
         dense[range].copy_from_slice(&data);
 
         // Write host command
         self.commands
-            .push(EcsCommand::AddComponent(entity, T::ID, data))
+            .push(EcsCommand::AddComponent(entity, C::ID, data))
     }
 
     // TODO: This is dreadfully slow but there's no way around that
