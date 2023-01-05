@@ -235,16 +235,17 @@ impl RenderEngine {
                         Some(lim) => lim.try_into().unwrap(),
                     };
 
-                    assert!(
-                        limit <= mesh.index_count,
-                        "Invalid draw limit, got {} but mesh has {} indices",
-                        limit,
-                        mesh.index_count
-                    );
-
                     // Draw mesh data
-                    gl.bind_vertex_array(Some(mesh.vao));
-                    gl.draw_elements(primitive, limit, gl::UNSIGNED_INT, 0);
+                    if limit <= mesh.index_count {
+                        gl.bind_vertex_array(Some(mesh.vao));
+                        gl.draw_elements(primitive, limit, gl::UNSIGNED_INT, 0);
+                    } else {
+                        log::warn!(
+                            "Invalid draw limit, got {} but mesh has {} indices",
+                            limit,
+                            mesh.index_count
+                        );
+                    }
                     //gl.bind_vertex_array(None);
                 } else {
                     log::warn!(
