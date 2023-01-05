@@ -129,30 +129,36 @@ impl Server {
 
         // Read client messages
         for mut conn in self.conns.drain(..) {
-            match conn.msg_buf.read(&mut conn.stream)? {
-                ReadState::Disconnected => {
-                    log::info!("{} Disconnected", conn.addr);
-                }
-                ReadState::Complete(buf) => {
-                    let msgs: ClientToServer =
-                        deserialize(std::io::Cursor::new(buf)).expect("Malformed message");
-                    // Broadcast from client to server modules
-                    for mut msg in msgs.messages {
-                        // Set the client ID for each message(!)
-                        msg.client = Some(conn.id);
-                        self.engine.broadcast_local(msg);
+            let keep_alive = loop {
+                match conn.msg_buf.read(&mut conn.stream)? {
+                    ReadState::Disconnected => {
+                        log::info!("{} Disconnected", conn.addr);
+                        break false;
                     }
-
-                    conns_tmp.push(conn);
-                }
-                ReadState::Invalid => {
-                    log::error!("Invalid data on connection");
-                    conns_tmp.push(conn);
-                }
-                ReadState::Incomplete => {
-                    conns_tmp.push(conn);
-                }
+                    ReadState::Complete(buf) => {
+                        let msgs: ClientToServer =
+                            deserialize(std::io::Cursor::new(buf)).expect("Malformed message");
+                        // Broadcast from client to server modules
+                        for mut msg in msgs.messages {
+                            // Set the client ID for each message(!)
+                            msg.client = Some(conn.id);
+                            self.engine.broadcast_local(msg);
+                        }
+                        continue;
+                    }
+                    ReadState::Invalid => {
+                        log::error!("Invalid data on connection");
+                        break true;
+                    }
+                    ReadState::Incomplete => {
+                        break true;
+                    }
+                };
             };
+
+            if keep_alive {
+                conns_tmp.push(conn);
+            }
         }
 
         // Send frame timing
