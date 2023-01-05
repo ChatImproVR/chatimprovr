@@ -13,6 +13,7 @@ use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
 use input::UserInputHandler;
 use render::RenderPlugin;
+use std::io::Write;
 use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
 use ui::OverlayUi;
@@ -218,6 +219,7 @@ impl Client {
             messages: self.engine.network_inbox(),
         };
         length_delmit_message(&msg, &mut self.conn)?;
+        self.conn.flush()?;
 
         Ok(())
     }

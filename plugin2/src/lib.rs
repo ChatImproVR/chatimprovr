@@ -12,8 +12,6 @@ struct ClientState;
 
 make_app_state!(ClientState, ServerState);
 
-const CUBE_HANDLE: RenderHandle = RenderHandle(3984203840);
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MyMessage {
     hewwo: String,
@@ -58,7 +56,7 @@ impl ClientState {
 
 impl UserState for ServerState {
     fn new(_io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
-        println!("HEWO");
+        println!("HEWWO");
 
         // Schedule the systems
         schedule.add_system(
@@ -158,6 +156,8 @@ impl ServerState {
         }
     }
 }
+
+const CUBE_HANDLE: RenderHandle = RenderHandle(3984203840);
 
 fn cube() -> RenderData {
     let vertices = vec![
