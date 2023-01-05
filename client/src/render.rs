@@ -6,6 +6,7 @@ use cimvr_engine::interface::prelude::Component;
 use cimvr_engine::interface::prelude::QueryComponent;
 use cimvr_engine::{interface::prelude::Access, Engine};
 use gl::HasContext;
+use glow::NativeUniformLocation;
 use glutin::dpi::PhysicalSize;
 use nalgebra::Matrix4;
 use std::collections::HashMap;
@@ -71,21 +72,6 @@ impl RenderPlugin {
             1000.,
         );
 
-        // Prepare data
-        let entities = engine.ecs().query(&[
-            QueryComponent::new::<Render>(Access::Read),
-            QueryComponent::new::<Transform>(Access::Read),
-        ]);
-
-        // TODO: Don't allocate here smh
-        let mut transforms = vec![];
-        let mut handles = vec![];
-
-        for entity in entities {
-            transforms.push(engine.ecs().get::<Transform>(entity));
-            handles.push(engine.ecs().get::<Render>(entity));
-        }
-
         // Send frame timing info
         engine.send(FrameTime {
             delta: self.last_frame.elapsed().as_secs_f32(),
@@ -93,14 +79,38 @@ impl RenderPlugin {
         });
 
         // Draw!
-        self.rdr.frame(
+        self.rdr.start_frame(
             &self.gl,
             proj,
             camera_transf.view(),
             camera_comp.clear_color,
-            &transforms,
-            &handles,
         )?;
+
+        // Prepare data
+        let entities = engine.ecs().query(&[
+            QueryComponent::new::<Render>(Access::Read),
+            QueryComponent::new::<Transform>(Access::Read),
+        ]);
+
+        for entity in entities {
+            let transf = engine.ecs().get::<Transform>(entity);
+            let rdr_comp = engine.ecs().get::<Render>(entity);
+            self.rdr.draw(&self.gl, transf, rdr_comp, None)?;
+        }
+
+        // Prepare EXTRA SPECIAL data
+        let entities = engine.ecs().query(&[
+            QueryComponent::new::<Render>(Access::Read),
+            QueryComponent::new::<Transform>(Access::Read),
+            QueryComponent::new::<RenderExtra>(Access::Read),
+        ]);
+
+        for entity in entities {
+            let transf = engine.ecs().get::<Transform>(entity);
+            let rdr_comp = engine.ecs().get::<Render>(entity);
+            let extra = engine.ecs().get::<RenderExtra>(entity);
+            self.rdr.draw(&self.gl, transf, rdr_comp, Some(extra))?;
+        }
 
         // Reset timing
         self.last_frame = Instant::now();
@@ -114,6 +124,8 @@ impl RenderPlugin {
 struct RenderEngine {
     meshes: HashMap<RenderHandle, GpuMesh>,
     shader: gl::Program,
+    transf_loc: Option<NativeUniformLocation>,
+    extra_loc: Option<NativeUniformLocation>,
 }
 
 struct GpuMesh {
@@ -142,9 +154,14 @@ impl RenderEngine {
                 ],
             )?;
 
+            let transf_loc = gl.get_uniform_location(shader, "transf");
+            let extra_loc = gl.get_uniform_location(shader, "extra");
+
             Ok(Self {
                 meshes: HashMap::new(),
                 shader,
+                transf_loc,
+                extra_loc,
             })
         }
     }
@@ -165,14 +182,12 @@ impl RenderEngine {
 
     /// The given heads will be rendered using the provided projection matrix and view Transform
     /// position
-    pub fn frame(
+    pub fn start_frame(
         &mut self,
         gl: &gl::Context,
         proj: Matrix4<f32>,
         view: Matrix4<f32>,
         clear_color: [f32; 3],
-        transforms: &[Transform],
-        handles: &[Render],
     ) -> Result<()> {
         unsafe {
             // Clear depth and color buffers
@@ -209,56 +224,73 @@ impl RenderEngine {
                 false,
                 proj.as_slice(),
             );
+        }
 
-            let transf_loc = gl.get_uniform_location(self.shader, "transf");
+        Ok(())
+    }
 
-            // TODO: Literally ANY optimization
-            for (transf, rdr_comp) in transforms.iter().zip(handles) {
-                if let Some(mesh) = self.meshes.get(&rdr_comp.id) {
-                    // Set transform
-                    let matrix = transf.to_homogeneous();
+    pub fn draw(
+        &mut self,
+        gl: &gl::Context,
+        transf: Transform,
+        rdr_comp: Render,
+        extra: Option<RenderExtra>,
+    ) -> Result<()> {
+        if let Some(mesh) = self.meshes.get(&rdr_comp.id) {
+            // Set transform
+            let matrix = transf.to_homogeneous();
+            unsafe {
+                gl.uniform_matrix_4_f32_slice(
+                    self.transf_loc.as_ref(),
+                    false,
+                    bytemuck::cast_slice(matrix.as_ref()),
+                );
+            }
+
+            if let Some(RenderExtra(data)) = extra {
+                unsafe {
                     gl.uniform_matrix_4_f32_slice(
-                        transf_loc.as_ref(),
+                        self.extra_loc.as_ref(),
                         false,
-                        bytemuck::cast_slice(matrix.as_ref()),
-                    );
-
-                    // Translate draw call
-                    let primitive = match rdr_comp.primitive {
-                        Primitive::Lines => gl::LINES,
-                        Primitive::Points => gl::POINTS,
-                        Primitive::Triangles => gl::TRIANGLES,
-                    };
-
-                    let limit: i32 = match rdr_comp.limit {
-                        None => mesh.index_count,
-                        Some(lim) => lim.try_into().unwrap(),
-                    };
-
-                    // Draw mesh data
-                    if limit <= mesh.index_count {
-                        gl.bind_vertex_array(Some(mesh.vao));
-                        gl.draw_elements(primitive, limit, gl::UNSIGNED_INT, 0);
-                    } else {
-                        log::warn!(
-                            "Invalid draw limit, got {} but mesh has {} indices",
-                            limit,
-                            mesh.index_count
-                        );
-                    }
-                    //gl.bind_vertex_array(None);
-                } else {
-                    log::warn!(
-                        "Warning: Attempted to access absent mesh data {:?}",
-                        rdr_comp
+                        bytemuck::cast_slice(data.as_ref()),
                     );
                 }
             }
 
-            gl.use_program(None);
+            // Translate draw call
+            let primitive = match rdr_comp.primitive {
+                Primitive::Lines => gl::LINES,
+                Primitive::Points => gl::POINTS,
+                Primitive::Triangles => gl::TRIANGLES,
+            };
 
-            Ok(())
+            let limit: i32 = match rdr_comp.limit {
+                None => mesh.index_count,
+                Some(lim) => lim.try_into().unwrap(),
+            };
+
+            // Draw mesh data
+            if limit <= mesh.index_count {
+                unsafe {
+                    gl.bind_vertex_array(Some(mesh.vao));
+                    gl.draw_elements(primitive, limit, gl::UNSIGNED_INT, 0);
+                }
+            } else {
+                log::warn!(
+                    "Invalid draw limit, got {} but mesh has {} indices",
+                    limit,
+                    mesh.index_count
+                );
+            }
+            //gl.bind_vertex_array(None);
+        } else {
+            log::warn!(
+                "Warning: Attempted to access absent mesh data {:?}",
+                rdr_comp
+            );
         }
+
+        Ok(())
     }
 }
 

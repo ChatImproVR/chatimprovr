@@ -45,7 +45,10 @@ impl Ecs {
 
         // Filter for the rest
         for term in rest {
-            entities.retain(|ent| self.map[&term.component].contains_key(&ent));
+            entities.retain(|ent| match self.map.get(&term.component) {
+                Some(comp_data) => comp_data.contains_key(&ent),
+                None => false,
+            });
         }
 
         entities

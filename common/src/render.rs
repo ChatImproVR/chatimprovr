@@ -56,6 +56,10 @@ pub struct Render {
     pub limit: Option<u32>,
 }
 
+/// Extra render data per component
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
+pub struct RenderExtra(pub [f32; 4 * 4]);
+
 /// How to draw the given mesh
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Primitive {
@@ -82,6 +86,13 @@ impl Component for Render {
     const ID: ComponentId = ComponentId {
         id: 0xDD05,
         size: 25,
+    };
+}
+
+impl Component for RenderExtra {
+    const ID: ComponentId = ComponentId {
+        id: 0x328409D,
+        size: 4 * 4 * 4,
     };
 }
 
