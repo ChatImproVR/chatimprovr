@@ -194,7 +194,7 @@ impl RenderEngine {
             gl.disable(gl::BLEND);
             gl.disable(gl::SCISSOR_TEST);
             gl.disable(gl::STENCIL_TEST);
-            gl.disable(gl::FRAMEBUFFER_SRGB);
+            gl.enable(gl::FRAMEBUFFER_SRGB);
 
             gl.enable(gl::CULL_FACE);
             gl.enable(glow::DEPTH_TEST);

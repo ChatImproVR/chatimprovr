@@ -1,5 +1,5 @@
 use cimvr_common::{
-    render::{Mesh, Render, RenderData, RenderHandle, Vertex},
+    render::{Mesh, Render, RenderData, RenderExtra, RenderHandle, Vertex},
     ui::{Schema, State, UiHandle, UiStateHelper, UiUpdate},
     Transform,
 };
@@ -19,6 +19,7 @@ struct ClientState {
     ui: UiStateHelper,
     test_element: UiHandle,
     val: f32,
+    rgb: [f32; 3],
 }
 
 /*
@@ -87,6 +88,7 @@ impl UserState for ClientState {
         );
 
         Self {
+            rgb: [1.; 3],
             ui,
             test_element,
             val: 0.,
@@ -107,6 +109,10 @@ impl ClientState {
             self.val = value;
         }
 
+        if let State::ColorPicker { rgb } = ret[3] {
+            self.rgb = rgb;
+        }
+
         //if io.inbox::<UiUpdate>().next().is_some() {
         //let val = self.ui.read(self.test_element);
         //dbg!(val);
@@ -116,33 +122,38 @@ impl ClientState {
     fn change_limit(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         for key in query.iter() {
             if self.val > 0. {
-                query.modify::<Render>(key, |r| r.limit = Some(self.val as u32))
+                query.modify::<Render>(key, |r| r.limit = Some(self.val as u32));
             }
+
+            let mut extra = [0.; 4 * 4];
+            extra[..3].copy_from_slice(&self.rgb);
+            extra[3] = 1.;
+            io.add_component(key.entity(), &RenderExtra(extra));
         }
     }
 }
 
 /*
 fn cube(color: [f32; 3]) -> RenderData {
-    let vertices = vec![
-        Vertex::new([-1.0, -1.0, -1.0], color),
-        Vertex::new([1.0, -1.0, -1.0], color),
-        Vertex::new([1.0, 1.0, -1.0], color),
-        Vertex::new([-1.0, 1.0, -1.0], color),
-        Vertex::new([-1.0, -1.0, 1.0], color),
-        Vertex::new([1.0, -1.0, 1.0], color),
-        Vertex::new([1.0, 1.0, 1.0], color),
-        Vertex::new([-1.0, 1.0, 1.0], color),
-    ];
+let vertices = vec![
+Vertex::new([-1.0, -1.0, -1.0], color),
+Vertex::new([1.0, -1.0, -1.0], color),
+Vertex::new([1.0, 1.0, -1.0], color),
+Vertex::new([-1.0, 1.0, -1.0], color),
+Vertex::new([-1.0, -1.0, 1.0], color),
+Vertex::new([1.0, -1.0, 1.0], color),
+Vertex::new([1.0, 1.0, 1.0], color),
+Vertex::new([-1.0, 1.0, 1.0], color),
+];
 
-    let indices = vec![
-        3, 1, 0, 2, 1, 3, 2, 5, 1, 6, 5, 2, 6, 4, 5, 7, 4, 6, 7, 0, 4, 3, 0, 7, 7, 2, 3, 6, 2, 7,
-        0, 5, 4, 1, 5, 0,
-    ];
+let indices = vec![
+3, 1, 0, 2, 1, 3, 2, 5, 1, 6, 5, 2, 6, 4, 5, 7, 4, 6, 7, 0, 4, 3, 0, 7, 7, 2, 3, 6, 2, 7,
+0, 5, 4, 1, 5, 0,
+];
 
-    RenderData {
-        mesh: Mesh { vertices, indices },
-        id: CUBE_HANDLE,
-    }
+RenderData {
+mesh: Mesh { vertices, indices },
+id: CUBE_HANDLE,
+}
 }
 */
