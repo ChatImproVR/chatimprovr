@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 /// Handle to a unique UI element
 #[derive(Serialize, Deserialize, Hash, Copy, Clone, Debug, Eq, PartialEq)]
-pub struct UiHandle(u128);
+pub struct UiHandle(u64);
 
 /// UI element schema
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -78,7 +78,12 @@ impl UiStateHelper {
         schema: Vec<Schema>,
         init_state: Vec<State>,
     ) -> UiHandle {
-        let id = UiHandle(io.random());
+        // (Hopefully) unique per plugin(!)
+        // Kinda cursed
+        let hashname = module_path!().to_string() + name;
+        let hash = simple_string_hash(hashname.as_bytes());
+
+        let id = UiHandle(hash);
 
         self.map.insert(id, init_state.clone());
 
@@ -136,6 +141,12 @@ impl UiStateHelper {
             }
         }
     }
+}
+
+// https://stackoverflow.com/questions/7666509/hash-function-for-string
+fn simple_string_hash(b: &[u8]) -> u64 {
+    b.iter()
+        .fold(5381, |hash, c| ((hash << 5) + hash) + u64::from(*c))
 }
 
 impl Message for UiRequest {

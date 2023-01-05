@@ -115,7 +115,6 @@ impl ClientState {
 
     fn change_limit(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         for key in query.iter() {
-            dbg!(self.val);
             if self.val > 0. {
                 query.modify::<Render>(key, |r| r.limit = Some(self.val as u32))
             }
