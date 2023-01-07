@@ -174,24 +174,26 @@ impl Client {
         }
 
         // Synchronize
-        match self.recv_buf.read(&mut self.conn)? {
-            ReadState::Invalid => {
-                log::error!("Failed to parse invalid message");
-            }
-            ReadState::Incomplete => (),
-            ReadState::Disconnected => {
-                bail!("Disconnected");
-            }
-            ReadState::Complete(buf) => {
-                // Update state!
-                let recv: ServerToClient = deserialize(std::io::Cursor::new(buf))?;
-                for msg in recv.messages {
-                    self.engine.broadcast_local(msg);
+        loop {
+            match self.recv_buf.read(&mut self.conn)? {
+                ReadState::Invalid => {
+                    log::error!("Failed to parse invalid message");
                 }
-                self.engine.ecs().import(
-                    &[QueryComponent::new::<Synchronized>(Access::Read)],
-                    recv.ecs,
-                );
+                ReadState::Incomplete => break,
+                ReadState::Disconnected => {
+                    bail!("Disconnected");
+                }
+                ReadState::Complete(buf) => {
+                    // Update state!
+                    let recv: ServerToClient = deserialize(std::io::Cursor::new(buf))?;
+                    for msg in recv.messages {
+                        self.engine.broadcast_local(msg);
+                    }
+                    self.engine.ecs().import(
+                        &[QueryComponent::new::<Synchronized>(Access::Read)],
+                        recv.ecs,
+                    );
+                }
             }
         }
 

@@ -199,21 +199,9 @@ impl Server {
             });
 
             // Serialize message
-            let mut msg = vec![];
-            length_delmit_message(&state, std::io::Cursor::new(&mut msg))?;
-
-            match conn.stream.write_all(&msg) {
-                Ok(_) => self.conns.push(conn),
-                Err(e) => match e.kind() {
-                    io::ErrorKind::WouldBlock => self.conns.push(conn),
-                    io::ErrorKind::BrokenPipe
-                    | io::ErrorKind::ConnectionReset
-                    | io::ErrorKind::ConnectionAborted => {
-                        log::info!("{} Disconnected; {:?}", conn.addr, e);
-                    }
-                    _ => return Err(e.into()),
-                },
-            }
+            length_delmit_message(&state, &mut conn.stream)?;
+            conn.stream.flush()?;
+            self.conns.push(conn);
         }
 
         self.last_frame = Instant::now();
