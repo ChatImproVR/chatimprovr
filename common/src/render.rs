@@ -34,7 +34,9 @@ pub struct CameraComponent {
 /// All information required to define a renderable mesh
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RenderData {
+    /// Mesh data
     pub mesh: Mesh,
+    /// Unique ID
     pub id: RenderHandle,
 }
 
@@ -45,6 +47,8 @@ pub struct ShaderData {
     pub vertex_src: String,
     /// Fragment shader source (GLSL)
     pub fragment_src: String,
+    /// Unique ID
+    pub id: ShaderHandle,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

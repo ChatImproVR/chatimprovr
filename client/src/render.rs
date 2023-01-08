@@ -57,6 +57,7 @@ struct GpuShader {
 impl RenderPlugin {
     pub fn new(gl: Arc<gl::Context>, engine: &mut Engine) -> Result<Self> {
         engine.subscribe::<RenderData>();
+        engine.subscribe::<ShaderData>();
 
         let rdr = RenderEngine::new(&gl)?;
 
@@ -81,7 +82,16 @@ impl RenderPlugin {
     pub fn frame(&mut self, engine: &mut Engine) -> Result<()> {
         // Upload render data
         for msg in engine.inbox::<RenderData>() {
-            self.rdr.upload(&self.gl, &msg)?;
+            if let Err(e) = self.rdr.upload_render_data(&self.gl, &msg) {
+                log::error!("Error uploading render data at id {:?}; {:?}", msg.id, e);
+            }
+        }
+
+        // Upload shader
+        for msg in engine.inbox::<ShaderData>() {
+            if let Err(e) = self.rdr.upload_shader(&self.gl, &msg) {
+                log::error!("Error uploading shader at id {:?}; {:?}", msg.id, e);
+            }
         }
 
         // Find camera, if any
@@ -126,15 +136,24 @@ impl RenderPlugin {
             let wanted_shader = rdr_comp.shader.unwrap_or(DEFAULT_SHADER);
             let extra = engine.ecs().get::<RenderExtra>(entity);
 
-            self.rdr.set_shader(
+            let res = self.rdr.set_shader(
                 &self.gl,
                 wanted_shader,
                 camera_transf.view(),
                 proj,
                 transf,
                 extra,
-            )?;
-            self.rdr.draw(&self.gl, rdr_comp)?;
+            );
+
+            if let Err(e) = res {
+                log::error!("Error setting shader for entity {:?}; {:?}", entity, e);
+                continue;
+            }
+
+            if let Err(e) = self.rdr.draw(&self.gl, rdr_comp) {
+                log::error!("Error drawing render component {:?}; {:?}", rdr_comp, e);
+                continue;
+            }
         }
 
         // Reset timing
@@ -168,8 +187,16 @@ impl RenderEngine {
         }
     }
 
+    /// Upload shader data
+    pub fn upload_shader(&mut self, gl: &gl::Context, data: &ShaderData) -> Result<()> {
+        // TODO: Unload old shader
+        let shader = GpuShader::new(gl, &data.fragment_src, &data.vertex_src)?;
+        self.shaders.insert(data.id, shader);
+        Ok(())
+    }
+
     /// Make the given render data available to the GPU
-    pub fn upload(&mut self, gl: &gl::Context, data: &RenderData) -> Result<()> {
+    pub fn upload_render_data(&mut self, gl: &gl::Context, data: &RenderData) -> Result<()> {
         // TODO: Use a different mesh type? Switch for upload frequency? Hmmm..
         if let Some(buf) = self.meshes.get_mut(&data.id) {
             update_mesh(gl, buf, &data.mesh);
@@ -229,12 +256,9 @@ impl RenderEngine {
     /// Draw the specified render component
     pub fn draw(&mut self, gl: &gl::Context, rdr_comp: Render) -> Result<()> {
         if let Some(mesh) = self.meshes.get(&rdr_comp.id) {
-            mesh.draw(gl, rdr_comp);
+            mesh.draw(gl, rdr_comp)?;
         } else {
-            bail!(
-                "Warning: Attempted to access absent mesh data {:?}",
-                rdr_comp
-            );
+            bail!("Attempted to access absent mesh data {:?}", rdr_comp.id);
         }
 
         Ok(())
