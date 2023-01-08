@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 
+/// Rendering Plugin, containing interfacing with ChatImproVR for RenderEngine
 pub struct RenderPlugin {
     gl: Arc<glow::Context>,
     rdr: RenderEngine,
@@ -21,6 +22,28 @@ pub struct RenderPlugin {
     /// Time since last frame
     last_frame: Instant,
     screen_size: PhysicalSize<u32>,
+}
+
+// TODO: destructors! (lol)
+/// Rendering engine state
+struct RenderEngine {
+    meshes: HashMap<RenderHandle, GpuMesh>,
+    shader: gl::Program,
+    transf_loc: Option<NativeUniformLocation>,
+    extra_loc: Option<NativeUniformLocation>,
+}
+
+// TODO: Actual mesh memory management. Fewer buffers!!
+/// Mesh data on GPU
+struct GpuMesh {
+    /// Vertex array
+    vao: gl::VertexArray,
+    /// Vertex buffer (vertices)
+    vbo: gl::NativeBuffer,
+    /// Element buffer (indices)
+    ebo: gl::NativeBuffer,
+    /// Number of indices in this mesh
+    index_count: i32,
 }
 
 impl RenderPlugin {
@@ -119,22 +142,6 @@ impl RenderPlugin {
     }
 }
 
-// TODO: destructors! (lol)
-/// Rendering engine state
-struct RenderEngine {
-    meshes: HashMap<RenderHandle, GpuMesh>,
-    shader: gl::Program,
-    transf_loc: Option<NativeUniformLocation>,
-    extra_loc: Option<NativeUniformLocation>,
-}
-
-struct GpuMesh {
-    vao: gl::VertexArray,
-    vbo: gl::NativeBuffer,
-    ebo: gl::NativeBuffer,
-    index_count: i32,
-}
-
 impl RenderEngine {
     pub fn new(gl: &gl::Context) -> Result<Self> {
         unsafe {
@@ -180,8 +187,7 @@ impl RenderEngine {
         Ok(())
     }
 
-    /// The given heads will be rendered using the provided projection matrix and view Transform
-    /// position
+    /// Begin a new frame (clears buffer, sets uniforms)
     pub fn start_frame(
         &mut self,
         gl: &gl::Context,
@@ -229,6 +235,7 @@ impl RenderEngine {
         Ok(())
     }
 
+    /// Draw the specified render component
     pub fn draw(
         &mut self,
         gl: &gl::Context,
@@ -339,6 +346,7 @@ fn compile_glsl_program(gl: &gl::Context, sources: &[(u32, &str)]) -> Result<gl:
     }
 }
 
+/// Set the vertex attribute corresponding to Vertex
 fn set_vertex_attrib(gl: &gl::Context) {
     unsafe {
         // Set vertex attributes
@@ -405,6 +413,7 @@ fn upload_mesh(gl: &gl::Context, usage: u32, mesh: &Mesh) -> Result<GpuMesh, Str
     }
 }
 
+/// Upload mesh data to the GPU
 fn update_mesh(gl: &gl::Context, buf: &mut GpuMesh, mesh: &Mesh) {
     unsafe {
         gl.bind_buffer(glow::ARRAY_BUFFER, Some(buf.vbo));
