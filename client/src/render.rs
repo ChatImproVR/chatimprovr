@@ -126,8 +126,15 @@ impl RenderPlugin {
             let wanted_shader = rdr_comp.shader.unwrap_or(DEFAULT_SHADER);
             let extra = engine.ecs().get::<RenderExtra>(entity);
 
-            self.rdr
-                .set_shader(&self.gl, wanted_shader, transf.view(), proj, transf, extra)?;
+            self.rdr.set_shader(
+                &self.gl,
+                wanted_shader,
+                camera_transf.view(),
+                proj,
+                transf,
+                extra,
+            )?;
+            self.rdr.draw(&self.gl, rdr_comp)?;
         }
 
         // Reset timing

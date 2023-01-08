@@ -199,9 +199,12 @@ impl Server {
             });
 
             // Serialize message
-            length_delmit_message(&state, &mut conn.stream)?;
-            conn.stream.flush()?;
-            self.conns.push(conn);
+            if let Err(e) = length_delmit_message(&state, &mut conn.stream) {
+                log::error!("Error writing to stream; {:?}", e);
+            } else {
+                conn.stream.flush()?;
+                self.conns.push(conn);
+            }
         }
 
         self.last_frame = Instant::now();

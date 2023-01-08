@@ -154,7 +154,7 @@ impl Ecs {
     /// Get data associated with a component
     pub fn get_raw(&self, entity: EntityId, component: ComponentId) -> Option<&[u8]> {
         let Some(component) = self.map.get(&component) else {
-            log::error!("Cannot get {:X?} (does not exist)", component);
+            //log::error!("Cannot get {:X?} (does not exist)", component);
             return None;
         };
 

@@ -103,7 +103,7 @@ impl Message for Screen {
 impl Component for Render {
     const ID: ComponentId = ComponentId {
         id: 0xDD05,
-        size: 25,
+        size: 42,
     };
 }
 
@@ -167,5 +167,26 @@ impl Render {
     pub fn limit(mut self, limit: Option<u32>) -> Self {
         self.limit = limit;
         self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use cimvr_engine_interface::serial::serialized_size;
+
+    use super::*;
+
+    #[test]
+    fn test_render_component() {
+        let example = Render {
+            id: RenderHandle(23910),
+            primitive: Primitive::Lines,
+            limit: Some(90),
+            shader: Some(ShaderHandle(93420)),
+        };
+        assert_eq!(
+            serialized_size(&example).unwrap(),
+            usize::from(Render::ID.size)
+        );
     }
 }
