@@ -11,7 +11,7 @@ use cimvr_engine::{interface::system::Stage, network::*, Engine};
 
 use std::time::Instant;
 use std::{
-    io::{self, Write},
+    io::Write,
     net::{SocketAddr, TcpListener, TcpStream},
     sync::mpsc::{self, Receiver, Sender},
     time::Duration,

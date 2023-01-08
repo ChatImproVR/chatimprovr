@@ -1,9 +1,4 @@
-use cimvr_common::{
-    render::{Mesh, Render, RenderData, RenderExtra, RenderHandle, Vertex},
-    ui::{Schema, State, UiHandle, UiStateHelper, UiUpdate},
-    Transform,
-};
-use cimvr_engine_interface::{dbg, make_app_state, prelude::*};
+use cimvr_engine_interface::{make_app_state, prelude::*};
 use serde::{Deserialize, Serialize};
 
 mod client;

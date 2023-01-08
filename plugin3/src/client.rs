@@ -1,10 +1,8 @@
 use cimvr_common::{
-    render::{Mesh, Render, RenderData, RenderExtra, RenderHandle, Vertex},
+    render::{Mesh, RenderData, RenderHandle, Vertex},
     ui::{Schema, State, UiHandle, UiStateHelper, UiUpdate},
-    Transform,
 };
-use cimvr_engine_interface::{dbg, make_app_state, prelude::*, println};
-use serde::{Deserialize, Serialize};
+use cimvr_engine_interface::{dbg, prelude::*};
 
 use crate::ChangeColor;
 

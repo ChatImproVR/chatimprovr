@@ -1,11 +1,10 @@
 use crate::ChangeColor;
 use cimvr_common::{
-    render::{Mesh, Render, RenderData, RenderExtra, RenderHandle, Vertex},
-    ui::{Schema, State, UiHandle, UiStateHelper, UiUpdate},
+    render::{Render, RenderExtra},
+    ui::UiUpdate,
     Transform,
 };
-use cimvr_engine_interface::{dbg, make_app_state, prelude::*, println};
-use serde::{Deserialize, Serialize};
+use cimvr_engine_interface::prelude::*;
 
 pub struct ServerState {
     cube: EntityId,
