@@ -44,10 +44,7 @@ impl Message for FrameTime {
 
 impl Default for Transform {
     fn default() -> Self {
-        Self {
-            pos: Point3::origin(),
-            orient: UnitQuaternion::identity(),
-        }
+        Self::identity()
     }
 }
 
@@ -69,5 +66,13 @@ impl Transform {
 
         // Compose the view
         rotation * translation
+    }
+
+    /// The identity transformation
+    pub fn identity() -> Self {
+        Self {
+            pos: Point3::origin(),
+            orient: UnitQuaternion::identity(),
+        }
     }
 }

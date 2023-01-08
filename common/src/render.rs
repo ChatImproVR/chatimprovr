@@ -26,13 +26,16 @@ pub struct RenderHandle(pub u128);
 pub struct ShaderHandle(pub u128);
 
 /// Component denotes a camera
+/// The Transform on the entity this is attached to will correspond to:
+/// * VR: The position and orientation of the floor
+/// * Desktop: The view matrix of the camera
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
 pub struct CameraComponent {
     /// Background color
     pub clear_color: [f32; 3],
     /// Projection matrices
-    /// VR: Left and right eyes
-    /// Desktop: only the left eye is used
+    /// * VR: Left and right eyes
+    /// * Desktop: only the left eye is used
     pub projection: [Matrix4<f32>; 2],
 }
 

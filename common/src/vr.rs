@@ -1,6 +1,7 @@
 //! Virtual Reality interfacing
 
 use crate::Transform;
+use cimvr_engine_interface::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// VR update message
@@ -12,9 +13,9 @@ pub struct VrUpdate {
     pub right_view: Transform,
 
     /// Projection parameters for left eye
-    pub left_proj: VrProjection,
+    pub left_fov: VrFov,
     /// Projection parameters for right eye
-    pub right_proj: VrProjection,
+    pub right_fov: VrFov,
 
     /// Right hand transform
     pub right_hand: Transform,
@@ -25,9 +26,10 @@ pub struct VrUpdate {
     pub events: Vec<VrEvent>,
 }
 
+/// Field of view of OpenXR camera
 /// Matches https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XrFovf
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct VrProjection {
+pub struct VrFov {
     /// Angle of the left side of the field of view. For a symmetric field of view this value is negative.
     pub angle_left: f32,
     /// Angle of the right side of the field of view.
@@ -41,4 +43,11 @@ pub struct VrProjection {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum VrEvent {
     // TODO: Events from controllers!
+}
+
+impl Message for VrUpdate {
+    const CHANNEL: ChannelId = ChannelId {
+        id: 0x1337_BEA7,
+        locality: Locality::Local,
+    };
 }
