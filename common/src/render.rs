@@ -2,6 +2,9 @@ use bytemuck::{Pod, Zeroable};
 use cimvr_engine_interface::prelude::*;
 use serde::{Deserialize, Serialize};
 
+pub const DEFAULT_VERTEX_SHADER: &str = include_str!("shaders/unlit.vert");
+pub const DEFAULT_FRAGMENT_SHADER: &str = include_str!("shaders/unlit.frag");
+
 // repr(C) is for the host; makes uploading vertices efficient.
 /// Vertex
 #[repr(C)]
@@ -17,6 +20,10 @@ pub struct Vertex {
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct RenderHandle(pub u128);
 
+/// Unique identifier for a remote Shader program
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ShaderHandle(pub u128);
+
 /// Component denotes a camera
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
 pub struct CameraComponent {
@@ -29,6 +36,15 @@ pub struct CameraComponent {
 pub struct RenderData {
     pub mesh: Mesh,
     pub id: RenderHandle,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ShaderData {
+    // TODO: Use SPIRV here? It's much more stable!
+    /// Vertex shader source (GLSL)
+    pub vertex_src: String,
+    /// Fragment shader source (GLSL)
+    pub fragment_src: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

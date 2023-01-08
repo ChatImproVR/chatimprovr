@@ -156,8 +156,8 @@ impl RenderEngine {
             let shader = compile_glsl_program(
                 &gl,
                 &[
-                    (gl::VERTEX_SHADER, include_str!("shaders/unlit.vert")),
-                    (gl::FRAGMENT_SHADER, include_str!("shaders/unlit.frag")),
+                    (gl::VERTEX_SHADER, DEFAULT_VERTEX_SHADER),
+                    (gl::FRAGMENT_SHADER, DEFAULT_FRAGMENT_SHADER),
                 ],
             )?;
 
