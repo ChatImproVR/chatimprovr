@@ -68,6 +68,12 @@ impl UserInputHandler {
                     .push(InputEvent::Mouse(MouseEvent::Scrolled(x, y))),
                 _ => (),
             },
+            glutin::event::WindowEvent::Resized(sz) => {
+                self.events.push(InputEvent::Window(WindowEvent::Resized {
+                    width: sz.width,
+                    height: sz.height,
+                }));
+            }
             _ => (),
         }
     }

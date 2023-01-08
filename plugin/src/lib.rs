@@ -3,9 +3,9 @@ use std::f32::consts::FRAC_PI_2;
 use cimvr_common::{
     input::{
         ElementState, InputEvent, InputEvents, KeyboardEvent, ModifiersState, MouseButton,
-        MouseEvent,
+        MouseEvent, WindowEvent,
     },
-    nalgebra::{Point3, UnitQuaternion, Vector3, Vector4},
+    nalgebra::{Matrix4, Point3, UnitQuaternion, Vector3, Vector4},
     render::CameraComponent,
     FrameTime, Transform,
 };
@@ -14,6 +14,7 @@ use cimvr_engine_interface::{make_app_state, prelude::*};
 struct ClientState {
     arcball: ArcBall,
     arcball_control: ArcBallController,
+    screen_size: (u32, u32),
 }
 
 make_app_state!(ClientState, DummyUserState);
@@ -23,10 +24,12 @@ impl UserState for ClientState {
         // Create camera
         let camera_ent = io.create_entity();
         io.add_component(camera_ent, &Transform::default());
+
         io.add_component(
             camera_ent,
             &CameraComponent {
                 clear_color: [0.; 3],
+                projection: Default::default(),
             },
         );
 
@@ -39,12 +42,13 @@ impl UserState for ClientState {
                 .subscribe::<FrameTime>()
                 .subscribe::<InputEvents>()
                 .query::<Transform>(Access::Write)
-                .query::<CameraComponent>(Access::Read),
+                .query::<CameraComponent>(Access::Write),
         );
 
         Self {
             arcball: ArcBall::default(),
             arcball_control: ArcBallController::default(),
+            screen_size: (1920, 1080),
         }
     }
 }
@@ -55,12 +59,29 @@ impl ClientState {
         if let Some(InputEvents(events)) = io.inbox_first() {
             for event in events {
                 self.arcball_control.handle_event(&event, &mut self.arcball);
+                if let InputEvent::Window(WindowEvent::Resized { width, height }) = event {
+                    self.screen_size = (width, height);
+                }
             }
         }
+
+        let proj = Matrix4::new_perspective(
+            self.screen_size.0 as f32 / self.screen_size.1 as f32,
+            45_f32.to_radians(),
+            0.01,
+            1000.,
+        );
 
         // Set camera position
         for key in query.iter() {
             query.write::<Transform>(key, &self.arcball.camera_transf());
+            query.write::<CameraComponent>(
+                key,
+                &CameraComponent {
+                    clear_color: [0.; 3],
+                    projection: [proj, proj],
+                },
+            );
         }
     }
 }

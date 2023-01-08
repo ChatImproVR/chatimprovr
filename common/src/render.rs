@@ -1,5 +1,6 @@
 use bytemuck::{Pod, Zeroable};
 use cimvr_engine_interface::prelude::*;
+use nalgebra::Matrix4;
 use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_VERTEX_SHADER: &str = include_str!("shaders/unlit.vert");
@@ -29,6 +30,10 @@ pub struct ShaderHandle(pub u128);
 pub struct CameraComponent {
     /// Background color
     pub clear_color: [f32; 3],
+    /// Projection matrices
+    /// VR: Left and right eyes
+    /// Desktop: only the left eye is used
+    pub projection: [Matrix4<f32>; 2],
 }
 
 /// All information required to define a renderable mesh
@@ -135,7 +140,7 @@ impl Message for ShaderData {
 impl Component for CameraComponent {
     const ID: ComponentId = ComponentId {
         id: 0x1337_1337_1337_1337_1337_1337_1337_1337,
-        size: 12,
+        size: 156,
     };
 }
 

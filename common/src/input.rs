@@ -11,6 +11,7 @@ pub struct InputEvents(pub Vec<InputEvent>);
 pub enum InputEvent {
     Keyboard(KeyboardEvent),
     Mouse(MouseEvent),
+    Window(WindowEvent),
 }
 
 /// Basic mouse events
@@ -21,6 +22,13 @@ pub enum MouseEvent {
     Entered,
     Exited,
     Clicked(MouseButton, ElementState, ModifiersState),
+}
+
+/// Basic window events
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub enum WindowEvent {
+    /// Window's size in pixels changed
+    Resized { width: u32, height: u32 },
 }
 
 impl Message for InputEvents {

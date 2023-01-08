@@ -25,7 +25,6 @@ pub struct RenderPlugin {
     start_time: Instant,
     /// Time since last frame
     last_frame: Instant,
-    screen_size: PhysicalSize<u32>,
 }
 
 // TODO: destructors! (lol)
@@ -64,7 +63,6 @@ impl RenderPlugin {
         Ok(Self {
             gl,
             rdr,
-            screen_size: PhysicalSize::new(1024, 768),
             start_time: Instant::now(),
             last_frame: Instant::now(),
         })
@@ -75,7 +73,6 @@ impl RenderPlugin {
             self.gl.scissor(0, 0, size.width as i32, size.height as i32);
             self.gl
                 .viewport(0, 0, size.width as i32, size.height as i32);
-            self.screen_size = size;
         }
     }
 
@@ -106,12 +103,7 @@ impl RenderPlugin {
         // Set up camera matrices. TODO: Determine projection via plugin!
         let camera_transf = engine.ecs().get::<Transform>(camera_entity).unwrap();
         let camera_comp = engine.ecs().get::<CameraComponent>(camera_entity).unwrap();
-        let proj = Matrix4::new_perspective(
-            self.screen_size.width as f32 / self.screen_size.height as f32,
-            45_f32.to_radians(),
-            0.01,
-            1000.,
-        );
+        let proj = camera_comp.projection[0];
 
         // Send frame timing info
         engine.send(FrameTime {
