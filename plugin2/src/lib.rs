@@ -88,11 +88,7 @@ impl ServerState {
         }
 
         // Cube mesh
-        let cube_rdr = Render {
-            id: CUBE_HANDLE,
-            primitive: Primitive::Lines,
-            limit: None,
-        };
+        let cube_rdr = Render::new(CUBE_HANDLE).primitive(Primitive::Lines);
 
         // Create central cube
         let cube_ent = io.create_entity();

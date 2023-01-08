@@ -1,3 +1,4 @@
+use anyhow::bail;
 use anyhow::format_err;
 use anyhow::Result;
 use cimvr_common::FrameTime;
@@ -11,7 +12,10 @@ use glutin::dpi::PhysicalSize;
 use nalgebra::Matrix4;
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::sync::LockResult;
 use std::time::Instant;
+
+const DEFAULT_SHADER: ShaderHandle = ShaderHandle(0);
 
 /// Rendering Plugin, containing interfacing with ChatImproVR for RenderEngine
 pub struct RenderPlugin {
@@ -28,9 +32,7 @@ pub struct RenderPlugin {
 /// Rendering engine state
 struct RenderEngine {
     meshes: HashMap<RenderHandle, GpuMesh>,
-    shader: gl::Program,
-    transf_loc: Option<NativeUniformLocation>,
-    extra_loc: Option<NativeUniformLocation>,
+    shaders: HashMap<ShaderHandle, GpuShader>,
 }
 
 // TODO: Actual mesh memory management. Fewer buffers!!
@@ -44,6 +46,12 @@ struct GpuMesh {
     ebo: gl::NativeBuffer,
     /// Number of indices in this mesh
     index_count: i32,
+}
+
+struct GpuShader {
+    program: gl::Program,
+    transf_loc: Option<NativeUniformLocation>,
+    extra_loc: Option<NativeUniformLocation>,
 }
 
 impl RenderPlugin {
@@ -86,8 +94,8 @@ impl RenderPlugin {
         };
 
         // Set up camera matrices. TODO: Determine projection via plugin!
-        let camera_transf = engine.ecs().get::<Transform>(camera_entity);
-        let camera_comp = engine.ecs().get::<CameraComponent>(camera_entity);
+        let camera_transf = engine.ecs().get::<Transform>(camera_entity).unwrap();
+        let camera_comp = engine.ecs().get::<CameraComponent>(camera_entity).unwrap();
         let proj = Matrix4::new_perspective(
             self.screen_size.width as f32 / self.screen_size.height as f32,
             45_f32.to_radians(),
@@ -102,12 +110,7 @@ impl RenderPlugin {
         });
 
         // Draw!
-        self.rdr.start_frame(
-            &self.gl,
-            proj,
-            camera_transf.view(),
-            camera_comp.clear_color,
-        )?;
+        self.rdr.start_frame(&self.gl, camera_comp.clear_color)?;
 
         // Prepare data
         let entities = engine.ecs().query(&[
@@ -116,23 +119,15 @@ impl RenderPlugin {
         ]);
 
         for entity in entities {
-            let transf = engine.ecs().get::<Transform>(entity);
-            let rdr_comp = engine.ecs().get::<Render>(entity);
-            self.rdr.draw(&self.gl, transf, rdr_comp, None)?;
-        }
+            let transf = engine.ecs().get::<Transform>(entity).unwrap();
+            let rdr_comp = engine.ecs().get::<Render>(entity).unwrap();
 
-        // Prepare EXTRA SPECIAL data
-        let entities = engine.ecs().query(&[
-            QueryComponent::new::<Render>(Access::Read),
-            QueryComponent::new::<Transform>(Access::Read),
-            QueryComponent::new::<RenderExtra>(Access::Read),
-        ]);
-
-        for entity in entities {
-            let transf = engine.ecs().get::<Transform>(entity);
-            let rdr_comp = engine.ecs().get::<Render>(entity);
+            // TODO: Sort entities by shader in order to set this less!
+            let wanted_shader = rdr_comp.shader.unwrap_or(DEFAULT_SHADER);
             let extra = engine.ecs().get::<RenderExtra>(entity);
-            self.rdr.draw(&self.gl, transf, rdr_comp, Some(extra))?;
+
+            self.rdr
+                .set_shader(&self.gl, wanted_shader, transf.view(), proj, transf, extra)?;
         }
 
         // Reset timing
@@ -153,22 +148,15 @@ impl RenderEngine {
             gl.depth_func(gl::LESS);
 
             // Compile shaders
-            let shader = compile_glsl_program(
-                &gl,
-                &[
-                    (gl::VERTEX_SHADER, DEFAULT_VERTEX_SHADER),
-                    (gl::FRAGMENT_SHADER, DEFAULT_FRAGMENT_SHADER),
-                ],
-            )?;
-
-            let transf_loc = gl.get_uniform_location(shader, "transf");
-            let extra_loc = gl.get_uniform_location(shader, "extra");
+            let mut shaders = HashMap::new();
+            shaders.insert(
+                DEFAULT_SHADER,
+                GpuShader::new(gl, DEFAULT_FRAGMENT_SHADER, DEFAULT_VERTEX_SHADER)?,
+            );
 
             Ok(Self {
                 meshes: HashMap::new(),
-                shader,
-                transf_loc,
-                extra_loc,
+                shaders,
             })
         }
     }
@@ -188,13 +176,7 @@ impl RenderEngine {
     }
 
     /// Begin a new frame (clears buffer, sets uniforms)
-    pub fn start_frame(
-        &mut self,
-        gl: &gl::Context,
-        proj: Matrix4<f32>,
-        view: Matrix4<f32>,
-        clear_color: [f32; 3],
-    ) -> Result<()> {
+    pub fn start_frame(&mut self, gl: &gl::Context, clear_color: [f32; 3]) -> Result<()> {
         unsafe {
             // Clear depth and color buffers
             gl.disable(gl::BLEND);
@@ -213,91 +195,105 @@ impl RenderEngine {
             gl.clear_depth_f32(1.0);
 
             gl.clear(gl::COLOR_BUFFER_BIT | gl::STENCIL_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-
-            // Draw map
-            // Must bind program before setting uniforms!!!
-            gl.use_program(Some(self.shader));
-
-            // Set camera matrix
-            gl.uniform_matrix_4_f32_slice(
-                gl.get_uniform_location(self.shader, "view").as_ref(),
-                false,
-                view.as_slice(),
-            );
-
-            gl.uniform_matrix_4_f32_slice(
-                gl.get_uniform_location(self.shader, "proj").as_ref(),
-                false,
-                proj.as_slice(),
-            );
         }
 
         Ok(())
     }
 
-    /// Draw the specified render component
-    pub fn draw(
+    /// Set the current shader
+    pub fn set_shader(
         &mut self,
         gl: &gl::Context,
+        handle: ShaderHandle,
+        view: Matrix4<f32>,
+        proj: Matrix4<f32>,
         transf: Transform,
-        rdr_comp: Render,
         extra: Option<RenderExtra>,
     ) -> Result<()> {
-        if let Some(mesh) = self.meshes.get(&rdr_comp.id) {
-            // Set transform
-            let matrix = transf.to_homogeneous();
-            unsafe {
-                gl.uniform_matrix_4_f32_slice(
-                    self.transf_loc.as_ref(),
-                    false,
-                    bytemuck::cast_slice(matrix.as_ref()),
-                );
-            }
-
-            if let Some(RenderExtra(data)) = extra {
-                unsafe {
-                    gl.uniform_matrix_4_f32_slice(
-                        self.extra_loc.as_ref(),
-                        false,
-                        bytemuck::cast_slice(data.as_ref()),
-                    );
-                }
-            }
-
-            // Translate draw call
-            let primitive = match rdr_comp.primitive {
-                Primitive::Lines => gl::LINES,
-                Primitive::Points => gl::POINTS,
-                Primitive::Triangles => gl::TRIANGLES,
-            };
-
-            let limit: i32 = match rdr_comp.limit {
-                None => mesh.index_count,
-                Some(lim) => lim.try_into().unwrap(),
-            };
-
-            // Draw mesh data
-            if limit <= mesh.index_count {
-                unsafe {
-                    gl.bind_vertex_array(Some(mesh.vao));
-                    gl.draw_elements(primitive, limit, gl::UNSIGNED_INT, 0);
-                }
-            } else {
-                log::warn!(
-                    "Invalid draw limit, got {} but mesh has {} indices",
-                    limit,
-                    mesh.index_count
-                );
-            }
-            //gl.bind_vertex_array(None);
+        if let Some(shader) = self.shaders.get(&handle) {
+            shader.load(gl, view, proj);
+            shader.set_uniforms(gl, transf, extra);
+            Ok(())
         } else {
-            log::warn!(
+            bail!("Shader handle {:?} not found", handle);
+        }
+    }
+
+    /// Draw the specified render component
+    pub fn draw(&mut self, gl: &gl::Context, rdr_comp: Render) -> Result<()> {
+        if let Some(mesh) = self.meshes.get(&rdr_comp.id) {
+            mesh.draw(gl, rdr_comp);
+        } else {
+            bail!(
                 "Warning: Attempted to access absent mesh data {:?}",
                 rdr_comp
             );
         }
 
         Ok(())
+    }
+}
+
+impl GpuShader {
+    fn new(gl: &gl::Context, fragment: &str, vertex: &str) -> Result<Self> {
+        let sources = [(gl::VERTEX_SHADER, vertex), (gl::FRAGMENT_SHADER, fragment)];
+
+        let program = compile_glsl_program(gl, &sources)?;
+        let (transf_loc, extra_loc) = unsafe {
+            (
+                gl.get_uniform_location(program, "transf"),
+                gl.get_uniform_location(program, "extra"),
+            )
+        };
+
+        Ok(Self {
+            program,
+            transf_loc,
+            extra_loc,
+        })
+    }
+
+    fn load(&self, gl: &gl::Context, view: Matrix4<f32>, proj: Matrix4<f32>) {
+        unsafe {
+            // Draw map
+            // Must bind program before setting uniforms!!!
+            gl.use_program(Some(self.program));
+
+            // Set camera matrix
+            gl.uniform_matrix_4_f32_slice(
+                gl.get_uniform_location(self.program, "view").as_ref(),
+                false,
+                view.as_slice(),
+            );
+
+            gl.uniform_matrix_4_f32_slice(
+                gl.get_uniform_location(self.program, "proj").as_ref(),
+                false,
+                proj.as_slice(),
+            );
+        }
+    }
+
+    fn set_uniforms(&self, gl: &gl::Context, transf: Transform, extra: Option<RenderExtra>) {
+        // Set transform
+        let matrix = transf.to_homogeneous();
+        unsafe {
+            gl.uniform_matrix_4_f32_slice(
+                self.transf_loc.as_ref(),
+                false,
+                bytemuck::cast_slice(matrix.as_ref()),
+            );
+        }
+
+        if let Some(RenderExtra(data)) = extra {
+            unsafe {
+                gl.uniform_matrix_4_f32_slice(
+                    self.extra_loc.as_ref(),
+                    false,
+                    bytemuck::cast_slice(data.as_ref()),
+                );
+            }
+        }
     }
 }
 
@@ -431,5 +427,37 @@ fn update_mesh(gl: &gl::Context, buf: &mut GpuMesh, mesh: &Mesh) {
         );
 
         buf.index_count = mesh.indices.len() as i32;
+    }
+}
+
+impl GpuMesh {
+    fn draw(&self, gl: &gl::Context, rdr_comp: Render) -> Result<()> {
+        // Translate draw call
+        let primitive = match rdr_comp.primitive {
+            Primitive::Lines => gl::LINES,
+            Primitive::Points => gl::POINTS,
+            Primitive::Triangles => gl::TRIANGLES,
+        };
+
+        let limit: i32 = match rdr_comp.limit {
+            None => self.index_count,
+            Some(lim) => lim.try_into().unwrap(),
+        };
+
+        // Draw mesh data
+        if limit <= self.index_count {
+            unsafe {
+                gl.bind_vertex_array(Some(self.vao));
+                gl.draw_elements(primitive, limit, gl::UNSIGNED_INT, 0);
+                Ok(())
+            }
+        } else {
+            bail!(
+                "Invalid draw limit, got {} but mesh has {} indices",
+                limit,
+                self.index_count
+            );
+        }
+        //gl.bind_vertex_array(None);
     }
 }

@@ -132,14 +132,14 @@ impl Ecs {
     /// Remove the given component from the given entity
     pub fn remove_component(&mut self, entity: EntityId, component: ComponentId) {
         let Some(component) = self.map.get_mut(&component) else {
-            return log::error!("Component {:?} does not exist", component);
+            return log::error!("Cannot remove from {:X?} {:X?} does not exist", entity, component);
         };
 
         let comp = component.remove(&entity);
 
         if comp.is_none() {
             log::error!(
-                "Entity {:?} does not have component {:?}",
+                "Entity {:X?} does not have component {:X?}",
                 entity,
                 component
             );
@@ -147,14 +147,14 @@ impl Ecs {
     }
 
     /// Convenient get function
-    pub fn get<C: Component>(&self, entity: EntityId) -> C {
-        deserialize(self.get_raw(entity, C::ID).unwrap()).expect("Failed to deserialize component")
+    pub fn get<C: Component>(&self, entity: EntityId) -> Option<C> {
+        Some(deserialize(self.get_raw(entity, C::ID)?).expect("Failed to deserialize component"))
     }
 
     /// Get data associated with a component
     pub fn get_raw(&self, entity: EntityId, component: ComponentId) -> Option<&[u8]> {
         let Some(component) = self.map.get(&component) else {
-            log::error!("Component {:?} does not exist", component);
+            log::error!("Cannot get {:X?} (does not exist)", component);
             return None;
         };
 
@@ -162,7 +162,7 @@ impl Ecs {
 
         if comp.is_none() {
             log::error!(
-                "Entity {:?} does not have component {:?}",
+                "Entity {:X?} does not have component {:X?}",
                 entity,
                 component
             );

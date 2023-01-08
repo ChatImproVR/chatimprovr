@@ -70,6 +70,8 @@ pub struct Render {
     /// Use this many indices, in order
     /// Draw everything if None
     pub limit: Option<u32>,
+    /// Optional shader handle; defaults to DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER
+    pub shader: Option<ShaderHandle>,
 }
 
 /// Extra render data per component
@@ -119,6 +121,13 @@ impl Message for RenderData {
     };
 }
 
+impl Message for ShaderData {
+    const CHANNEL: ChannelId = ChannelId {
+        id: 0xBAD_BAE,
+        locality: Locality::Local,
+    };
+}
+
 impl Component for CameraComponent {
     const ID: ComponentId = ComponentId {
         id: 0x1337_1337_1337_1337_1337_1337_1337_1337,
@@ -134,3 +143,29 @@ impl Vertex {
 
 unsafe impl Pod for Vertex {}
 unsafe impl Zeroable for Vertex {}
+
+impl Render {
+    pub fn new(id: RenderHandle) -> Self {
+        Self {
+            id,
+            primitive: Primitive::Triangles,
+            shader: None,
+            limit: None,
+        }
+    }
+
+    pub fn primitive(mut self, primitive: Primitive) -> Self {
+        self.primitive = primitive;
+        self
+    }
+
+    pub fn shader(mut self, shader: ShaderHandle) -> Self {
+        self.shader = Some(shader);
+        self
+    }
+
+    pub fn limit(mut self, limit: Option<u32>) -> Self {
+        self.limit = limit;
+        self
+    }
+}
