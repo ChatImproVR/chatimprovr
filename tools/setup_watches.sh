@@ -6,4 +6,4 @@ function term() {
 term plugin/
 term plugin2/
 term plugin3/ 
-./tools/run_server.sh
+#./tools/run_server.sh

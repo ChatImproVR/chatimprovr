@@ -12,7 +12,6 @@ use glutin::dpi::PhysicalSize;
 use nalgebra::Matrix4;
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::sync::LockResult;
 use std::time::Instant;
 
 const DEFAULT_SHADER: ShaderHandle = ShaderHandle(0);
