@@ -153,42 +153,17 @@ impl Ecs {
 
     /// Get data associated with a component
     pub fn get_raw(&self, entity: EntityId, component: ComponentId) -> Option<&[u8]> {
-        let Some(component) = self.map.get(&component) else {
-            log::trace!("Cannot get {:X?} (does not exist)", component);
-            return None;
-        };
-
-        let comp = component.get(&entity);
-
-        if comp.is_none() {
-            log::trace!(
-                "Entity {:X?} does not have component {:X?}",
-                entity,
-                component
-            );
-        }
-
-        comp.map(|s| s.as_slice())
+        Some(self.map.get(&component)?.get(&entity)?.as_slice())
     }
 
-    /// Get data associated with a component
+    /// Get data associated with a component, mutably
     pub fn get_mut(&mut self, entity: EntityId, component: ComponentId) -> Option<&mut [u8]> {
-        let Some(column) = self.map.get_mut(&component) else {
-            log::trace!("Component {:?} does not exist", component);
-            return None;
-        };
-
-        let comp = column.get_mut(&entity);
-
-        if comp.is_none() {
-            log::trace!(
-                "Entity {:?} does not have component {:?}",
-                entity,
-                component
-            );
-        }
-
-        comp.map(|s| s.as_mut_slice())
+        Some(
+            self.map
+                .get_mut(&component)?
+                .get_mut(&entity)?
+                .as_mut_slice(),
+        )
     }
 
     /// Get all entities and data associated with the given component
