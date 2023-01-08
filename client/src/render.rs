@@ -249,7 +249,8 @@ impl RenderEngine {
             shader.set_uniforms(gl, transf, extra);
             Ok(())
         } else {
-            bail!("Shader handle {:?} not found", handle);
+            log::trace!("Shader handle {:?} not found", handle);
+            Ok(())
         }
     }
 

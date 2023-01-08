@@ -106,7 +106,7 @@ impl Ecs {
     pub fn add_component_raw(&mut self, entity: EntityId, component: ComponentId, data: &[u8]) {
         component.check_data_size(data.len());
         if !self.entities.contains(&entity) {
-            return log::error!(
+            return log::trace!(
                 "Failed to add component {:X?}; entity {:?} does not exist",
                 component,
                 entity
@@ -132,13 +132,13 @@ impl Ecs {
     /// Remove the given component from the given entity
     pub fn remove_component(&mut self, entity: EntityId, component: ComponentId) {
         let Some(component) = self.map.get_mut(&component) else {
-            return log::error!("Cannot remove from {:X?} {:X?} does not exist", entity, component);
+            return log::trace!("Cannot remove from {:X?} {:X?} does not exist", entity, component);
         };
 
         let comp = component.remove(&entity);
 
         if comp.is_none() {
-            log::error!(
+            log::trace!(
                 "Entity {:X?} does not have component {:X?}",
                 entity,
                 component
@@ -154,14 +154,14 @@ impl Ecs {
     /// Get data associated with a component
     pub fn get_raw(&self, entity: EntityId, component: ComponentId) -> Option<&[u8]> {
         let Some(component) = self.map.get(&component) else {
-            //log::error!("Cannot get {:X?} (does not exist)", component);
+            log::trace!("Cannot get {:X?} (does not exist)", component);
             return None;
         };
 
         let comp = component.get(&entity);
 
         if comp.is_none() {
-            log::error!(
+            log::trace!(
                 "Entity {:X?} does not have component {:X?}",
                 entity,
                 component
@@ -174,14 +174,14 @@ impl Ecs {
     /// Get data associated with a component
     pub fn get_mut(&mut self, entity: EntityId, component: ComponentId) -> Option<&mut [u8]> {
         let Some(column) = self.map.get_mut(&component) else {
-            log::error!("Component {:?} does not exist", component);
+            log::trace!("Component {:?} does not exist", component);
             return None;
         };
 
         let comp = column.get_mut(&entity);
 
         if comp.is_none() {
-            log::error!(
+            log::trace!(
                 "Entity {:?} does not have component {:?}",
                 entity,
                 component

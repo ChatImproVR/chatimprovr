@@ -1,6 +1,9 @@
 use cimvr_common::{
     nalgebra::{Point3, UnitQuaternion, Vector3},
-    render::{Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
+    render::{
+        Mesh, Primitive, Render, RenderData, RenderHandle, ShaderData, ShaderHandle, Vertex,
+        DEFAULT_VERTEX_SHADER,
+    },
     FrameTime, Transform,
 };
 use cimvr_engine_interface::{dbg, make_app_state, prelude::*, println};
@@ -32,6 +35,7 @@ pub struct MoveCube {
 impl UserState for ClientState {
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         io.send(&cube());
+        io.send(&cube_shader());
 
         io.send(&MyMessage {
             hewwo: "I'm a client!".to_string(),
@@ -88,7 +92,9 @@ impl ServerState {
         }
 
         // Cube mesh
-        let cube_rdr = Render::new(CUBE_HANDLE).primitive(Primitive::Lines);
+        let cube_rdr = Render::new(CUBE_HANDLE)
+            .primitive(Primitive::Lines)
+            .shader(CUBE_SHADER);
 
         // Create central cube
         let cube_ent = io.create_entity();
@@ -154,6 +160,7 @@ impl ServerState {
 }
 
 const CUBE_HANDLE: RenderHandle = RenderHandle(3984203840);
+const CUBE_SHADER: ShaderHandle = ShaderHandle(4320432);
 
 fn cube() -> RenderData {
     let vertices = vec![
@@ -175,6 +182,27 @@ fn cube() -> RenderData {
     RenderData {
         mesh: Mesh { vertices, indices },
         id: CUBE_HANDLE,
+    }
+}
+
+fn cube_shader() -> ShaderData {
+    let fragment_src = "
+#version 450
+precision mediump float;
+
+in vec4 f_color;
+
+out vec4 out_color;
+
+void main() {
+    vec3 color = vec3(1., 0., 0.);
+    out_color = vec4(color, 1.);
+}"
+    .into();
+    ShaderData {
+        vertex_src: DEFAULT_VERTEX_SHADER.to_string(),
+        fragment_src,
+        id: CUBE_SHADER,
     }
 }
 
