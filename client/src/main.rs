@@ -102,7 +102,7 @@ impl Client {
         })
     }
 
-    pub fn set_window_size(&mut self, width: u32, height: u32) {
+    pub fn set_resolution(&mut self, width: u32, height: u32) {
         self.render.set_screen_size(width, height)
     }
 
@@ -247,7 +247,7 @@ fn desktop(args: Opt) -> Result<()> {
 
                 match event {
                     WindowEvent::Resized(ph) => {
-                        client.set_window_size(ph.width, ph.height);
+                        client.set_resolution(ph.width, ph.height);
                         glutin_ctx.resize(*ph);
                     }
                     WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
@@ -517,8 +517,10 @@ fn virtual_reality(args: Opt) -> Result<()> {
 
             // Set scissor and viewport
             let view = xr_views[view_idx];
-            let w = view.recommended_image_rect_width as i32;
-            let h = view.recommended_image_rect_height as i32;
+            client.set_resolution(
+                view.recommended_image_rect_width,
+                view.recommended_image_rect_height,
+            );
 
             // Set the texture as the render target
             let img_idx = xr_swapchain_img_idx as usize;
