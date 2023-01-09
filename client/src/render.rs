@@ -67,11 +67,10 @@ impl RenderPlugin {
         })
     }
 
-    pub fn set_screen_size(&mut self, size: PhysicalSize<u32>) {
+    pub fn set_screen_size(&mut self, width: u32, height: u32) {
         unsafe {
-            self.gl.scissor(0, 0, size.width as i32, size.height as i32);
-            self.gl
-                .viewport(0, 0, size.width as i32, size.height as i32);
+            self.gl.scissor(0, 0, width as i32, height as i32);
+            self.gl.viewport(0, 0, width as i32, height as i32);
         }
     }
 
