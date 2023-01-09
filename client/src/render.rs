@@ -74,7 +74,8 @@ impl RenderPlugin {
         }
     }
 
-    pub fn frame(&mut self, engine: &mut Engine) -> Result<()> {
+    /// Draw a frame, prepending camera transform to the given view
+    pub fn frame(&mut self, engine: &mut Engine, vr_view: Matrix4<f32>) -> Result<()> {
         // Upload render data
         for msg in engine.inbox::<RenderData>() {
             if let Err(e) = self.rdr.upload_render_data(&self.gl, &msg) {
@@ -102,6 +103,7 @@ impl RenderPlugin {
         let camera_transf = engine.ecs().get::<Transform>(camera_entity).unwrap();
         let camera_comp = engine.ecs().get::<CameraComponent>(camera_entity).unwrap();
         let proj = camera_comp.projection[0];
+        let view = camera_transf.view() * vr_view;
 
         // Send frame timing info
         engine.send(FrameTime {
@@ -126,14 +128,9 @@ impl RenderPlugin {
             let wanted_shader = rdr_comp.shader.unwrap_or(DEFAULT_SHADER);
             let extra = engine.ecs().get::<RenderExtra>(entity);
 
-            let res = self.rdr.set_shader(
-                &self.gl,
-                wanted_shader,
-                camera_transf.view(),
-                proj,
-                transf,
-                extra,
-            );
+            let res = self
+                .rdr
+                .set_shader(&self.gl, wanted_shader, view, proj, transf, extra);
 
             if let Err(e) = res {
                 log::error!("Error setting shader for entity {:?}; {:?}", entity, e);

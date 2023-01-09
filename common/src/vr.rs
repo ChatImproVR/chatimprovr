@@ -16,7 +16,7 @@ pub struct VrUpdate {
     pub left_fov: VrFov,
     /// Projection parameters for right eye
     pub right_fov: VrFov,
-
+    /*
     /// Right hand transform
     pub right_hand: Transform,
     /// Left hand transform
@@ -24,6 +24,7 @@ pub struct VrUpdate {
 
     /// All VR events
     pub events: Vec<VrEvent>,
+    */
 }
 
 /// Field of view of OpenXR camera

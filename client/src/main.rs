@@ -1,7 +1,9 @@
 extern crate glow as gl;
 extern crate openxr as xr;
 
-use anyhow::{bail, Context, Result, format_err};
+use anyhow::{bail, format_err, Context, Result};
+use cimvr_common::vr::{VrFov, VrUpdate};
+use cimvr_common::Transform;
 use cimvr_engine::hotload::Hotloader;
 use cimvr_engine::interface::prelude::{Access, QueryComponent, Synchronized};
 use cimvr_engine::interface::serial::deserialize;
@@ -15,10 +17,12 @@ use egui_glow::EguiGlow;
 use gl::HasContext;
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
+use nalgebra::{Matrix4, Point3, Quaternion, Unit};
 use render::RenderPlugin;
 use std::io::Write;
 use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
+use std::sync::Arc;
 use ui::OverlayUi;
 
 mod desktop;
@@ -69,11 +73,7 @@ fn main() -> Result<()> {
 }
 
 impl Client {
-    pub fn new(
-        gl: std::sync::Arc<gl::Context>,
-        plugins: &[PathBuf],
-        addr: SocketAddr,
-    ) -> Result<Self> {
+    pub fn new(gl: Arc<gl::Context>, plugins: &[PathBuf], addr: SocketAddr) -> Result<Self> {
         // Connect to remote host
         let conn = TcpStream::connect(addr)?;
         conn.set_nonblocking(true)?;
@@ -144,8 +144,8 @@ impl Client {
         self.ui.run(ctx, &mut self.engine);
     }
 
-    pub fn render_frame(&mut self) -> Result<()> {
-        self.render.frame(&mut self.engine)
+    pub fn render_frame(&mut self, vr_view: Matrix4<f32>) -> Result<()> {
+        self.render.frame(&mut self.engine, vr_view)
     }
 
     pub fn upload(&mut self) -> Result<()> {
@@ -181,7 +181,7 @@ fn desktop(args: Opt) -> Result<()> {
     let gl = unsafe {
         gl::Context::from_loader_function(|s| glutin_ctx.get_proc_address(s) as *const _)
     };
-    let gl = std::sync::Arc::new(gl);
+    let gl = Arc::new(gl);
 
     // Set up egui
     let mut egui_glow = egui_glow::EguiGlow::new(&event_loop, gl.clone());
@@ -222,7 +222,9 @@ fn desktop(args: Opt) -> Result<()> {
                 egui_glow.run(glutin_ctx.window(), |ctx| client.update_ui(ctx));
 
                 // Render frame
-                client.render_frame().expect("Frame render");
+                client
+                    .render_frame(Matrix4::identity())
+                    .expect("Frame render");
 
                 // Render UI
                 egui_glow.paint(glutin_ctx.window());
@@ -260,6 +262,8 @@ fn desktop(args: Opt) -> Result<()> {
     });
 }
 
+const VR_DEPTH_FORMAT: u32 = gl::DEPTH_COMPONENT24;
+
 fn virtual_reality(args: Opt) -> Result<()> {
     // Load OpenXR from platform-specific location
     #[cfg(target_os = "linux")]
@@ -268,7 +272,6 @@ fn virtual_reality(args: Opt) -> Result<()> {
     #[cfg(target_os = "windows")]
     let entry = xr::Entry::linked();
 
-    /*
     // Application info
     let app_info = xr::ApplicationInfo {
         application_name: "ChatImproVR",
@@ -325,11 +328,12 @@ fn virtual_reality(args: Opt) -> Result<()> {
 
     // Load OpenGL
     let gl = unsafe { gl::Context::from_loader_function(|s| ctx.get_proc_address(s) as *const _) };
+    let gl = Arc::new(gl);
 
     let session_create_info = glutin_openxr_opengl_helper::session_create_info(&ctx, &window)?;
 
     // Setup client code
-    let mut client = Client::new(gl, &args.plugins, args.connect)?;
+    let mut client = Client::new(gl.clone(), &args.plugins, args.connect)?;
 
     // Create session
     let (xr_session, mut xr_frame_waiter, mut xr_frame_stream) =
@@ -458,10 +462,40 @@ fn virtual_reality(args: Opt) -> Result<()> {
             continue;
         }
 
-        // Get head positions from server
-        let state = client.update_heads()?;
-        let head_mats = head_matrices(&state.heads);
-        engine.update_heads(&gl, &head_mats);
+        // Download messages from server
+        client.download().expect("Message download");
+
+        // Pre update stage
+        client
+            .engine()
+            .dispatch(Stage::PreUpdate)
+            .expect("Frame pre-update");
+
+        // Get OpenXR Views
+        let (_xr_view_state_flags, xr_view_poses) = xr_session.locate_views(
+            xr_view_type,
+            xr_frame_state.predicted_display_time,
+            &xr_play_space,
+        )?;
+
+        // Get VR data for Update stage
+        let vr_data: VrUpdate = VrUpdate {
+            left_view: transform_from_pose(&xr_view_poses[0].pose),
+            right_view: transform_from_pose(&xr_view_poses[1].pose),
+            left_fov: convert_fov(&xr_view_poses[0].fov),
+            right_fov: convert_fov(&xr_view_poses[1].fov),
+            // TODO
+            //right_hand: Transform::identity(),
+            //left_hand: Transform::identity(),
+            //events: vec![],
+        };
+        client.engine().send(vr_data);
+
+        // Update stage
+        client
+            .engine()
+            .dispatch(Stage::Update)
+            .expect("Frame udpate");
 
         // Get OpenXR Views
         // TODO: Do this as close to render-time as possible!!
@@ -477,7 +511,9 @@ fn virtual_reality(args: Opt) -> Result<()> {
             xr_swapchains[view_idx].wait_image(xr::Duration::from_nanos(1_000_000_000_000))?;
 
             // Bind framebuffer
-            gl.bind_framebuffer(gl::FRAMEBUFFER, Some(gl_framebuffers[view_idx]));
+            unsafe {
+                gl.bind_framebuffer(gl::FRAMEBUFFER, Some(gl_framebuffers[view_idx]));
+            }
 
             // Set scissor and viewport
             let view = xr_views[view_idx];
@@ -489,32 +525,37 @@ fn virtual_reality(args: Opt) -> Result<()> {
             let color_texture = swapchain_color_images[view_idx][img_idx];
             let depth_texture = swapchain_depth_images[view_idx][img_idx];
 
-            gl.framebuffer_texture_2d(
-                gl::FRAMEBUFFER,
-                gl::COLOR_ATTACHMENT0,
-                gl::TEXTURE_2D,
-                Some(color_texture),
-                0,
-            );
+            unsafe {
+                gl.framebuffer_texture_2d(
+                    gl::FRAMEBUFFER,
+                    gl::COLOR_ATTACHMENT0,
+                    gl::TEXTURE_2D,
+                    Some(color_texture),
+                    0,
+                );
 
-            gl.framebuffer_texture_2d(
-                gl::FRAMEBUFFER,
-                gl::DEPTH_ATTACHMENT,
-                gl::TEXTURE_2D,
-                Some(depth_texture),
-                0,
-            );
+                gl.framebuffer_texture_2d(
+                    gl::FRAMEBUFFER,
+                    gl::DEPTH_ATTACHMENT,
+                    gl::TEXTURE_2D,
+                    Some(depth_texture),
+                    0,
+                );
+            }
 
             // Set view and projection matrices
             let headset_view = xr_view_poses[view_idx];
+            let view = transform_from_pose(&headset_view.pose);
 
-            let view = view_from_pose(&headset_view.pose);
-            let proj = projection_from_fov(&headset_view.fov, 0.01, 1000.);
-
-            engine.frame(&gl, proj, view).expect("Engine error");
+            // Render frame
+            client
+                .render_frame(view.to_homogeneous())
+                .expect("Frame render");
 
             // Unbind framebuffer
-            gl.bind_framebuffer(gl::FRAMEBUFFER, None);
+            unsafe {
+                gl.bind_framebuffer(gl::FRAMEBUFFER, None);
+            }
 
             // Release image
             xr_swapchains[view_idx].release_image()?;
@@ -553,14 +594,15 @@ fn virtual_reality(args: Opt) -> Result<()> {
             &[&layers],
         )?;
 
-        // Update head position in server. This is done after all the display work, so that we
-        // don't introduce latency
-        let state = ClientState {
-            head: head_from_xr_pose(&xr_view_poses[0].pose),
-        };
-        client.send_state(&state)?;
+        // Post update stage
+        client
+            .engine()
+            .dispatch(Stage::PostUpdate)
+            .expect("Frame post-update");
+
+        // Upload messages to server
+        client.upload().expect("Message upload");
     }
-    */
 
     Ok(())
 }
@@ -570,7 +612,6 @@ fn get_vr_depth_texture(
     width: i32,
     height: i32,
 ) -> Result<gl::NativeTexture, String> {
-    /*
     unsafe {
         let depth_tex = gl.create_texture()?;
         gl.bind_texture(gl::TEXTURE_2D, Some(depth_tex));
@@ -592,6 +633,26 @@ fn get_vr_depth_texture(
 
         Ok(depth_tex)
     }
-    */
-    todo!()
+}
+
+fn transform_from_pose(pose: &xr::Posef) -> Transform {
+    // Convert the rotation quaternion from OpenXR to nalgebra
+    let orient = pose.orientation;
+    let orient = Quaternion::new(orient.w, orient.x, orient.y, orient.z);
+    let orient = Unit::try_new(orient, 0.0).expect("Not a unit orienternion");
+
+    // Convert the position vector from OpenXR to nalgebra
+    let pos = pose.position;
+    let pos = Point3::new(pos.x, pos.y, pos.z);
+
+    Transform { pos, orient }
+}
+
+fn convert_fov(fov: &xr::Fovf) -> VrFov {
+    VrFov {
+        angle_left: fov.angle_left,
+        angle_right: fov.angle_right,
+        angle_up: fov.angle_up,
+        angle_down: fov.angle_down,
+    }
 }
