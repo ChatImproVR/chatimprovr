@@ -58,6 +58,14 @@ fn main() -> Result<()> {
     // Parse args
     let args = Opt::from_args();
 
+    if args.vr {
+        virtual_reality(args)
+    } else {
+        desktop(args)
+    }
+}
+
+fn desktop(args: Opt) -> Result<()> {
     // Set up window
     let event_loop = glutin::event_loop::EventLoop::new();
     let window_builder = glutin::window::WindowBuilder::new().with_title("ChatImproVR");
@@ -151,6 +159,10 @@ fn main() -> Result<()> {
             _ => (),
         }
     });
+}
+
+fn virtual_reality(args: Opt) -> Result<()> {
+    todo!()
 }
 
 impl Client {
