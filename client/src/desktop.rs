@@ -1,5 +1,6 @@
 use cimvr_common::desktop::*;
 
+/// Input handler for Desktop platform
 pub struct DesktopInputHandler {
     events: Vec<InputEvent>,
 }

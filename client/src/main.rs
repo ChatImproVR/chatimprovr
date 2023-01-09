@@ -36,16 +36,18 @@ struct Opt {
 
     /// Plugins
     plugins: Vec<PathBuf>,
+
+    /// Whether to use VR
+    #[structopt(long)]
+    vr: bool,
 }
 
 struct Client {
     engine: Engine,
     render: RenderPlugin,
-    input: DesktopInputHandler,
     recv_buf: AsyncBufferedReceiver,
     conn: TcpStream,
     hotload: Hotloader,
-    egui_glow: EguiGlow,
     ui: OverlayUi,
 }
 
@@ -55,10 +57,6 @@ fn main() -> Result<()> {
 
     // Parse args
     let args = Opt::from_args();
-
-    // Connect to remote host
-    let tcp_stream = TcpStream::connect(args.connect)?;
-    tcp_stream.set_nonblocking(true)?;
 
     // Set up window
     let event_loop = glutin::event_loop::EventLoop::new();
@@ -78,42 +76,78 @@ fn main() -> Result<()> {
     };
     let gl = std::sync::Arc::new(gl);
 
-    // Set up hotloading
-    let hotload = Hotloader::new(&args.plugins)?;
-
-    // Set up engine and initialize plugins
-    let engine = Engine::new(&args.plugins, Config { is_server: false })?;
-
     // Set up egui
-    let egui_glow = egui_glow::EguiGlow::new(&event_loop, gl.clone());
+    let mut egui_glow = egui_glow::EguiGlow::new(&event_loop, gl.clone());
+
+    // Set up desktop input
+    let mut input = DesktopInputHandler::new();
 
     // Setup client code
-    let mut client = Client::new(engine, gl, tcp_stream, hotload, egui_glow)?;
+    let mut client = Client::new(gl, &args.plugins, args.connect)?;
 
     // Run event loop
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Poll;
         client.handle_event(&event);
         match event {
-            Event::LoopDestroyed => {
-                return;
-            }
             Event::MainEventsCleared => {
                 glutin_ctx.window().request_redraw();
             }
             Event::RedrawRequested(_) => {
+                // Download messages from server
+                client.download().expect("Message download");
+
+                // Send input history
+                client.engine().send(input.get_history());
+
+                // Pre update stage
                 client
-                    .frame(glutin_ctx.window())
-                    .expect("Frame returned error");
+                    .engine()
+                    .dispatch(Stage::PreUpdate)
+                    .expect("Frame pre-update");
+
+                // Update stage
+                client
+                    .engine()
+                    .dispatch(Stage::Update)
+                    .expect("Frame udpate");
+
+                // Collect UI input
+                egui_glow.run(glutin_ctx.window(), |ctx| client.update_ui(ctx));
+
+                // Render frame
+                client.render_frame().expect("Frame render");
+
+                // Render UI
+                egui_glow.paint(glutin_ctx.window());
+
+                // Post update stage
+                client
+                    .engine()
+                    .dispatch(Stage::PostUpdate)
+                    .expect("Frame post-update");
+
+                // Upload messages to server
+                client.upload().expect("Message upload");
+
                 glutin_ctx.swap_buffers().unwrap();
             }
-            Event::WindowEvent { ref event, .. } => match event {
-                WindowEvent::Resized(physical_size) => {
-                    glutin_ctx.resize(*physical_size);
+            Event::WindowEvent { ref event, .. } => {
+                if !egui_glow.on_event(&event) {
+                    input.handle_winit_event(event);
                 }
-                WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
-                _ => (),
-            },
+
+                match event {
+                    WindowEvent::Resized(physical_size) => {
+                        glutin_ctx.resize(*physical_size);
+                    }
+                    WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                    _ => (),
+                }
+            }
+            Event::LoopDestroyed => {
+                egui_glow.destroy();
+            }
             _ => (),
         }
     });
@@ -121,52 +155,50 @@ fn main() -> Result<()> {
 
 impl Client {
     pub fn new(
-        mut engine: Engine,
         gl: std::sync::Arc<gl::Context>,
-        conn: TcpStream,
-        hotload: Hotloader,
-        egui_glow: EguiGlow,
+        plugins: &[PathBuf],
+        addr: SocketAddr,
     ) -> Result<Self> {
+        // Connect to remote host
+        let conn = TcpStream::connect(addr)?;
+        conn.set_nonblocking(true)?;
+
+        // Set up hotloading
+        let hotload = Hotloader::new(&plugins)?;
+
+        // Set up engine and initialize plugins
+        let mut engine = Engine::new(&plugins, Config { is_server: false })?;
+
+        // Set up rendering
         let render = RenderPlugin::new(gl, &mut engine).context("Setting up render engine")?;
-        let input = DesktopInputHandler::new();
+
         let ui = OverlayUi::new(&mut engine);
 
         // Initialize plugins AFTER we set up our plugins
         engine.init_plugins()?;
 
         Ok(Self {
-            egui_glow,
             hotload,
             conn,
             ui,
             recv_buf: AsyncBufferedReceiver::new(),
             engine,
             render,
-            input,
         })
     }
 
     pub fn handle_event(&mut self, event: &Event<()>) {
         match event {
-            Event::WindowEvent { event, .. } => {
-                if !self.egui_glow.on_event(&event) {
-                    self.input.handle_winit_event(event);
-                }
-                match event {
-                    WindowEvent::Resized(physical_size) => {
-                        self.render.set_screen_size(*physical_size)
-                    }
-                    _ => (),
-                }
-            }
-            Event::LoopDestroyed => {
-                self.egui_glow.destroy();
-            }
+            Event::WindowEvent { event, .. } => match event {
+                WindowEvent::Resized(physical_size) => self.render.set_screen_size(*physical_size),
+                _ => (),
+            },
             _ => (),
         }
     }
 
-    pub fn frame(&mut self, window: &glutin::window::Window) -> Result<()> {
+    /// Synchronize with remote and with plugin hotloading
+    pub fn download(&mut self) -> Result<()> {
         // Check for hotloaded plugins
         for path in self.hotload.hotload()? {
             log::info!("Reloading {}", path.display());
@@ -179,7 +211,7 @@ impl Client {
                 ReadState::Invalid => {
                     log::error!("Failed to parse invalid message");
                 }
-                ReadState::Incomplete => break,
+                ReadState::Incomplete => break Ok(()),
                 ReadState::Disconnected => {
                     bail!("Disconnected");
                 }
@@ -196,26 +228,18 @@ impl Client {
                 }
             }
         }
+    }
 
-        // Pre-update
-        self.engine.send(self.input.get_history());
-        self.engine.dispatch(Stage::PreUpdate)?;
-
-        // Update
-        self.engine.dispatch(Stage::Update)?;
-
-        // UI updates
+    pub fn update_ui(&mut self, ctx: &egui::Context) {
         self.ui.update(&mut self.engine);
-        self.egui_glow
-            .run(window, |ctx| self.ui.run(ctx, &mut self.engine));
+        self.ui.run(ctx, &mut self.engine);
+    }
 
-        // Render game, then egui
-        self.render.frame(&mut self.engine)?;
-        self.egui_glow.paint(window);
+    pub fn render_frame(&mut self) -> Result<()> {
+        self.render.frame(&mut self.engine)
+    }
 
-        // Post-update
-        self.engine.dispatch(Stage::PostUpdate)?;
-
+    pub fn upload(&mut self) -> Result<()> {
         // Send message to server
         let msg = ClientToServer {
             messages: self.engine.network_inbox(),
@@ -224,5 +248,9 @@ impl Client {
         self.conn.flush()?;
 
         Ok(())
+    }
+
+    fn engine(&mut self) -> &mut Engine {
+        &mut self.engine
     }
 }
