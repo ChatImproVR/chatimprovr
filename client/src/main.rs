@@ -547,11 +547,11 @@ fn virtual_reality(args: Opt) -> Result<()> {
 
             // Set view and projection matrices
             let headset_view = xr_view_poses[view_idx];
-            let view = transform_from_pose(&headset_view.pose);
+            let transf = transform_from_pose(&headset_view.pose);
 
             // Render frame
             client
-                .render_frame(view.to_homogeneous())
+                .render_frame(transf.view())
                 .expect("Frame render");
 
             // Unbind framebuffer

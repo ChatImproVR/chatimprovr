@@ -163,15 +163,16 @@ const CUBE_HANDLE: RenderHandle = RenderHandle(3984203840);
 const CUBE_SHADER: ShaderHandle = ShaderHandle(4320432);
 
 fn cube() -> RenderData {
+    let s = 0.25;
     let vertices = vec![
-        Vertex::new([-1.0, -1.0, -1.0], [0.0, 1.0, 1.0]),
-        Vertex::new([1.0, -1.0, -1.0], [1.0, 0.0, 1.0]),
-        Vertex::new([1.0, 1.0, -1.0], [1.0, 1.0, 0.0]),
-        Vertex::new([-1.0, 1.0, -1.0], [0.0, 1.0, 1.0]),
-        Vertex::new([-1.0, -1.0, 1.0], [1.0, 0.0, 1.0]),
-        Vertex::new([1.0, -1.0, 1.0], [1.0, 1.0, 0.0]),
-        Vertex::new([1.0, 1.0, 1.0], [0.0, 1.0, 1.0]),
-        Vertex::new([-1.0, 1.0, 1.0], [1.0, 0.0, 1.0]),
+        Vertex::new([-s, -s, -s], [0.0, 1.0, 1.0]),
+        Vertex::new([s, -s, -s], [1.0, 0.0, 1.0]),
+        Vertex::new([s, s, -s], [1.0, 1.0, 0.0]),
+        Vertex::new([-s, s, -s], [0.0, 1.0, 1.0]),
+        Vertex::new([-s, -s, s], [1.0, 0.0, 1.0]),
+        Vertex::new([s, -s, s], [1.0, 1.0, 0.0]),
+        Vertex::new([s, s, s], [0.0, 1.0, 1.0]),
+        Vertex::new([-s, s, s], [1.0, 0.0, 1.0]),
     ];
 
     let indices = vec![

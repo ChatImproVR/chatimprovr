@@ -100,7 +100,7 @@ impl ClientState {
                     key,
                     &CameraComponent {
                         clear_color,
-                        projection: [left_proj, right_proj],
+                        projection: [right_proj, left_proj],
                     },
                 );
             }
