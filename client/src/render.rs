@@ -75,7 +75,7 @@ impl RenderPlugin {
     }
 
     /// Draw a frame, prepending camera transform to the given view
-    pub fn frame(&mut self, engine: &mut Engine, vr_view: Matrix4<f32>) -> Result<()> {
+    pub fn frame(&mut self, engine: &mut Engine, vr_view: Matrix4<f32>, camera_idx: usize) -> Result<()> {
         // Upload render data
         for msg in engine.inbox::<RenderData>() {
             if let Err(e) = self.rdr.upload_render_data(&self.gl, &msg) {
@@ -99,10 +99,9 @@ impl RenderPlugin {
             }
         };
 
-        // Set up camera matrices. TODO: Determine projection via plugin!
         let camera_transf = engine.ecs().get::<Transform>(camera_entity).unwrap();
         let camera_comp = engine.ecs().get::<CameraComponent>(camera_entity).unwrap();
-        let proj = camera_comp.projection[0];
+        let proj = camera_comp.projection[camera_idx];
         let view = camera_transf.view() * vr_view;
 
         // Send frame timing info

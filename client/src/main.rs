@@ -144,8 +144,8 @@ impl Client {
         self.ui.run(ctx, &mut self.engine);
     }
 
-    pub fn render_frame(&mut self, vr_view: Matrix4<f32>) -> Result<()> {
-        self.render.frame(&mut self.engine, vr_view)
+    pub fn render_frame(&mut self, vr_view: Matrix4<f32>, view_idx: usize) -> Result<()> {
+        self.render.frame(&mut self.engine, vr_view, view_idx)
     }
 
     pub fn upload(&mut self) -> Result<()> {
@@ -223,7 +223,7 @@ fn desktop(args: Opt) -> Result<()> {
 
                 // Render frame
                 client
-                    .render_frame(Matrix4::identity())
+                    .render_frame(Matrix4::identity(), 0)
                     .expect("Frame render");
 
                 // Render UI
@@ -551,7 +551,7 @@ fn virtual_reality(args: Opt) -> Result<()> {
 
             // Render frame
             client
-                .render_frame(transf.view())
+                .render_frame(transf.view(), view_idx)
                 .expect("Frame render");
 
             // Unbind framebuffer

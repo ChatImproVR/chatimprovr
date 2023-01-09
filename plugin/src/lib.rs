@@ -10,7 +10,7 @@ use cimvr_common::{
     vr::{VrFov, VrUpdate},
     Transform,
 };
-use cimvr_engine_interface::{make_app_state, prelude::*};
+use cimvr_engine_interface::{dbg, make_app_state, prelude::*};
 
 struct ClientState {
     arcball: ArcBall,
@@ -100,7 +100,7 @@ impl ClientState {
                     key,
                     &CameraComponent {
                         clear_color,
-                        projection: [right_proj, left_proj],
+                        projection: [left_proj, right_proj],
                     },
                 );
             }
