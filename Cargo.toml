@@ -3,11 +3,14 @@ members = [
     "engine_interface",
     "engine",
     "common",
-    "client",
     "server",
     "plugin",
     "plugin2",
     "plugin3",
+]
+# Causes a build issue with OpenXR if included in workspace
+exclude = [
+    "client",
 ]
 
 [profile.release]
