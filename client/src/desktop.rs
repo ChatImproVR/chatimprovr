@@ -1,10 +1,10 @@
-use cimvr_common::input::*;
+use cimvr_common::desktop::*;
 
-pub struct UserInputHandler {
+pub struct DesktopInputHandler {
     events: Vec<InputEvent>,
 }
 
-impl UserInputHandler {
+impl DesktopInputHandler {
     pub fn new() -> Self {
         Self { events: vec![] }
     }

@@ -195,7 +195,7 @@ in vec4 f_color;
 out vec4 out_color;
 
 void main() {
-    vec3 color = vec3(1., 0., 0.);
+    vec3 color = f_color.rgb;
     out_color = vec4(color, 1.);
 }"
     .into();

@@ -8,17 +8,17 @@ use cimvr_engine::network::{
 };
 use cimvr_engine::Config;
 use cimvr_engine::{interface::system::Stage, Engine};
+use desktop::DesktopInputHandler;
 use egui_glow::EguiGlow;
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
-use input::UserInputHandler;
 use render::RenderPlugin;
 use std::io::Write;
 use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
 use ui::OverlayUi;
 
-mod input;
+mod desktop;
 mod render;
 mod ui;
 
@@ -41,7 +41,7 @@ struct Opt {
 struct Client {
     engine: Engine,
     render: RenderPlugin,
-    input: UserInputHandler,
+    input: DesktopInputHandler,
     recv_buf: AsyncBufferedReceiver,
     conn: TcpStream,
     hotload: Hotloader,
@@ -128,7 +128,7 @@ impl Client {
         egui_glow: EguiGlow,
     ) -> Result<Self> {
         let render = RenderPlugin::new(gl, &mut engine).context("Setting up render engine")?;
-        let input = UserInputHandler::new();
+        let input = DesktopInputHandler::new();
         let ui = OverlayUi::new(&mut engine);
 
         // Initialize plugins AFTER we set up our plugins

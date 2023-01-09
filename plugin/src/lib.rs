@@ -1,7 +1,7 @@
 use std::f32::consts::FRAC_PI_2;
 
 use cimvr_common::{
-    input::{
+    desktop::{
         ElementState, InputEvent, InputEvents, KeyboardEvent, ModifiersState, MouseButton,
         MouseEvent, WindowEvent,
     },

@@ -3,7 +3,7 @@ pub use nalgebra;
 use nalgebra::{Matrix4, Point3, UnitQuaternion};
 use serde::{Deserialize, Serialize};
 
-pub mod input;
+pub mod desktop;
 pub mod render;
 pub mod ui;
 pub mod vr;
