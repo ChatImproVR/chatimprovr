@@ -1093,7 +1093,7 @@ dependencies = [
 [[package]]
 name = "glutin-openxr-opengl-helper"
 version = "0.1.0"
-source = "git+https://github.com/ChatImproVR/rust-opengl-openxr-example.git?branch=library#92be2e3c08337b922ca2bba7ab866e447e3ab1ae"
+source = "git+https://github.com/ChatImproVR/rust-opengl-openxr-example.git?rev=c56b2dc#c56b2dc80395b27db56bf2bad09f8abbe2589c4a"
 dependencies = [
  "anyhow",
  "glutin",
