@@ -5,6 +5,10 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = []
+vr = ["openxr"]
+
 [dependencies]
 cimvr_engine = { path = "../engine" }
 cimvr_common = { path = "../common" }
@@ -29,7 +33,7 @@ raw-window-handle = "0.5.0"
 glutin-openxr-opengl-helper = { git = "https://github.com/ChatImproVR/rust-opengl-openxr-example.git", rev = "c56b2dc" }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-openxr = { version = "0.17.0", features = ["loaded"] }
+openxr = { version = "0.17.0", optional = true, features = ["loaded"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
-openxr = { version = "0.17.0", features = ["static"] }
+openxr = { version = "0.17.0", optional = true, features = ["static"] }
