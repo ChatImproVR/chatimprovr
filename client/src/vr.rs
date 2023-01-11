@@ -1,30 +1,11 @@
-use anyhow::{bail, format_err, Context, Result};
+use anyhow::{format_err, Result};
 use cimvr_common::vr::{VrFov, VrUpdate};
 use cimvr_common::Transform;
-use cimvr_engine::hotload::Hotloader;
-use cimvr_engine::interface::prelude::{Access, QueryComponent, Synchronized};
-use cimvr_engine::interface::serial::deserialize;
-use cimvr_engine::network::{
-    length_delmit_message, AsyncBufferedReceiver, ClientToServer, ReadState, ServerToClient,
-};
-use cimvr_engine::Config;
-use cimvr_engine::{interface::system::Stage, Engine};
-use crate::desktop_input::DesktopInputHandler;
-use egui_glow::EguiGlow;
+use cimvr_engine::interface::system::Stage;
 use gl::HasContext;
-use glutin::event::{Event, WindowEvent};
-use glutin::event_loop::ControlFlow;
-use nalgebra::{Matrix4, Point3, Quaternion, Unit};
-use render::RenderPlugin;
-use std::io::Write;
-use std::net::{SocketAddr, TcpStream};
-use std::path::PathBuf;
+use nalgebra::{Point3, Quaternion, Unit};
 use std::sync::Arc;
-use ui::OverlayUi;
-use crate::{render, ui};
-
-use crate::{Opt, Client};
-
+use crate::{Client, Opt};
 
 const VR_DEPTH_FORMAT: u32 = gl::DEPTH_COMPONENT24;
 
@@ -127,8 +108,6 @@ pub fn virtual_reality(args: Opt) -> Result<()> {
 
     // Set up swapchains and get images
     for &xr_view in &xr_views {
-        let image_types = [(), ()];
-
         let width = xr_view.recommended_image_rect_width;
         let height = xr_view.recommended_image_rect_height;
 

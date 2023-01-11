@@ -1,29 +1,11 @@
-use anyhow::{bail, format_err, Context, Result};
-use cimvr_common::vr::{VrFov, VrUpdate};
-use cimvr_common::Transform;
-use cimvr_engine::hotload::Hotloader;
-use cimvr_engine::interface::prelude::{Access, QueryComponent, Synchronized};
-use cimvr_engine::interface::serial::deserialize;
-use cimvr_engine::network::{
-    length_delmit_message, AsyncBufferedReceiver, ClientToServer, ReadState, ServerToClient,
-};
-use cimvr_engine::Config;
-use cimvr_engine::{interface::system::Stage, Engine};
+use anyhow::Result;
 use crate::desktop_input::DesktopInputHandler;
-use egui_glow::EguiGlow;
-use gl::HasContext;
+use cimvr_engine::interface::system::Stage;
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
-use nalgebra::{Matrix4, Point3, Quaternion, Unit};
-use render::RenderPlugin;
-use std::io::Write;
-use std::net::{SocketAddr, TcpStream};
-use std::path::PathBuf;
+use nalgebra::Matrix4;
 use std::sync::Arc;
-use ui::OverlayUi;
-use crate::{render, ui};
-
-use crate::{Opt, Client};
+use crate::{Client, Opt};
 
 pub fn desktop(args: Opt) -> Result<()> {
     // Set up window

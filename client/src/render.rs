@@ -8,7 +8,7 @@ use cimvr_engine::interface::prelude::QueryComponent;
 use cimvr_engine::{interface::prelude::Access, Engine};
 use gl::HasContext;
 use glow::NativeUniformLocation;
-use glutin::dpi::PhysicalSize;
+
 use nalgebra::Matrix4;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -75,7 +75,12 @@ impl RenderPlugin {
     }
 
     /// Draw a frame, prepending camera transform to the given view
-    pub fn frame(&mut self, engine: &mut Engine, vr_view: Matrix4<f32>, camera_idx: usize) -> Result<()> {
+    pub fn frame(
+        &mut self,
+        engine: &mut Engine,
+        vr_view: Matrix4<f32>,
+        camera_idx: usize,
+    ) -> Result<()> {
         // Upload render data
         for msg in engine.inbox::<RenderData>() {
             if let Err(e) = self.rdr.upload_render_data(&self.gl, &msg) {

@@ -3,9 +3,7 @@ extern crate glow as gl;
 #[cfg(feature = "vr")]
 extern crate openxr as xr;
 
-use anyhow::{bail, format_err, Context, Result};
-use cimvr_common::vr::{VrFov, VrUpdate};
-use cimvr_common::Transform;
+use anyhow::{bail, Context, Result};
 use cimvr_engine::hotload::Hotloader;
 use cimvr_engine::interface::prelude::{Access, QueryComponent, Synchronized};
 use cimvr_engine::interface::serial::deserialize;
@@ -13,13 +11,8 @@ use cimvr_engine::network::{
     length_delmit_message, AsyncBufferedReceiver, ClientToServer, ReadState, ServerToClient,
 };
 use cimvr_engine::Config;
-use cimvr_engine::{interface::system::Stage, Engine};
-use desktop_input::DesktopInputHandler;
-use egui_glow::EguiGlow;
-use gl::HasContext;
-use glutin::event::{Event, WindowEvent};
-use glutin::event_loop::ControlFlow;
-use nalgebra::{Matrix4, Point3, Quaternion, Unit};
+use cimvr_engine::Engine;
+use nalgebra::Matrix4;
 use render::RenderPlugin;
 use std::io::Write;
 use std::net::{SocketAddr, TcpStream};
@@ -30,8 +23,8 @@ use ui::OverlayUi;
 #[cfg(feature = "vr")]
 mod vr;
 
-mod desktop_input;
 mod desktop;
+mod desktop_input;
 mod render;
 mod ui;
 
