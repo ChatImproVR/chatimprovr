@@ -16,19 +16,24 @@ Make sure you have the `wasm32-unknown-unknown` target installed;
 rustup target add wasm32-unknown-unknown
 ```
 
+Dependencies on Ubuntu:
+```sh
+sudo apt install build-essential cmake libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev libxkbcommon-dev libssl-dev
+```
+
 # Compilation
 First, compile the plugins. Currently you must `cd` into each plugin and build it with `cargo build --release`.
 Then, from the root of the project execute `./run_client.sh`. This will bring up the plugins in the client!
 
 First, execute:
 ```sh
-cd iteration0/client
+cd iteration0/server
 cargo run --release --bin cimvr_server -- ../target/wasm32-unknown-unknown/release/plugin*.wasm
 ```
 
 Then, in **another terminal**, execute:
 ```sh
-cd iteration0/server
+cd iteration0/client
 cargo run --release --bin cimvr_client -- ../target/wasm32-unknown-unknown/release/plugin*.wasm
 ```
 
