@@ -21,21 +21,28 @@ Dependencies on Ubuntu:
 sudo apt install build-essential cmake libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev libxkbcommon-dev libssl-dev
 ```
 
-# Compilation
+# Compilation and running
 First, compile the plugins. Currently you must `cd` into each plugin and build it with `cargo build --release`.
-Then, from the root of the project execute `./run_client.sh`. This will bring up the plugins in the client!
 
-First, execute:
+Next, execute:
 ```sh
-cd iteration0/server
+cd server
 cargo run --release --bin cimvr_server -- ../target/wasm32-unknown-unknown/release/plugin*.wasm
 ```
 
-Then, in **another terminal**, execute:
+Finally, in **another terminal**, execute:
 ```sh
-cd iteration0/client
+cd client
 cargo run --release --bin cimvr_client -- ../target/wasm32-unknown-unknown/release/plugin*.wasm
 ```
+
+# Connection to a remote server
+You may connect to a remote server like so:
+```sh
+cargo run --release --bin cimvr_client -- -connect <ip>:5031 <plugins>
+```
+
+The default port is 5031, but this can be configured in the server with `--bind <bind addr>:<port>`
 
 # Organization 
 ![Visual aid for crate graph](./graph.svg)
