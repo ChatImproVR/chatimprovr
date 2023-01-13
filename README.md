@@ -20,9 +20,16 @@ rustup target add wasm32-unknown-unknown
 First, compile the plugins. Currently you must `cd` into each plugin and build it with `cargo build --release`.
 Then, from the root of the project execute `./run_client.sh`. This will bring up the plugins in the client!
 
-This is the content of `run_client.sh`, in case you're on Windows:
+First, execute:
 ```sh
-cargo run --release --bin cimvr_client -- target/wasm32-unknown-unknown/release/plugin.wasm target/wasm32-unknown-unknown/release/plugin2.wasm
+cd iteration0/client
+cargo run --release --bin cimvr_server -- ../target/wasm32-unknown-unknown/release/plugin*.wasm
+```
+
+Then, in **another terminal**, execute:
+```sh
+cd iteration0/server
+cargo run --release --bin cimvr_client -- ../target/wasm32-unknown-unknown/release/plugin*.wasm
 ```
 
 # Organization 
