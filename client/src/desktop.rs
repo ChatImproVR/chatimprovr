@@ -1,11 +1,11 @@
-use anyhow::Result;
 use crate::desktop_input::DesktopInputHandler;
+use crate::{Client, Opt};
+use anyhow::Result;
 use cimvr_engine::interface::system::Stage;
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
 use nalgebra::Matrix4;
 use std::sync::Arc;
-use crate::{Client, Opt};
 
 pub fn mainloop(args: Opt) -> Result<()> {
     // Set up window
