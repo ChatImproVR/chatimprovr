@@ -69,9 +69,9 @@ fn main() -> Result<()> {
         bail!("Client was not compiled with the \"vr\" feature. Virtual Reality is not available.");
 
         #[cfg(feature = "vr")]
-        vr::virtual_reality(args)
+        vr::mainloop(args)
     } else {
-        desktop::desktop(args)
+        desktop::mainloop(args)
     }
 }
 
@@ -156,8 +156,11 @@ impl Client {
         let msg = ClientToServer {
             messages: self.engine.network_inbox(),
         };
+
+        self.conn.set_nonblocking(false)?;
         length_delmit_message(&msg, &mut self.conn)?;
         self.conn.flush()?;
+        self.conn.set_nonblocking(true)?;
 
         Ok(())
     }

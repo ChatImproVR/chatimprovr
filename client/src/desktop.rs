@@ -7,7 +7,7 @@ use nalgebra::Matrix4;
 use std::sync::Arc;
 use crate::{Client, Opt};
 
-pub fn desktop(args: Opt) -> Result<()> {
+pub fn mainloop(args: Opt) -> Result<()> {
     // Set up window
     let event_loop = glutin::event_loop::EventLoop::new();
     let window_builder = glutin::window::WindowBuilder::new().with_title("ChatImproVR");

@@ -9,7 +9,7 @@ use crate::{Client, Opt};
 
 const VR_DEPTH_FORMAT: u32 = gl::DEPTH_COMPONENT24;
 
-pub fn virtual_reality(args: Opt) -> Result<()> {
+pub fn mainloop(args: Opt) -> Result<()> {
     // Load OpenXR from platform-specific location
     #[cfg(target_os = "linux")]
     let entry = unsafe { xr::Entry::load()? };

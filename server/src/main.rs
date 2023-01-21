@@ -199,10 +199,12 @@ impl Server {
             });
 
             // Serialize message
+            conn.stream.set_nonblocking(false)?;
             if let Err(e) = length_delmit_message(&state, &mut conn.stream) {
                 log::error!("Error writing to stream; {:?}", e);
             } else {
                 conn.stream.flush()?;
+                conn.stream.set_nonblocking(true)?;
                 self.conns.push(conn);
             }
         }
