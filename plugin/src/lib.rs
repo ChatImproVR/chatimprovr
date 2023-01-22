@@ -92,8 +92,9 @@ impl ClientState {
             // Set correct FOV for each eye
             let near = 0.01;
             let far = 1000.;
-            let left_proj = vr_projection_from_fov(&update.left_fov, near, far);
-            let right_proj = vr_projection_from_fov(&update.right_fov, near, far);
+            dbg!(&update);
+            let left_proj = vr_projection_from_fov(&update.fov_left, near, far);
+            let right_proj = vr_projection_from_fov(&update.fov_right, near, far);
 
             for key in query.iter() {
                 query.write::<CameraComponent>(

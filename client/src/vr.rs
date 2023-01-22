@@ -464,7 +464,7 @@ struct PluginVrInterfacing {
 impl PluginVrInterfacing {
     pub fn new(xr_instance: &xr::Instance, xr_session: &xr::Session<xr::OpenGL>) -> Result<Self> {
         // Create action set
-        let action_set = xr_instance.create_action_set("Gameplay", "Gameplay", 0)?;
+        let action_set = xr_instance.create_action_set("gameplay", "Gameplay", 0)?;
 
         let grip_left_action =
             action_set.create_action::<xr::Posef>("grip_left", "grip_left", &[])?;
