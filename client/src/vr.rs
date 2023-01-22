@@ -8,6 +8,7 @@ use nalgebra::{Point3, Quaternion, Unit};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
+use xr::View;
 
 const VR_DEPTH_FORMAT: u32 = gl::DEPTH_COMPONENT24;
 
@@ -36,6 +37,7 @@ struct MainLoop {
     swapchain_depth_images: Vec<Vec<gl::NativeTexture>>,
     _glutin_ctx: glutin::ContextWrapper<glutin::PossiblyCurrent, ()>,
     _glutin_window: glutin::window::Window,
+    plugin_interface: PluginVrInterfacing,
 }
 
 impl MainLoop {
@@ -186,11 +188,13 @@ impl MainLoop {
             gl_framebuffers.push(fb);
         }
 
-        // Compile shaders
+        // Get the floor space
         let xr_play_space = xr_session
-            .create_reference_space(xr::ReferenceSpaceType::LOCAL, xr::Posef::IDENTITY)?;
+            .create_reference_space(xr::ReferenceSpaceType::STAGE, xr::Posef::IDENTITY)?;
 
         let xr_event_buf = xr::EventDataBuffer::default();
+
+        let plugin_interface = PluginVrInterfacing::new(&xr_instance, &xr_session)?;
 
         Ok(Self {
             client,
@@ -210,6 +214,7 @@ impl MainLoop {
             swapchain_depth_images,
             _glutin_ctx: glutin_ctx,
             _glutin_window: glutin_window,
+            plugin_interface,
         })
     }
 
@@ -264,18 +269,14 @@ impl MainLoop {
             &self.xr_play_space,
         )?;
 
-        // Get VR data for Update stage
-        let vr_data: VrUpdate = VrUpdate {
-            left_view: transform_from_pose(&xr_view_poses[0].pose),
-            right_view: transform_from_pose(&xr_view_poses[1].pose),
-            left_fov: convert_fov(&xr_view_poses[0].fov),
-            right_fov: convert_fov(&xr_view_poses[1].fov),
-            // TODO
-            //right_hand: Transform::identity(),
-            //left_hand: Transform::identity(),
-            //events: vec![],
-        };
-        self.client.engine().send(vr_data);
+        // Send update data to plugins
+        let vr_update = self.plugin_interface.update(
+            &xr_view_poses,
+            &self.xr_session,
+            &xr_frame_state,
+            &self.xr_play_space,
+        )?;
+        self.client.engine().send(vr_update);
 
         // Update stage
         self.client
@@ -443,5 +444,165 @@ fn convert_fov(fov: &xr::Fovf) -> VrFov {
         angle_right: fov.angle_right,
         angle_up: fov.angle_up,
         angle_down: fov.angle_down,
+    }
+}
+
+/// Plugin interfacing for VR controllers, headset
+struct PluginVrInterfacing {
+    action_set: xr::ActionSet,
+    grip_left: xr::Space,
+    grip_right: xr::Space,
+    aim_left: xr::Space,
+    aim_right: xr::Space,
+
+    grip_left_action: xr::Action<xr::Posef>,
+    grip_right_action: xr::Action<xr::Posef>,
+    aim_left_action: xr::Action<xr::Posef>,
+    aim_right_action: xr::Action<xr::Posef>,
+}
+
+impl PluginVrInterfacing {
+    pub fn new(xr_instance: &xr::Instance, xr_session: &xr::Session<xr::OpenGL>) -> Result<Self> {
+        // Create action set
+        let action_set = xr_instance.create_action_set("Gameplay", "Gameplay", 0)?;
+
+        let grip_left_action =
+            action_set.create_action::<xr::Posef>("grip_left", "grip_left", &[])?;
+
+        let aim_left_action = action_set.create_action::<xr::Posef>("aim_left", "aim_left", &[])?;
+
+        let grip_right_action =
+            action_set.create_action::<xr::Posef>("grip_right", "grip_right", &[])?;
+
+        let aim_right_action =
+            action_set.create_action::<xr::Posef>("aim_right", "aim_right", &[])?;
+
+        xr_instance
+            .suggest_interaction_profile_bindings(
+                xr_instance
+                    .string_to_path("/interaction_profiles/khr/simple_controller")
+                    .unwrap(),
+                &[
+                    xr::Binding::new(
+                        &aim_right_action,
+                        xr_instance
+                            .string_to_path("/user/hand/right/input/aim/pose")
+                            .unwrap(),
+                    ),
+                    xr::Binding::new(
+                        &aim_left_action,
+                        xr_instance
+                            .string_to_path("/user/hand/left/input/aim/pose")
+                            .unwrap(),
+                    ),
+                    xr::Binding::new(
+                        &grip_right_action,
+                        xr_instance
+                            .string_to_path("/user/hand/right/input/grip/pose")
+                            .unwrap(),
+                    ),
+                    xr::Binding::new(
+                        &grip_left_action,
+                        xr_instance
+                            .string_to_path("/user/hand/left/input/grip/pose")
+                            .unwrap(),
+                    ),
+                ],
+            )
+            .unwrap();
+
+        xr_session.attach_action_sets(&[&action_set])?;
+
+        let aim_right = aim_right_action.create_space(
+            xr_session.clone(),
+            xr::Path::NULL,
+            xr::Posef::IDENTITY,
+        )?;
+
+        let aim_left = aim_left_action.create_space(
+            xr_session.clone(),
+            xr::Path::NULL,
+            xr::Posef::IDENTITY,
+        )?;
+
+        let grip_right = grip_right_action.create_space(
+            xr_session.clone(),
+            xr::Path::NULL,
+            xr::Posef::IDENTITY,
+        )?;
+
+        let grip_left = grip_left_action.create_space(
+            xr_session.clone(),
+            xr::Path::NULL,
+            xr::Posef::IDENTITY,
+        )?;
+
+        Ok(Self {
+            action_set,
+            aim_left,
+            aim_right,
+            grip_left,
+            grip_right,
+
+            aim_left_action,
+            aim_right_action,
+            grip_left_action,
+            grip_right_action,
+        })
+    }
+
+    pub fn update(
+        &mut self,
+        views: &[View],
+        xr_session: &xr::Session<xr::OpenGL>,
+        xr_frame_state: &xr::FrameState,
+        stage: &xr::Space,
+    ) -> Result<VrUpdate> {
+        xr_session.sync_actions(&[xr::ActiveActionSet::new(&self.action_set)])?;
+
+        // Get hand positions
+        let aim_right = self
+            .aim_right
+            .locate(&stage, xr_frame_state.predicted_display_time)?;
+        let aim_right = self
+            .aim_right_action
+            .is_active(xr_session, xr::Path::NULL)?
+            .then(|| transform_from_pose(&aim_right.pose));
+
+        let aim_left = self
+            .aim_left
+            .locate(&stage, xr_frame_state.predicted_display_time)?;
+        let aim_left = self
+            .aim_left_action
+            .is_active(xr_session, xr::Path::NULL)?
+            .then(|| transform_from_pose(&aim_left.pose));
+
+        let grip_right = self
+            .grip_right
+            .locate(&stage, xr_frame_state.predicted_display_time)?;
+        let grip_right = self
+            .grip_right_action
+            .is_active(xr_session, xr::Path::NULL)?
+            .then(|| transform_from_pose(&grip_right.pose));
+
+        let grip_left = self
+            .grip_left
+            .locate(&stage, xr_frame_state.predicted_display_time)?;
+        let grip_left = self
+            .grip_left_action
+            .is_active(xr_session, xr::Path::NULL)?
+            .then(|| transform_from_pose(&grip_left.pose));
+
+        // Get VR data for Update stage
+        Ok(VrUpdate {
+            view_left: transform_from_pose(&views[0].pose),
+            view_right: transform_from_pose(&views[1].pose),
+            fov_left: convert_fov(&views[0].fov),
+            fov_right: convert_fov(&views[1].fov),
+            grip_left,
+            grip_right,
+            aim_left,
+            aim_right,
+        })
     }
 }

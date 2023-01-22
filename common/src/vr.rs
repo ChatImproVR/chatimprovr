@@ -8,23 +8,26 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct VrUpdate {
     /// View for left eye (may lag behind view in shaders by a small duration!)
-    pub left_view: Transform,
+    pub view_left: Transform,
     /// View for right eye (may lag behind view in shaders by a small duration!)
-    pub right_view: Transform,
+    pub view_right: Transform,
 
     /// Projection parameters for left eye
-    pub left_fov: VrFov,
+    pub fov_left: VrFov,
     /// Projection parameters for right eye
-    pub right_fov: VrFov,
-    /*
-    /// Right hand transform
-    pub right_hand: Transform,
-    /// Left hand transform
-    pub left_hand: Transform,
+    pub fov_right: VrFov,
 
-    /// All VR events
-    pub events: Vec<VrEvent>,
-    */
+    /// Left hand aim
+    pub aim_left: Option<Transform>,
+    /// Right hand aim
+    pub aim_right: Option<Transform>,
+
+    /// Left hand grip
+    pub grip_left: Option<Transform>,
+    /// Right hand grip
+    pub grip_right: Option<Transform>,
+    // /// All VR events
+    // pub events: Vec<VrEvent>,
 }
 
 /// Field of view of OpenXR camera
@@ -41,10 +44,12 @@ pub struct VrFov {
     pub angle_down: f32,
 }
 
+/*
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum VrEvent {
     // TODO: Events from controllers!
 }
+*/
 
 impl Message for VrUpdate {
     const CHANNEL: ChannelId = ChannelId {
