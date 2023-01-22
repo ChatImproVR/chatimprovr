@@ -34,6 +34,8 @@ struct MainLoop {
     xr_swapchains: Vec<xr::Swapchain<xr::OpenGL>>,
     swapchain_color_images: Vec<Vec<gl::NativeTexture>>,
     swapchain_depth_images: Vec<Vec<gl::NativeTexture>>,
+    _glutin_ctx: glutin::ContextWrapper<glutin::PossiblyCurrent, ()>,
+    _glutin_window: glutin::window::Window,
 }
 
 impl MainLoop {
@@ -64,9 +66,10 @@ impl MainLoop {
         // Create instance
         let xr_instance = entry.create_instance(&app_info, &extensions, &[])?;
         let instance_props = xr_instance.properties().unwrap();
-        println!(
+        log::info!(
             "loaded OpenXR runtime: {} {}",
-            instance_props.runtime_name, instance_props.runtime_version
+            instance_props.runtime_name,
+            instance_props.runtime_version
         );
 
         // Get headset system
@@ -88,23 +91,23 @@ impl MainLoop {
 
         // Create window
         let event_loop = glutin::event_loop::EventLoop::new();
-        let window_builder = glutin::window::WindowBuilder::new()
-            .with_title("Hello world!")
-            .with_inner_size(glutin::dpi::LogicalSize::new(1024.0f32, 768.0));
+        let window_builder = glutin::window::WindowBuilder::new().with_title("ChatImproVR");
 
         let windowed_context = glutin::ContextBuilder::new()
             .build_windowed(window_builder, &event_loop)
             .unwrap();
 
-        let (ctx, window) = unsafe { windowed_context.split() };
-        let ctx = unsafe { ctx.make_current().unwrap() };
+        let (ctx, glutin_window) = unsafe { windowed_context.split() };
+        let glutin_ctx = unsafe { ctx.make_current().unwrap() };
 
         // Load OpenGL
-        let gl =
-            unsafe { gl::Context::from_loader_function(|s| ctx.get_proc_address(s) as *const _) };
+        let gl = unsafe {
+            gl::Context::from_loader_function(|s| glutin_ctx.get_proc_address(s) as *const _)
+        };
         let gl = Arc::new(gl);
 
-        let session_create_info = glutin_openxr_opengl_helper::session_create_info(&ctx, &window)?;
+        let session_create_info =
+            glutin_openxr_opengl_helper::session_create_info(&glutin_ctx, &glutin_window)?;
 
         // Setup client code
         let client = Client::new(gl.clone(), &plugins, connect)?;
@@ -205,6 +208,8 @@ impl MainLoop {
             xr_views,
             swapchain_color_images,
             swapchain_depth_images,
+            _glutin_ctx: glutin_ctx,
+            _glutin_window: glutin_window,
         })
     }
 
