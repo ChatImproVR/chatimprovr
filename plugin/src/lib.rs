@@ -6,7 +6,7 @@ use cimvr_common::{
         MouseEvent, WindowEvent,
     },
     nalgebra::{Matrix4, Point3, UnitQuaternion, Vector3, Vector4},
-    render::CameraComponent,
+    render::{CameraComponent, Mesh, Render, RenderData, RenderHandle, Vertex},
     vr::{VrFov, VrUpdate},
     Transform,
 };
@@ -16,9 +16,13 @@ struct ClientState {
     arcball: ArcBall,
     arcball_control: ArcBallController,
     screen_size: (u32, u32),
+    left_hand: EntityId,
+    right_hand: EntityId,
 }
 
 make_app_state!(ClientState, DummyUserState);
+
+const HAND_RDR_ID: RenderHandle = RenderHandle(283490834298);
 
 impl UserState for ClientState {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
@@ -33,6 +37,8 @@ impl UserState for ClientState {
             },
         );
 
+        io.send(&hand());
+
         // Schedule the system
         // In the future it would be super cool to do this like Bevy and be able to just infer the
         // query from the type arguments and such...
@@ -45,10 +51,17 @@ impl UserState for ClientState {
                 .query::<CameraComponent>(Access::Write),
         );
 
+        let left_hand = io.create_entity();
+        let right_hand = io.create_entity();
+        io.add_component(left_hand, &Render::new(HAND_RDR_ID));
+        io.add_component(right_hand, &Render::new(HAND_RDR_ID));
+
         Self {
             arcball: ArcBall::default(),
             arcball_control: ArcBallController::default(),
             screen_size: (1920, 1080),
+            left_hand,
+            right_hand,
         }
     }
 }
@@ -92,7 +105,6 @@ impl ClientState {
             // Set correct FOV for each eye
             let near = 0.01;
             let far = 1000.;
-            dbg!(&update);
             let left_proj = vr_projection_from_fov(&update.fov_left, near, far);
             let right_proj = vr_projection_from_fov(&update.fov_right, near, far);
 
@@ -104,6 +116,14 @@ impl ClientState {
                         projection: [left_proj, right_proj],
                     },
                 );
+            }
+
+            if let Some(pos) = update.grip_left {
+                io.add_component(self.left_hand, &pos);
+            }
+
+            if let Some(pos) = update.grip_right {
+                io.add_component(self.right_hand, &pos);
             }
         }
     }
@@ -271,4 +291,29 @@ pub fn vr_projection_from_fov(fov: &VrFov, near: f32, far: f32) -> Matrix4<f32> 
         0.0, 0.0, a33, a43, //
         0.0, 0.0, -1.0, 0.0, //
     )
+}
+
+fn hand() -> RenderData {
+    let s = 0.15;
+
+    let vertices = vec![
+        Vertex::new([-s, -s, -s], [0.0, 1.0, 1.0]),
+        Vertex::new([s, -s, -s], [1.0, 0.0, 1.0]),
+        Vertex::new([s, s, -s], [1.0, 1.0, 0.0]),
+        Vertex::new([-s, s, -s], [0.0, 1.0, 1.0]),
+        Vertex::new([-s, -s, s], [1.0, 0.0, 1.0]),
+        Vertex::new([s, -s, s], [1.0, 1.0, 0.0]),
+        Vertex::new([s, s, s], [0.0, 1.0, 1.0]),
+        Vertex::new([-s, s, s], [1.0, 0.0, 1.0]),
+    ];
+
+    let indices = vec![
+        3, 1, 0, 2, 1, 3, 2, 5, 1, 6, 5, 2, 6, 4, 5, 7, 4, 6, 7, 0, 4, 3, 0, 7, 7, 2, 3, 6, 2, 7,
+        0, 5, 4, 1, 5, 0,
+    ];
+
+    RenderData {
+        mesh: Mesh { vertices, indices },
+        id: HAND_RDR_ID,
+    }
 }
