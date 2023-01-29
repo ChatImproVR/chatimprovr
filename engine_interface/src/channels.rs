@@ -5,10 +5,12 @@
 //!
 //! **Channels** come in two flavors, represented by [Locality](Locality).
 //!
-//! The following example sends a message from a **Client** and receives it on the **Server**
-//!
-//! ```rust
-//! ```
+
+// //! The following example sends a message from a **Client** and receives it on the **Server**
+// //!
+// //! ```rust
+// //!
+// //! ```
 
 use std::collections::HashMap;
 
@@ -53,8 +55,14 @@ pub struct MessageData {
     pub data: Vec<u8>,
 }
 
-/// A single message sent or received
+/// Trait denoting a Message type, which identifies a message by it's ID
+///
+/// See note about `CHANNEL`
 pub trait Message: Serialize + DeserializeOwned + Sized {
     /// Channel ID
+    ///
+    /// Must be unique to the responsibility of this channel.
+    /// You ***MUST*** change this ID if you change the datatype of this Message, to avoid
+    /// sending corrupted data to other plugins
     const CHANNEL: ChannelId;
 }
