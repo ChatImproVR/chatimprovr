@@ -5,12 +5,7 @@
 //!
 //! **Channels** come in two flavors, represented by [Locality](Locality).
 //!
-
-// //! The following example sends a message from a **Client** and receives it on the **Server**
-// //!
-// //! ```rust
-// //!
-// //! ```
+//! See the `channels` example under `example_plugins` in the ChatImproVR repository
 
 use std::collections::HashMap;
 

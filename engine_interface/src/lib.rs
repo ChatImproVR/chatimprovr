@@ -10,7 +10,6 @@ pub mod plugin;
 /// Printing functions for plugins
 pub mod stdout;
 
-/// ECS interfacing types
 pub mod ecs;
 
 /// Serialization format for plugin to host communication and vice versa

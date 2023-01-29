@@ -1,3 +1,7 @@
+//! # Entity Component System
+//!
+//!
+
 use std::ops::Range;
 
 use serde::{de::DeserializeOwned, Deserialize, Serialize};

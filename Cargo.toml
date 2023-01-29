@@ -7,7 +7,8 @@ members = [
     "plugin",
     "plugin2",
     "plugin3",
-    "example_plugins/channels"
+    "example_plugins/channels",
+    "example_plugins/hello",
 ]
 # Causes a build issue with OpenXR if included in workspace
 exclude = [
