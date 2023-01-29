@@ -1,3 +1,9 @@
+//! # ChatImproVR engine interface
+//! This crate facilitates communication between **Plugins** and the **Host**.
+//! It does not include any interfacing with the specific features of the **Client** or **Server**; instead these datatypes are relegated to the `common` crate.
+//!
+//! The entry point for **Plugins** is the [make_app_state!()](make_app_state) macro.
+
 /// Code specific to WASM plugins
 pub mod plugin;
 
@@ -10,7 +16,6 @@ pub mod ecs;
 /// Serialization format for plugin to host communication and vice versa
 pub mod serial;
 
-/// Message channels
 pub mod channels;
 
 /// Systems and scheduling

@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct ClientId(pub u32);
 
 /// Component indicating the entity is forcibly copied from client to server
+///
 /// Cannot be added to or removed from entities clientside!
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Synchronized;

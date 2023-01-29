@@ -1,3 +1,15 @@
+//! # Message channels
+//! ChatImproVR follows the Pub/Sub messaging pattern.
+//! After each **Stage**, the messages sent by the previous **Stage** are propagated to those
+//! **Plugins** subscribed the to corresponding **Channel**.
+//!
+//! **Channels** come in two flavors, represented by [Locality](Locality).
+//!
+//! The following example sends a message from a **Client** and receives it on the **Server**
+//!
+//! ```rust
+//! ```
+
 use std::collections::HashMap;
 
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
@@ -18,9 +30,9 @@ pub struct ChannelId {
 /// Determines whether messages are sent locally or to the remote
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Locality {
-    /// Data is sent to other local plugins
+    /// Messages are sent to or received from other plugins on the **Host**
     Local,
-    /// Data is sent between client and server
+    /// Messages are sent to or received from the **Remote**
     Remote,
     //Remote(Reliability),
 }

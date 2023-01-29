@@ -8,13 +8,19 @@ use crate::{
 pub use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 
-/// Application state, defines a constructor with common engine interface in it
+/// Defines the given structure to represent the state of a plugin (on either the **Client** or the
+/// **Server**).
 pub trait UserState: Sized {
+    /// Constructor for this state; called once before the **Init** stage.
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self;
 }
 
-/// I'm dummy
-/// Useful if you want client state but don't care about server state or vice versa
+/// A dummy UserState that doesn't do anything.
+///
+/// Useful if your plugin does not have any server state or any client state, e.g.
+/// ```rust
+/// make_app_state!(MyClientState, DummyUserState)
+/// ```
 pub struct DummyUserState;
 
 /// Full plugin context, contains user state and engine IO buffers
@@ -42,10 +48,23 @@ enum ClientOrServerState<ClientState, ServerState> {
     Server(PluginState<ServerState>),
 }
 
-/// Basically main() for plugins; allows a struct implementing AppState to be the state and entry
-/// point for the plugin
-/// Syntax is `make_app_state(ClientState, ServerState)`
-/// Use an empty struct or enum if you have no need for server state!
+/// Basically main() for plugins; allows a struct implementing the [UserState](crate::plugin::UserState) trait to be the state and entry
+/// point for the plugin.
+///
+/// The Syntax is `make_app_state(ClientState, ServerState)`, in that order.
+///
+/// For example:
+/// ```rust
+/// struct MyClientState;
+///
+/// impl UserState for MyClientState {
+///     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
+///         println!("Hello, world!");
+///     }
+/// }
+///
+/// make_app_state!(MyClientState, DummyUserState);
+/// ```
 #[macro_export]
 macro_rules! make_app_state {
     ($ClientState:ident, $ServerState:ident) => {
@@ -297,7 +316,6 @@ impl EngineIo {
 
 impl UserState for DummyUserState {
     fn new(_: &mut EngineIo, _: &mut EngineSchedule<Self>) -> Self {
-        crate::println!("I'm dummy :3");
         Self
     }
 }
