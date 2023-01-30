@@ -28,27 +28,41 @@ pub struct EntityId(pub u128);
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ComponentId {
     /// Universally-unique id
+    ///
+    /// It's recommended to generate this manually, either by the running the following Python one-liner:
+    /// ```python
+    /// import random; print(random.randint(0, 2**128))
+    /// ```
+    /// Or by simply pulling out your D&D set and rolling your d340282366920938463463374607431768211456
     pub id: u128,
     /// Serialized size in bytes
     ///
-    /// Preemptive FAQ:
-    /// Q: What? How do I get this number?
+    /// # Preemptive FAQ:
+    ///
+    /// ## Q: What? How do I get this number?
     /// A: Just put any ol number in and use it in `add_component()` once.
     /// The resulting crash will inform you of the size
+    ///
     /// A: Or just use `engine_interface::serial::serialized_size()` at runtime
     ///
-    /// Q: Why do you need this?
+    ///
+    /// ## Q: Why do you need this?
     /// A: So the engine can check that it's right
+    ///
     /// A: To easily move components around in memory
+    ///
     /// A: To help uniquely identify the database key with it's data type
     ///
-    /// Q: Is this the same as the size of the associated type?
+    /// ## Q: Is this the same as the size of the associated type?
+    ///
     /// A: Not always! `std::mem::size_of<T>()` (`where T: Component`)
     /// can be different than `serialized_size::<T>()`.
     /// Layout in memory subject to change
     ///
-    /// Q: Why is this u16?
-    /// A: Are you kidding? Components >64k? Are you outta your mind?!
+    /// ## Q: Why is this u16?
+    ///
+    /// A: Are you kidding? Components bigger than 64k? Are you outta your mind?!
+    ///
     /// A: Honestly this should be u8 but I was merciful.
     pub size: u16,
 }
