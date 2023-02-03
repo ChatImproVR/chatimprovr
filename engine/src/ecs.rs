@@ -325,7 +325,7 @@ mod tests {
 
         for ent in entities {
             let buf = ecs.get_raw(ent, comp_a);
-            let val = u64::from_le_bytes(buf.try_into().unwrap());
+            let val = u64::from_le_bytes(buf.unwrap().try_into().unwrap());
             assert_eq!(val, test_val);
             println!("{:X}", val);
         }
@@ -367,7 +367,7 @@ mod tests {
         let mut showed_up = vec![false; 50];
         for ent in entities {
             let buf = ecs.get_raw(ent, comp_b);
-            let val = u64::from_le_bytes(buf.try_into().unwrap());
+            let val = u64::from_le_bytes(buf.unwrap().try_into().unwrap());
             showed_up[val as usize] = true;
         }
 

@@ -19,6 +19,7 @@ pub trait UserState: Sized {
 ///
 /// Useful if your plugin does not have any server state or any client state, e.g.
 /// ```rust
+/// use cimvr_engine_interface::prelude::*;
 /// make_app_state!(MyClientState, DummyUserState)
 /// ```
 pub struct DummyUserState;
