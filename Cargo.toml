@@ -4,12 +4,12 @@ members = [
     "engine",
     "common",
     "server",
-    "plugin",
-    "plugin2",
-    "plugin3",
+    "example_plugins/arcball_camera",
     "example_plugins/channels",
-    "example_plugins/hello",
+    "example_plugins/dancing_cubes",
     "example_plugins/ecs",
+    "example_plugins/hello",
+    "example_plugins/ui_example",
 ]
 # Causes a build issue with OpenXR if included in workspace
 exclude = [

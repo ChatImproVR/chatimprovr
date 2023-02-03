@@ -1,5 +1,5 @@
 [package]
-name = "plugin"
+name = "ui_example"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,6 +7,6 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-cimvr_common = { path = "../common" }
-cimvr_engine_interface = { path = "../engine_interface" }
+cimvr_common = { path = "../../common" }
+cimvr_engine_interface = { path = "../../engine_interface" }
 serde = { version = "1", features = ["derive"] }
