@@ -7,6 +7,7 @@ members = [
     "example_plugins/arcball_camera",
     "example_plugins/channels",
     "example_plugins/dancing_cubes",
+    "example_plugins/cube",
     "example_plugins/ecs",
     "example_plugins/hello",
     "example_plugins/ui_example",
