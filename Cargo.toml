@@ -4,7 +4,7 @@ members = [
     "engine",
     "common",
     "server",
-    "example_plugins/arcball_camera",
+    "example_plugins/camera",
     "example_plugins/channels",
     "example_plugins/dancing_cubes",
     "example_plugins/cube",

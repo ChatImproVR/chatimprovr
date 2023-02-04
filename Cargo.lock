@@ -59,15 +59,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "arcball_camera"
-version = "0.1.0"
-dependencies = [
- "cimvr_common",
- "cimvr_engine_interface",
- "serde",
-]
-
-[[package]]
 name = "arrayvec"
 version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -148,6 +139,15 @@ name = "byteorder"
 version = "1.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
+
+[[package]]
+name = "camera"
+version = "0.1.0"
+dependencies = [
+ "cimvr_common",
+ "cimvr_engine_interface",
+ "serde",
+]
 
 [[package]]
 name = "cc"
