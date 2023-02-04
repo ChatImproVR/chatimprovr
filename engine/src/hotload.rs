@@ -1,5 +1,5 @@
 use ahash::HashSet;
-use anyhow::Result;
+use anyhow::{format_err, Context, Result};
 use notify::{Event, RecommendedWatcher, RecursiveMode, Watcher};
 use std::{
     path::PathBuf,
@@ -16,8 +16,11 @@ impl Hotloader {
     pub fn new(plugins: &[PathBuf]) -> Result<Self> {
         let paths: HashSet<PathBuf> = plugins
             .iter()
-            .map(|p| p.canonicalize().expect("Path cannot cannonicalize"))
-            .collect();
+            .map(|p| {
+                p.canonicalize()
+                    .with_context(|| format_err!("Plugin not found {}", p.display()))
+            })
+            .collect::<Result<_>>()?;
 
         let (tx, rx) = channel();
         let mut watcher = notify::recommended_watcher(move |res| match res {
