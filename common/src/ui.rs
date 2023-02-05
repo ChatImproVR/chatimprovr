@@ -1,3 +1,4 @@
+//! Basic graphical user interfacing
 use cimvr_engine_interface::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

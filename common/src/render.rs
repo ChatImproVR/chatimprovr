@@ -1,9 +1,12 @@
+//! Types for interfacing with the Host's rendering engine
 use bytemuck::{Pod, Zeroable};
 use cimvr_engine_interface::prelude::*;
 use nalgebra::Matrix4;
 use serde::{Deserialize, Serialize};
 
+/// The default vertex shader
 pub const DEFAULT_VERTEX_SHADER: &str = include_str!("shaders/unlit.vert");
+/// The default fragment shader
 pub const DEFAULT_FRAGMENT_SHADER: &str = include_str!("shaders/unlit.frag");
 
 // repr(C) is for the host; makes uploading vertices efficient.
@@ -48,6 +51,7 @@ pub struct RenderData {
     pub id: RenderHandle,
 }
 
+/// A complete description of a shader (sources)
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ShaderData {
     // TODO: Use SPIRV here? It's much more stable!
@@ -59,6 +63,7 @@ pub struct ShaderData {
     pub id: ShaderHandle,
 }
 
+/// Mesh defined by vertices and indices
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Mesh {
     /// Vertices. An empty list indicates procedurally generated vertex data

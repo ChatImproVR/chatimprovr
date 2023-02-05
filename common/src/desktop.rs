@@ -1,3 +1,4 @@
+//! Types useful for interfacing with the Host's mouse and keyboard
 use cimvr_engine_interface::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -75,6 +76,7 @@ pub enum ElementState {
     Released,
 }
 
+/// KeyCode; matches winit's keycode enum.
 #[derive(Serialize, Deserialize, Hash, Copy, Debug, Clone, PartialEq, Eq)]
 pub enum KeyCode {
     /// The '1' key over the letters.

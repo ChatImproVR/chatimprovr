@@ -7,5 +7,6 @@ Here we have a number of plugins written to demonstrate the functionality of Cha
 * `cube`: A basic example demonstrating the addition of a cube to the scene. Recommended to be used with the `camera` plugin.
 * `dancing_cubes`: A somewhat more advanced example, synchronizes some animation of the server to the clients. Recommended to be used with the `camera` plugin.
 * `ui_example`: A basic example of GUI manipulation from plugins. Recommended to be used with the `camera` plugin. Recommended to be used with the `camera` and `cube` plugins.
+* `fluid-sim`: A pretty rough example of client-side fluid simulation and particles.
 
 If you're on Linux, you may compile all plugins at once with the `compile_all.sh` script.
