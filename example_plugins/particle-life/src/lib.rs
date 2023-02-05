@@ -34,7 +34,7 @@ impl UserState for ClientState {
                 aa.with_inter_strength(0.),
                 aa.with_inter_strength(10.),
             ],
-            damping: 3.,
+            damping: 4.,
         };
 
         let sim = SimState::new(&mut Pcg::new(), palette, 1_000);
@@ -56,7 +56,7 @@ impl UserState for ClientState {
 
 impl ClientState {
     fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
-        let dt = 2e-5;
+        let dt = 1e-5;
         self.sim.step(dt);
 
         let mesh = draw_particles(&self.sim);
