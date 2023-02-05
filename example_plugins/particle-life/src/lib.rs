@@ -6,6 +6,7 @@ use cimvr_common::{
 use cimvr_engine_interface::{dbg, make_app_state, pcg::Pcg, prelude::*, println};
 mod sim;
 use sim::*;
+mod query_accel;
 
 // All state associated with client-side behaviour
 struct ClientState {
@@ -37,7 +38,7 @@ impl UserState for ClientState {
             damping: 4.,
         };
 
-        let sim = SimState::new(&mut Pcg::new(), palette, 1_000);
+        let sim = SimState::new(&mut Pcg::new(), palette, 500);
 
         let ent = io.create_entity();
         io.add_component(ent, &Transform::identity());

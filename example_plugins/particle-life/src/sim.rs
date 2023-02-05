@@ -1,0 +1,164 @@
+use cimvr_common::{
+    nalgebra::{self, Point2, Vector2},
+    render::{Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
+    Transform,
+};
+use cimvr_engine_interface::{dbg, make_app_state, pcg::Pcg, prelude::*, println};
+
+pub struct SimState {
+    particles: Vec<Particle>,
+    config: SimConfig,
+}
+
+type Color = u8;
+
+#[derive(Clone, Copy)]
+pub struct Particle {
+    pub pos: Point2<f32>,
+    pub vel: Vector2<f32>,
+    pub color: Color,
+}
+
+#[derive(Clone, Copy)]
+pub struct Behaviour {
+    /// Magnitude of the default repulsion force
+    pub default_repulse: f32,
+    /// Zero point between default repulsion and particle interaction (0 to 1)
+    pub inter_threshold: f32,
+    /// Interaction peak strength
+    pub inter_strength: f32,
+    /// Maximum distance of particle interaction (0 to 1)
+    pub inter_max_dist: f32,
+}
+
+/// Display colors and physical behaviour coefficients
+pub struct SimConfig {
+    pub colors: Vec<[f32; 3]>,
+    pub behaviours: Vec<Behaviour>,
+    pub damping: f32,
+}
+
+impl Behaviour {
+    /// Returns the force on this particle
+    ///
+    /// Distance is in the range `0.0..=1.0`
+    fn interact(&self, dist: f32) -> f32 {
+        if dist < self.inter_threshold {
+            let f = dist / self.inter_threshold;
+            (1. - f) * -self.default_repulse
+        } else if dist > self.inter_max_dist {
+            0.0
+        } else {
+            let x = dist - self.inter_threshold;
+            let x = x / (self.inter_max_dist - self.inter_threshold);
+            let x = x * 2. - 1.;
+            let x = 1. - x.abs();
+            x * self.inter_strength
+        }
+    }
+}
+
+impl SimState {
+    pub fn new(rng: &mut Pcg, config: SimConfig, n: usize) -> Self {
+        let particles = (0..n).map(|_| random_particle(rng, &config)).collect();
+        Self { particles, config }
+    }
+
+    pub fn step(&mut self, dt: f32) {
+        let len = self.particles.len();
+        for i in 0..len {
+            for j in 0..len {
+                if i != j {
+                    let a = self.particles[i];
+                    let b = self.particles[j];
+
+                    // The vector pointing from a to b
+                    let diff = b.pos - a.pos;
+
+                    // Distance is capped
+                    let dist = diff.magnitude();
+
+                    // Accelerate towards b
+                    let normal = diff.normalize();
+                    let behav = self.config.get_bahaviour(a.color, b.color);
+                    let accel = normal * behav.interact(dist) / dist;
+
+                    let vel = self.particles[i].vel + accel * dt;
+
+                    // Dampen velocity
+                    let vel = vel * (1. - dt * self.config.damping);
+
+                    self.particles[i].vel = vel;
+                    self.particles[i].pos += vel * dt;
+                }
+            }
+        }
+    }
+
+    pub fn particles(&self) -> &[Particle] {
+        &self.particles
+    }
+
+    pub fn config(&self) -> &SimConfig {
+        &self.config
+    }
+}
+
+impl SimConfig {
+    fn random_color(&self, rng: &mut Pcg) -> Color {
+        (rng.gen_u32() as usize % self.colors.len()) as u8
+    }
+
+    pub fn get_bahaviour(&self, a: Color, b: Color) -> Behaviour {
+        let idx = a as usize * self.colors.len() + b as usize;
+        self.behaviours[idx]
+    }
+}
+
+fn random_particle(rng: &mut Pcg, config: &SimConfig) -> Particle {
+    Particle {
+        pos: Point2::new(rng.gen_f32(), rng.gen_f32()),
+        vel: Vector2::zeros(),
+        color: config.random_color(rng),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_behaviour() {
+        let behav = Behaviour {
+            default_repulse: 1.0,
+            inter_threshold: 0.25,
+            inter_strength: 3.0,
+            inter_max_dist: 0.75,
+        };
+
+        assert_eq!(behav.interact(0.), -behav.default_repulse);
+        assert_eq!(behav.interact(behav.inter_threshold), 0.0);
+        assert_eq!(behav.interact(0.25 + 0.125), behav.inter_strength / 2.);
+        assert_eq!(behav.interact(0.5), behav.inter_strength);
+        assert_eq!(behav.interact(behav.inter_max_dist), 0.0);
+        assert_eq!(behav.interact(0.85), 0.0);
+    }
+}
+
+impl Default for Behaviour {
+    fn default() -> Self {
+        Self {
+            default_repulse: 10.,
+            inter_threshold: 0.02,
+            inter_strength: 1.,
+            inter_max_dist: 3.,
+        }
+    }
+}
+
+impl Behaviour {
+    pub fn with_inter_strength(mut self, inter_strength: f32) -> Self {
+        self.inter_strength = inter_strength;
+        self
+    }
+}

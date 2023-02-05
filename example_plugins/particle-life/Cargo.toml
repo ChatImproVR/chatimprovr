@@ -10,3 +10,4 @@ crate-type = ["cdylib"]
 cimvr_common = { path = "../../common" }
 cimvr_engine_interface = { path = "../../engine_interface" }
 serde = { version = "1", features = ["derive"] }
+zwohash = "0.1.2"
