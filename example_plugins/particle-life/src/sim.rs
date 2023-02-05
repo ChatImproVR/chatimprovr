@@ -164,7 +164,7 @@ mod tests {
 impl Default for Behaviour {
     fn default() -> Self {
         Self {
-            default_repulse: 500.,
+            default_repulse: 10.,
             inter_threshold: 0.02,
             inter_strength: 1.,
             inter_max_dist: 0.2,

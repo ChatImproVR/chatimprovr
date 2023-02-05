@@ -23,19 +23,21 @@ impl UserState for ClientState {
 
         // NOTE: We are using the println defined by cimvr_engine_interface here, NOT the standard library!
         let palette = SimConfig {
-            colors: vec![[0.1, 1., 0.], [1., 0.1, 0.], [0., 0.25, 1.]],
+            colors: vec![[0.1, 1., 0.], [1., 0.1, 0.] /*, [0., 0.25, 1.]*/],
             behaviours: vec![
-                aa.with_inter_strength(10.),
                 aa.with_inter_strength(2.),
                 aa.with_inter_strength(-1.),
-                aa.with_inter_strength(-1.),
+                aa.with_inter_strength(2.),
+                aa.with_inter_strength(1.),
+                /*
                 aa.with_inter_strength(10.),
                 aa.with_inter_strength(2.),
                 aa.with_inter_strength(2.),
                 aa.with_inter_strength(-1.),
                 aa.with_inter_strength(10.),
+                */
             ],
-            damping: 5.,
+            damping: 3.,
         };
 
         let sim = SimState::new(&mut Pcg::new(), palette, 8_000);
@@ -57,7 +59,7 @@ impl UserState for ClientState {
 
 impl ClientState {
     fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
-        let dt = 2e-5;
+        let dt = 5e-5;
         self.sim.step(dt);
 
         let mesh = draw_particles(&self.sim);
