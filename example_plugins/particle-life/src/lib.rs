@@ -16,10 +16,12 @@ const SIM_RENDER_ID: RenderHandle = RenderHandle(0xBEEF_BEEF);
 impl UserState for ClientState {
     // Implement a constructor
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
+        let mut aa = Behaviour::default();
+
         // NOTE: We are using the println defined by cimvr_engine_interface here, NOT the standard library!
         let palette = Palette {
             colors: vec![[0., 1., 0.], [1., 0., 0.]],
-            behaviours: vec![0.1, 0.1, 0.0, 0.0],
+            behaviours: vec![aa; 4],
         };
 
         let sim = SimState::new(&mut Pcg::new(), palette, 1_000);
@@ -40,8 +42,8 @@ impl UserState for ClientState {
 }
 
 impl ClientState {
-    fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
-        self.sim.step();
+    fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
+        self.sim.step(0.000001);
 
         let mesh = draw_particles(&self.sim);
         io.send(&RenderData {
@@ -73,12 +75,14 @@ struct SimState {
 
 type Color = u8;
 
+#[derive(Clone, Copy)]
 struct Particle {
     pos: Point2<f32>,
     vel: Vector2<f32>,
     color: Color,
 }
 
+#[derive(Clone, Copy)]
 pub struct Behaviour {
     /// Magnitude of the default repulsion force
     pub default_repulse: f32,
@@ -88,6 +92,12 @@ pub struct Behaviour {
     pub inter_strength: f32,
     /// Maximum distance of particle interaction (0 to 1)
     pub inter_max_dist: f32,
+}
+
+/// Display colors and physical behaviour coefficients
+struct Palette {
+    colors: Vec<[f32; 3]>,
+    behaviours: Vec<Behaviour>,
 }
 
 impl Behaviour {
@@ -110,20 +120,38 @@ impl Behaviour {
     }
 }
 
-/// Display colors and physical behaviour coefficients
-struct Palette {
-    colors: Vec<[f32; 3]>,
-    behaviours: Vec<f32>,
-}
-
 impl SimState {
     pub fn new(rng: &mut Pcg, palette: Palette, n: usize) -> Self {
         let particles = (0..n).map(|_| random_particle(rng, &palette)).collect();
         Self { particles, palette }
     }
 
-    pub fn step(&mut self) {
-        //todo!()
+    pub fn step(&mut self, dt: f32) {
+        let len = self.particles.len();
+        for i in 0..len {
+            for j in 0..len {
+                if i != j {
+                    let a = self.particles[i];
+                    let b = self.particles[j];
+
+                    // The vector pointing from a to b
+                    let diff = b.pos - a.pos;
+
+                    // Distance is capped
+                    let dist = diff.magnitude();
+                    let dist = (dist / 3.).min(1.0);
+
+                    // Accelerate towards b
+                    let normal = diff.normalize();
+                    let behav = self.palette.get_bahaviour(a.color, b.color);
+                    let accel = normal * behav.interact(dist) / dist;
+
+                    let vel = self.particles[i].vel + accel * dt;
+                    self.particles[i].vel = vel;
+                    self.particles[i].pos += vel * dt;
+                }
+            }
+        }
     }
 }
 
@@ -132,7 +160,7 @@ impl Palette {
         (rng.gen_u32() as usize % self.colors.len()) as u8
     }
 
-    pub fn get_bahaviour_coeff(&self, a: Color, b: Color) -> f32 {
+    pub fn get_bahaviour(&self, a: Color, b: Color) -> Behaviour {
         let idx = a as usize * self.colors.len() + b as usize;
         self.behaviours[idx]
     }
@@ -182,5 +210,16 @@ mod tests {
         assert_eq!(behav.interact(0.5), behav.inter_strength);
         assert_eq!(behav.interact(behav.inter_max_dist), 0.0);
         assert_eq!(behav.interact(0.85), 0.0);
+    }
+}
+
+impl Default for Behaviour {
+    fn default() -> Self {
+        Self {
+            default_repulse: -1.,
+            inter_threshold: 0.25,
+            inter_strength: 1.,
+            inter_max_dist: 1.,
+        }
     }
 }
