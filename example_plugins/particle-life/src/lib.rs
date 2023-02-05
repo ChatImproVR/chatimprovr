@@ -26,19 +26,19 @@ impl UserState for ClientState {
             colors: vec![[0.1, 1., 0.], [1., 0.1, 0.], [0., 0.25, 1.]],
             behaviours: vec![
                 aa.with_inter_strength(10.),
-                aa.with_inter_strength(0.),
-                aa.with_inter_strength(0.),
-                aa.with_inter_strength(0.),
+                aa.with_inter_strength(2.),
+                aa.with_inter_strength(-1.),
+                aa.with_inter_strength(-1.),
                 aa.with_inter_strength(10.),
-                aa.with_inter_strength(0.),
-                aa.with_inter_strength(0.),
-                aa.with_inter_strength(0.),
+                aa.with_inter_strength(2.),
+                aa.with_inter_strength(2.),
+                aa.with_inter_strength(-1.),
                 aa.with_inter_strength(10.),
             ],
-            damping: 4.,
+            damping: 5.,
         };
 
-        let sim = SimState::new(&mut Pcg::new(), palette, 500);
+        let sim = SimState::new(&mut Pcg::new(), palette, 8_000);
 
         let ent = io.create_entity();
         io.add_component(ent, &Transform::identity());
@@ -57,7 +57,7 @@ impl UserState for ClientState {
 
 impl ClientState {
     fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
-        let dt = 1e-5;
+        let dt = 2e-5;
         self.sim.step(dt);
 
         let mesh = draw_particles(&self.sim);

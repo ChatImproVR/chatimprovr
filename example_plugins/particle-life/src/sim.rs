@@ -5,9 +5,12 @@ use cimvr_common::{
 };
 use cimvr_engine_interface::{dbg, make_app_state, pcg::Pcg, prelude::*, println};
 
+use crate::query_accel::QueryAccelerator;
+
 pub struct SimState {
     particles: Vec<Particle>,
     config: SimConfig,
+    max_interaction_radius: f32,
 }
 
 type Color = u8;
@@ -61,36 +64,47 @@ impl Behaviour {
 impl SimState {
     pub fn new(rng: &mut Pcg, config: SimConfig, n: usize) -> Self {
         let particles = (0..n).map(|_| random_particle(rng, &config)).collect();
-        Self { particles, config }
+        let max_interaction_radius: f32 = config
+            .behaviours
+            .iter()
+            .map(|b| b.inter_max_dist)
+            .fold(0., |r, acc| acc.max(r));
+
+        Self {
+            particles,
+            config,
+            max_interaction_radius,
+        }
     }
 
     pub fn step(&mut self, dt: f32) {
+        let points: Vec<Point2<f32>> = self.particles.iter().map(|p| p.pos).collect();
+        let accel = QueryAccelerator::new(&points, self.max_interaction_radius);
+
         let len = self.particles.len();
         for i in 0..len {
-            for j in 0..len {
-                if i != j {
-                    let a = self.particles[i];
-                    let b = self.particles[j];
+            for neighbor in accel.query_neighbors(&points, i) {
+                let a = self.particles[i];
+                let b = self.particles[neighbor];
 
-                    // The vector pointing from a to b
-                    let diff = b.pos - a.pos;
+                // The vector pointing from a to b
+                let diff = b.pos - a.pos;
 
-                    // Distance is capped
-                    let dist = diff.magnitude();
+                // Distance is capped
+                let dist = diff.magnitude();
 
-                    // Accelerate towards b
-                    let normal = diff.normalize();
-                    let behav = self.config.get_bahaviour(a.color, b.color);
-                    let accel = normal * behav.interact(dist) / dist;
+                // Accelerate towards b
+                let normal = diff.normalize();
+                let behav = self.config.get_bahaviour(a.color, b.color);
+                let accel = normal * behav.interact(dist) / dist;
 
-                    let vel = self.particles[i].vel + accel * dt;
+                let vel = self.particles[i].vel + accel * dt;
 
-                    // Dampen velocity
-                    let vel = vel * (1. - dt * self.config.damping);
+                // Dampen velocity
+                let vel = vel * (1. - dt * self.config.damping);
 
-                    self.particles[i].vel = vel;
-                    self.particles[i].pos += vel * dt;
-                }
+                self.particles[i].vel = vel;
+                self.particles[i].pos += vel * dt;
             }
         }
     }
@@ -116,8 +130,10 @@ impl SimConfig {
 }
 
 fn random_particle(rng: &mut Pcg, config: &SimConfig) -> Particle {
+    let range = 5.;
     Particle {
-        pos: Point2::new(rng.gen_f32(), rng.gen_f32()),
+        pos: Point2::new(rng.gen_f32(), rng.gen_f32()) * range
+            - Vector2::new(range / 2., range / 2.),
         vel: Vector2::zeros(),
         color: config.random_color(rng),
     }
@@ -148,10 +164,10 @@ mod tests {
 impl Default for Behaviour {
     fn default() -> Self {
         Self {
-            default_repulse: 10.,
+            default_repulse: 500.,
             inter_threshold: 0.02,
             inter_strength: 1.,
-            inter_max_dist: 3.,
+            inter_max_dist: 0.2,
         }
     }
 }
