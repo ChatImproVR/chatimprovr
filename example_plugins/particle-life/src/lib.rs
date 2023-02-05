@@ -25,8 +25,8 @@ impl UserState for ClientState {
         let palette = SimConfig {
             colors: vec![[0.1, 1., 0.], [1., 0.1, 0.] /*, [0., 0.25, 1.]*/],
             behaviours: vec![
-                aa.with_inter_strength(2.),
-                aa.with_inter_strength(-1.),
+                aa.with_inter_strength(3.),
+                aa.with_inter_strength(-1.5),
                 aa.with_inter_strength(2.),
                 aa.with_inter_strength(1.),
                 /*
