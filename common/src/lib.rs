@@ -1,3 +1,7 @@
+//! # Common
+//! This crate is intended to facilitate communication with the specific server and client
+//! implementations provided alongside ChatimproVR. This library is always used in conjunction with
+//! `engine_interface`.
 use cimvr_engine_interface::prelude::*;
 pub use nalgebra;
 use nalgebra::{Matrix4, Point3, UnitQuaternion};
@@ -8,7 +12,7 @@ pub mod render;
 pub mod ui;
 pub mod vr;
 
-/// Component representing positino and orientation
+/// Component representing position and orientation
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
 pub struct Transform {
     /// Position
