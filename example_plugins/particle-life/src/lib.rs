@@ -22,15 +22,15 @@ impl UserState for ClientState {
         let palette = Palette {
             colors: vec![[0.1, 1., 0.], [1., 0.1, 0.], [0., 0.25, 1.]],
             behaviours: vec![
-                aa.with_inter_strength(5.),
-                aa.with_inter_strength(-1.),
+                aa.with_inter_strength(10.),
                 aa.with_inter_strength(0.),
                 aa.with_inter_strength(0.),
-                aa.with_inter_strength(5.),
-                aa.with_inter_strength(-1.),
-                aa.with_inter_strength(-1.),
                 aa.with_inter_strength(0.),
-                aa.with_inter_strength(5.),
+                aa.with_inter_strength(10.),
+                aa.with_inter_strength(0.),
+                aa.with_inter_strength(0.),
+                aa.with_inter_strength(0.),
+                aa.with_inter_strength(10.),
             ],
         };
 
@@ -150,7 +150,6 @@ impl SimState {
 
                     // Distance is capped
                     let dist = diff.magnitude();
-                    let dist = (dist * 3.).min(1.0);
 
                     // Accelerate towards b
                     let normal = diff.normalize();
@@ -158,6 +157,7 @@ impl SimState {
                     let accel = normal * behav.interact(dist) / dist;
 
                     let vel = self.particles[i].vel + accel * dt;
+                    let vel = vel * 0.9999;
                     self.particles[i].vel = vel;
                     self.particles[i].pos += vel * dt;
                 }
@@ -227,10 +227,10 @@ mod tests {
 impl Default for Behaviour {
     fn default() -> Self {
         Self {
-            default_repulse: -1.,
-            inter_threshold: 0.2,
+            default_repulse: 10.,
+            inter_threshold: 0.1,
             inter_strength: 1.,
-            inter_max_dist: 1.,
+            inter_max_dist: 3.,
         }
     }
 }
