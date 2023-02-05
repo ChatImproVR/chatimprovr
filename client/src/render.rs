@@ -164,6 +164,9 @@ impl RenderEngine {
             gl.enable(gl::DEPTH_TEST);
             gl.depth_func(gl::LESS);
 
+            // Enable point size to be determined in shaders
+            gl.enable(gl::VERTEX_PROGRAM_POINT_SIZE);
+
             // Compile shaders
             let mut shaders = HashMap::new();
             shaders.insert(

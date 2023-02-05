@@ -21,7 +21,12 @@ impl UserState for ClientState {
         // NOTE: We are using the println defined by cimvr_engine_interface here, NOT the standard library!
         let palette = Palette {
             colors: vec![[0., 1., 0.], [1., 0., 0.]],
-            behaviours: vec![aa; 4],
+            behaviours: vec![
+                aa.with_inter_strength(-1.0),
+                aa,
+                aa.with_inter_strength(-1.0),
+                aa,
+            ],
         };
 
         let sim = SimState::new(&mut Pcg::new(), palette, 1_000);
@@ -43,7 +48,7 @@ impl UserState for ClientState {
 
 impl ClientState {
     fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
-        self.sim.step(0.000001);
+        self.sim.step(1e-5);
 
         let mesh = draw_particles(&self.sim);
         io.send(&RenderData {
@@ -139,7 +144,7 @@ impl SimState {
 
                     // Distance is capped
                     let dist = diff.magnitude();
-                    let dist = (dist / 3.).min(1.0);
+                    let dist = (dist).min(1.0);
 
                     // Accelerate towards b
                     let normal = diff.normalize();
@@ -221,5 +226,12 @@ impl Default for Behaviour {
             inter_strength: 1.,
             inter_max_dist: 1.,
         }
+    }
+}
+
+impl Behaviour {
+    pub fn with_inter_strength(mut self, inter_strength: f32) -> Self {
+        self.inter_strength = inter_strength;
+        self
     }
 }
