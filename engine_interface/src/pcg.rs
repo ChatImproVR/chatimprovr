@@ -39,6 +39,7 @@ impl Pcg {
         x >> r | x << (r.wrapping_neg() & 31)
     }
 
+    /// Generates a random u32
     pub fn gen_u32(&mut self) -> u32 {
         let mut x = self.state;
         let count = x >> 59;
@@ -47,6 +48,19 @@ impl Pcg {
         Self::rotr32(Self::u64_to_u32(x >> 27), Self::u64_to_u32(count))
     }
 
+    /// This is kind of bad. Whatever. Generates (MOST) f32s between 0 and 1.
+    ///
+    /// The actual distribution might be shit though.
+    pub fn gen_f32(&mut self) -> f32 {
+        self.gen_u32() as f32 / u32::MAX as f32
+    }
+
+    /// Generates a boolean
+    pub fn gen_bool(&mut self) -> bool {
+        self.gen_u32() & 1 == 0
+    }
+
+    /// Generates a u128
     pub fn gen_u128(&mut self) -> u128 {
         let mut n: u128 = 0;
         for _ in 0..4 {

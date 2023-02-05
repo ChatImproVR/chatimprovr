@@ -24,7 +24,7 @@ pub mod system;
 pub mod network;
 
 /// PCG algorithm for generating random universally-unique entity IDs
-pub(crate) mod pcg;
+pub mod pcg;
 
 /// Convenience imports for the lazy
 pub mod prelude {

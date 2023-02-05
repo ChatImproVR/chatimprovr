@@ -12,6 +12,7 @@ members = [
     "example_plugins/hello",
     "example_plugins/ui_example",
     "example_plugins/fluid-sim",
+    "example_plugins/particle-life",
 ]
 # Causes a build issue with OpenXR if included in workspace
 exclude = [
