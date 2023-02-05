@@ -3,7 +3,7 @@ use cimvr_common::{
     render::{Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
     Transform,
 };
-use cimvr_engine_interface::{make_app_state, pcg::Pcg, prelude::*, println};
+use cimvr_engine_interface::{dbg, make_app_state, pcg::Pcg, prelude::*, println};
 
 // All state associated with client-side behaviour
 struct ClientState {
@@ -20,12 +20,17 @@ impl UserState for ClientState {
 
         // NOTE: We are using the println defined by cimvr_engine_interface here, NOT the standard library!
         let palette = Palette {
-            colors: vec![[0., 1., 0.], [1., 0., 0.]],
+            colors: vec![[0.1, 1., 0.], [1., 0.1, 0.], [0., 0.25, 1.]],
             behaviours: vec![
-                aa.with_inter_strength(-1.0),
-                aa,
-                aa.with_inter_strength(-1.0),
-                aa,
+                aa.with_inter_strength(5.),
+                aa.with_inter_strength(-1.),
+                aa.with_inter_strength(0.),
+                aa.with_inter_strength(0.),
+                aa.with_inter_strength(5.),
+                aa.with_inter_strength(-1.),
+                aa.with_inter_strength(-1.),
+                aa.with_inter_strength(0.),
+                aa.with_inter_strength(5.),
             ],
         };
 
@@ -48,7 +53,8 @@ impl UserState for ClientState {
 
 impl ClientState {
     fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
-        self.sim.step(1e-5);
+        let dt = 2e-5;
+        self.sim.step(dt);
 
         let mesh = draw_particles(&self.sim);
         io.send(&RenderData {
@@ -144,7 +150,7 @@ impl SimState {
 
                     // Distance is capped
                     let dist = diff.magnitude();
-                    let dist = (dist).min(1.0);
+                    let dist = (dist * 3.).min(1.0);
 
                     // Accelerate towards b
                     let normal = diff.normalize();
@@ -222,7 +228,7 @@ impl Default for Behaviour {
     fn default() -> Self {
         Self {
             default_repulse: -1.,
-            inter_threshold: 0.25,
+            inter_threshold: 0.2,
             inter_strength: 1.,
             inter_max_dist: 1.,
         }
