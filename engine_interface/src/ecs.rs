@@ -9,7 +9,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use crate::serial::{deserialize, serialize, EcsData};
 
 /// A single requirement in a query
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct QueryComponent {
     /// Component ID queried
     pub component: ComponentId,
@@ -25,16 +25,10 @@ pub type Query = Vec<QueryComponent>;
 pub struct EntityId(pub u128);
 
 /// Component ID
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ComponentId {
     /// Universally-unique id
-    ///
-    /// It's recommended to generate this manually, either by the running the following Python one-liner:
-    /// ```python
-    /// import random; print(random.randint(0, 2**128))
-    /// ```
-    /// Or by simply pulling out your D&D set and rolling your d340282366920938463463374607431768211456
-    pub id: u128,
+    pub id: String,
     /// Serialized size in bytes
     ///
     /// # Preemptive FAQ:
@@ -67,6 +61,12 @@ pub struct ComponentId {
     pub size: u16,
 }
 
+/// Static version of ComponentId
+pub struct ComponentIdStatic {
+    pub id: &'static str,
+    pub size: u16,
+}
+
 /// Access level for the given component
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Access {
@@ -80,7 +80,7 @@ pub enum Access {
 // Copy bound here is to discourage variable-sized types!
 pub trait Component: Serialize + DeserializeOwned + Copy {
     /// Unique ID of this component
-    const ID: ComponentId;
+    const ID: ComponentIdStatic;
 }
 
 /// Single command to be sent to engine
@@ -95,7 +95,7 @@ pub enum EcsCommand {
 impl QueryComponent {
     pub fn new<T: Component>(access: Access) -> Self {
         Self {
-            component: T::ID,
+            component: T::ID.into(),
             access,
         }
     }
@@ -151,7 +151,7 @@ impl QueryResult {
         let component_idx = self
             .query
             .iter()
-            .position(|c| c.component == T::ID)
+            .position(|c| c.component == T::ID.into())
             .expect("Attempted to access component not queried");
 
         let size = T::ID.size as usize;
@@ -175,7 +175,7 @@ impl QueryResult {
         // Serialize data
         // TODO: Never allocate in hot loops!
         let data = serialize(data).expect("Failed to serialize component for writing");
-        C::ID.check_data_size(data.len());
+        check_component_data_size(C::ID.size, data.len());
 
         // Write back to ECS storage for possible later modification. This is never read by the
         // host, but MAY be read by us!
@@ -185,7 +185,7 @@ impl QueryResult {
 
         // Write host command
         self.commands
-            .push(EcsCommand::AddComponent(entity, C::ID, data))
+            .push(EcsCommand::AddComponent(entity, C::ID.into(), data))
     }
 
     // TODO: This is dreadfully slow but there's no way around that
@@ -197,15 +197,23 @@ impl QueryResult {
     }
 }
 
-impl ComponentId {
-    /// Check that the given data size is compatible with this component
-    /// For now, the data size must be less than or equal to the prescribed size
-    pub fn check_data_size(&self, size: usize) {
-        assert!(
-            size <= usize::from(self.size),
-            "Component data ({} bytes) must be less than or equal to the ID's size ({} bytes)",
-            size,
-            self.size,
-        );
+/// Check that the given data size is compatible with this component
+/// For now, the data size must be less than or equal to the prescribed size
+#[track_caller]
+pub fn check_component_data_size(component_size: u16, size: usize) {
+    assert!(
+        size <= usize::from(component_size),
+        "Component data ({} bytes) must be less than or equal to the ID's size ({} bytes)",
+        size,
+        component_size
+    );
+}
+
+impl From<ComponentIdStatic> for ComponentId {
+    fn from(value: ComponentIdStatic) -> Self {
+        Self {
+            id: value.id.into(),
+            size: value.size,
+        }
     }
 }

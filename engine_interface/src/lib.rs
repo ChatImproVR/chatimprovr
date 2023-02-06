@@ -35,3 +35,11 @@ pub mod prelude {
     pub use super::stdout::*;
     pub use super::system::*;
 }
+
+/// Shorthand for `"<your crate's name>/$name"`, useful for namespaced IDs
+#[macro_export]
+macro_rules! pkg_namespace {
+    ($name:expr) => {
+        concat!(env!("CARGO_PKG_NAME"), "/", $name)
+    };
+}

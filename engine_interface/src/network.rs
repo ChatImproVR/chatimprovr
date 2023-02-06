@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 
 /// Client connection identifier; unique to the connection and NOT the client.
@@ -13,8 +13,8 @@ pub struct Synchronized;
 //pub struct Synchronized(Reliability);
 
 impl Component for Synchronized {
-    const ID: ComponentId = ComponentId {
-        id: 0x99999999999,
+    const ID: ComponentIdStatic = ComponentIdStatic {
+        id: pkg_namespace!("Thang"),
         size: 0,
     };
 }
@@ -26,8 +26,8 @@ pub struct Connections {
 }
 
 impl Message for Connections {
-    const CHANNEL: ChannelId = ChannelId {
-        id: 0xD0000D1E,
+    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+        id: pkg_namespace!("Connections"),
         locality: Locality::Local,
     };
 }

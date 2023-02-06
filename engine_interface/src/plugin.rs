@@ -251,10 +251,10 @@ impl EngineIo {
         let data = serialize(data).expect("Failed to serialize component data");
 
         // Sanity check
-        C::ID.check_data_size(data.len());
+        check_component_data_size(C::ID.size, data.len());
 
         self.commands
-            .push(EcsCommand::AddComponent(entity, C::ID, data));
+            .push(EcsCommand::AddComponent(entity, C::ID.into(), data));
     }
 
     /// Delete an entity and all of it's components
@@ -269,9 +269,13 @@ impl EngineIo {
 
     /// Read inbox for this message type
     pub fn inbox<M: Message>(&mut self) -> impl Iterator<Item = M> + '_ {
-        self.inbox.entry(M::CHANNEL).or_default().iter().map(|m| {
-            deserialize(std::io::Cursor::new(&m.data)).expect("Failed to deserialize message")
-        })
+        self.inbox
+            .entry(M::CHANNEL.into())
+            .or_default()
+            .iter()
+            .map(|m| {
+                deserialize(std::io::Cursor::new(&m.data)).expect("Failed to deserialize message")
+            })
     }
 
     /// Read inbox for this message type, along with client sender information
@@ -282,17 +286,21 @@ impl EngineIo {
             "It makes no sense to use this method for local messages!"
         );
 
-        self.inbox.entry(M::CHANNEL).or_default().iter().map(|m| {
-            let data =
-                deserialize(std::io::Cursor::new(&m.data)).expect("Failed to deserialize message");
-            (m.client.unwrap(), data)
-        })
+        self.inbox
+            .entry(M::CHANNEL.into())
+            .or_default()
+            .iter()
+            .map(|m| {
+                let data = deserialize(std::io::Cursor::new(&m.data))
+                    .expect("Failed to deserialize message");
+                (m.client.unwrap(), data)
+            })
     }
 
     /// Send a message
     pub fn send<M: Message>(&mut self, data: &M) {
         self.outbox.push(MessageData {
-            channel: M::CHANNEL,
+            channel: M::CHANNEL.into(),
             data: serialize(data).expect("Failed to serialize message data"),
             client: None,
         });
@@ -301,7 +309,7 @@ impl EngineIo {
     /// Send a message to a specific client
     pub fn send_to_client<M: Message>(&mut self, data: &M, client: ClientId) {
         self.outbox.push(MessageData {
-            channel: M::CHANNEL,
+            channel: M::CHANNEL.into(),
             data: serialize(data).expect("Failed to serialize message data"),
             client: Some(client),
         });
@@ -309,9 +317,13 @@ impl EngineIo {
 
     /// Get the first message on this channel, or return None
     pub fn inbox_first<M: Message>(&mut self) -> Option<M> {
-        self.inbox.entry(M::CHANNEL).or_default().first().map(|m| {
-            deserialize(std::io::Cursor::new(&m.data)).expect("Failed to deserialize message")
-        })
+        self.inbox
+            .entry(M::CHANNEL.into())
+            .or_default()
+            .first()
+            .map(|m| {
+                deserialize(std::io::Cursor::new(&m.data)).expect("Failed to deserialize message")
+            })
     }
 }
 

@@ -16,10 +16,19 @@ use crate::network::ClientId;
 pub type Inbox = HashMap<ChannelId, Vec<MessageData>>;
 
 /// Channel identity, corresponds to exactly one local or remote connection
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ChannelId {
     /// Unique ID
-    pub id: u128,
+    pub id: String,
+    /// Destination host; local or remote
+    pub locality: Locality,
+}
+
+/// Channel identity, corresponds to exactly one local or remote connection
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ChannelIdStatic {
+    /// Unique ID
+    pub id: &'static str,
     /// Destination host; local or remote
     pub locality: Locality,
 }
@@ -59,5 +68,14 @@ pub trait Message: Serialize + DeserializeOwned + Sized {
     /// Must be unique to the responsibility of this channel.
     /// You ***MUST*** change this ID if you change the datatype of this Message, to avoid
     /// sending corrupted data to other plugins
-    const CHANNEL: ChannelId;
+    const CHANNEL: ChannelIdStatic;
+}
+
+impl From<ChannelIdStatic> for ChannelId {
+    fn from(value: ChannelIdStatic) -> Self {
+        Self {
+            id: value.id.into(),
+            locality: value.locality,
+        }
+    }
 }
