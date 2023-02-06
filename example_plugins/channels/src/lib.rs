@@ -1,4 +1,4 @@
-use cimvr_engine_interface::{dbg, make_app_state, prelude::*};
+use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 
 struct ClientState {
@@ -18,9 +18,12 @@ struct MyMessage {
 }
 
 impl Message for MyMessage {
-    const CHANNEL: ChannelId = ChannelId {
-        // Arbitrary! But must be random
-        id: 232171203811109360315433038366538761455,
+    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+        // Here we define the universally unique name for this message.
+        // Note that this macro simply concatenates the package name with the name you provide.
+        // We could have written "channels_example/MyMessage" or even "jdasjdlfkjasdjfk" instead.
+        // It's important to make sure your package name is UNIQUE if you use this macro.
+        id: pkg_namespace!("MyMessage"),
         // Sent to server
         locality: Locality::Remote,
     };

@@ -1,7 +1,7 @@
 //! Virtual Reality interfacing
 
 use crate::Transform;
-use cimvr_engine_interface::prelude::*;
+use cimvr_engine_interface::{pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 
 /// VR update message
@@ -52,8 +52,8 @@ pub enum VrEvent {
 */
 
 impl Message for VrUpdate {
-    const CHANNEL: ChannelId = ChannelId {
-        id: 0x1337_BEA7,
+    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+        id: pkg_namespace!("VrUpdate"),
         locality: Locality::Local,
     };
 }

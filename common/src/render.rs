@@ -1,6 +1,6 @@
 //! Types for interfacing with the Host's rendering engine
 use bytemuck::{Pod, Zeroable};
-use cimvr_engine_interface::prelude::*;
+use cimvr_engine_interface::{pkg_namespace, prelude::*};
 use nalgebra::Matrix4;
 use serde::{Deserialize, Serialize};
 
@@ -111,43 +111,43 @@ pub struct Screen {
 }
 
 impl Message for Screen {
-    const CHANNEL: ChannelId = ChannelId {
-        id: 0x234980,
+    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+        id: pkg_namespace!("Screen"),
         locality: Locality::Local,
     };
 }
 
 impl Component for Render {
-    const ID: ComponentId = ComponentId {
-        id: 0xDD05,
+    const ID: ComponentIdStatic = ComponentIdStatic {
+        id: pkg_namespace!("Render"),
         size: 42,
     };
 }
 
 impl Component for RenderExtra {
-    const ID: ComponentId = ComponentId {
-        id: 0x328409D,
+    const ID: ComponentIdStatic = ComponentIdStatic {
+        id: pkg_namespace!("RenderExtra"),
         size: 4 * 4 * 4,
     };
 }
 
 impl Message for RenderData {
-    const CHANNEL: ChannelId = ChannelId {
-        id: 0xCE0_0F_BEEF,
+    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+        id: pkg_namespace!("RenderData"),
         locality: Locality::Local,
     };
 }
 
 impl Message for ShaderData {
-    const CHANNEL: ChannelId = ChannelId {
-        id: 0xBAD_BAE,
+    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+        id: pkg_namespace!("ShaderData"),
         locality: Locality::Local,
     };
 }
 
 impl Component for CameraComponent {
-    const ID: ComponentId = ComponentId {
-        id: 0x1337_1337_1337_1337_1337_1337_1337_1337,
+    const ID: ComponentIdStatic = ComponentIdStatic {
+        id: pkg_namespace!("CameraComponent"),
         size: 156,
     };
 }

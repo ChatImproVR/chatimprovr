@@ -6,7 +6,7 @@ use cimvr_common::{
     },
     FrameTime, Transform,
 };
-use cimvr_engine_interface::{dbg, make_app_state, prelude::*, println};
+use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*, println};
 use serde::{Deserialize, Serialize};
 use std::f32::consts::TAU;
 
@@ -21,8 +21,8 @@ pub struct MyMessage {
 }
 
 impl Message for MyMessage {
-    const CHANNEL: ChannelId = ChannelId {
-        id: 0xB0000F,
+    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+        id: pkg_namespace!("MyMessage"),
         locality: Locality::Remote,
     };
 }
@@ -208,8 +208,8 @@ void main() {
 }
 
 impl Component for MoveCube {
-    const ID: ComponentId = ComponentId {
-        id: 0xC0BE,
+    const ID: ComponentIdStatic = ComponentIdStatic {
+        id: pkg_namespace!("MoveCube"),
         size: 4,
     };
 }

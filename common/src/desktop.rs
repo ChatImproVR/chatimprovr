@@ -1,5 +1,5 @@
 //! Types useful for interfacing with the Host's mouse and keyboard
-use cimvr_engine_interface::prelude::*;
+use cimvr_engine_interface::{pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 
 // TODO: Gamepad support!
@@ -33,8 +33,8 @@ pub enum WindowEvent {
 }
 
 impl Message for InputEvents {
-    const CHANNEL: ChannelId = ChannelId {
-        id: 0xC0DE_F00D,
+    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+        id: pkg_namespace!("InputEvents"),
         locality: Locality::Local,
     };
 }

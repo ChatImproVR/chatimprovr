@@ -2,7 +2,7 @@
 //! This crate is intended to facilitate communication with the specific server and client
 //! implementations provided alongside ChatimproVR. This library is always used in conjunction with
 //! `engine_interface`.
-use cimvr_engine_interface::prelude::*;
+use cimvr_engine_interface::{pkg_namespace, prelude::*};
 pub use nalgebra;
 use nalgebra::{Matrix4, Point3, UnitQuaternion};
 use serde::{Deserialize, Serialize};
@@ -22,9 +22,9 @@ pub struct Transform {
 }
 
 impl Component for Transform {
-    const ID: ComponentId = ComponentId {
+    const ID: ComponentIdStatic = ComponentIdStatic {
         // steakhouse
-        id: 0xDEAD_BEEF_CAFE,
+        id: pkg_namespace!("Transform"),
         size: 44,
     };
 }
@@ -39,9 +39,9 @@ pub struct FrameTime {
 }
 
 impl Message for FrameTime {
-    const CHANNEL: ChannelId = ChannelId {
+    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
         // That's what I've been waitin for, that's what it's all about! Wahoo!
-        id: 0x0000000_EEEAAA_BABEEE,
+        id: pkg_namespace!("FrameTime"),
         locality: Locality::Local,
     };
 }

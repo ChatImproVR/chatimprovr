@@ -1,5 +1,5 @@
 //! Basic graphical user interfacing
-use cimvr_engine_interface::prelude::*;
+use cimvr_engine_interface::{pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -151,15 +151,15 @@ fn simple_string_hash(b: &[u8]) -> u64 {
 }
 
 impl Message for UiRequest {
-    const CHANNEL: ChannelId = ChannelId {
-        id: 0x239840283048,
+    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+        id: pkg_namespace!("UiRequest"),
         locality: Locality::Local,
     };
 }
 
 impl Message for UiUpdate {
-    const CHANNEL: ChannelId = ChannelId {
-        id: 0x3284080238423,
+    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+        id: pkg_namespace!("UiUpdate"),
         locality: Locality::Local,
     };
 }

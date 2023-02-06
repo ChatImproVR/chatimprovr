@@ -1,4 +1,4 @@
-use cimvr_engine_interface::{make_app_state, prelude::*};
+use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 
 mod client;
@@ -14,8 +14,8 @@ pub struct ChangeColor {
 }
 
 impl Message for ChangeColor {
-    const CHANNEL: ChannelId = ChannelId {
-        id: 0x99999999999,
+    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+        id: pkg_namespace!("ChangeColor"),
         locality: Locality::Remote,
     };
 }

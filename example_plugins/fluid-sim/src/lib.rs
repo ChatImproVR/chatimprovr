@@ -3,7 +3,7 @@ use cimvr_common::{
     render::{Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
     Transform,
 };
-use cimvr_engine_interface::{make_app_state, prelude::*, println};
+use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, println};
 use serde::{Deserialize, Serialize};
 
 make_app_state!(ClientState, ServerState);
@@ -21,8 +21,8 @@ struct ClientState {
 struct FluidStuff;
 
 impl Component for FluidStuff {
-    const ID: ComponentId = ComponentId {
-        id: 0xC0CE_C0CE,
+    const ID: ComponentIdStatic = ComponentIdStatic {
+        id: pkg_namespace!("FluidStuff"),
         size: 0,
     };
 }
