@@ -36,6 +36,9 @@ pub mod prelude {
     pub use super::system::*;
 }
 
+// TODO: Is this a million dollar mistake?
+// It might be better to be explicit about it. Let people be lazy by making their own specialized
+// macros.
 /// Shorthand for `"<your crate's name>/$name"`, useful for namespaced IDs
 #[macro_export]
 macro_rules! pkg_namespace {

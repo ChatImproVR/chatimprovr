@@ -134,9 +134,9 @@ impl Engine {
         // Setup message indices for each system
         for (sys_idx, sys) in recv.systems.iter().enumerate() {
             // Set up lookup table
-            for &channel in &sys.subscriptions {
+            for channel in &sys.subscriptions {
                 self.indices
-                    .entry(channel)
+                    .entry(channel.clone())
                     .or_default()
                     .push((plugin_idx, sys_idx));
             }
@@ -221,7 +221,7 @@ impl Engine {
         if let Some(destinations) = self.indices.get(&msg.channel) {
             for (plugin_idx, system_idx) in destinations {
                 self.plugins[*plugin_idx].inbox[*system_idx]
-                    .entry(msg.channel)
+                    .entry(msg.channel.clone())
                     .or_default()
                     .push(msg.clone());
             }
@@ -241,13 +241,13 @@ impl Engine {
 
     /// Subscribe to the given channel
     pub fn subscribe<M: Message>(&mut self) {
-        self.external_inbox.entry(M::CHANNEL).or_default();
+        self.external_inbox.entry(M::CHANNEL.into()).or_default();
     }
 
     /// Drain messages from the given channel (external inbox)
     pub fn inbox<M: Message>(&mut self) -> impl Iterator<Item = M> + '_ {
         self.external_inbox
-            .get_mut(&M::CHANNEL)
+            .get_mut(&M::CHANNEL.into())
             .expect("Attempted to access a channel we haven't subscribed to")
             .drain(..)
             .map(|msg| {
@@ -263,7 +263,7 @@ impl Engine {
     /// Broadcast a local message
     pub fn send<M: Message>(&mut self, data: M) {
         self.broadcast(MessageData {
-            channel: M::CHANNEL,
+            channel: M::CHANNEL.into(),
             data: serialize(&data).expect("Failed to serialize message"),
             client: None,
         });

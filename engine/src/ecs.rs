@@ -37,7 +37,7 @@ impl Ecs {
         // TODO: Pick smallest?
         let mut entities: HashSet<EntityId> = self
             .map
-            .entry(init.component)
+            .entry(init.component.clone())
             .or_default()
             .keys()
             .copied()
@@ -60,7 +60,7 @@ impl Ecs {
         let query: Vec<QueryComponent> = query
             .into_iter()
             .map(|c| QueryComponent {
-                component: *c,
+                component: c.clone(),
                 access: Access::Read,
             })
             .collect();
@@ -97,14 +97,14 @@ impl Ecs {
     pub fn add_component<C: Component>(&mut self, entity: EntityId, data: &C) {
         self.add_component_raw(
             entity,
-            C::ID,
+            &C::ID.into(),
             &serialize(data).expect("Failed to serialize component"),
         );
     }
 
     /// Add component to entity, or overwrite existing data
-    pub fn add_component_raw(&mut self, entity: EntityId, component: ComponentId, data: &[u8]) {
-        component.check_data_size(data.len());
+    pub fn add_component_raw(&mut self, entity: EntityId, component: &ComponentId, data: &[u8]) {
+        check_component_data_size(component.size, data.len());
         if !self.entities.contains(&entity) {
             return log::trace!(
                 "Failed to add component {:X?}; entity {:?} does not exist",
@@ -114,7 +114,7 @@ impl Ecs {
         }
 
         // Get the component
-        let comp = self.map.entry(component).or_default();
+        let comp = self.map.entry(component.clone()).or_default();
 
         // Set the data on the component
         // We ensure that the field is always the size of the component, and the remainder is
@@ -130,7 +130,7 @@ impl Ecs {
     }
 
     /// Remove the given component from the given entity
-    pub fn remove_component(&mut self, entity: EntityId, component: ComponentId) {
+    pub fn remove_component(&mut self, entity: EntityId, component: &ComponentId) {
         let Some(component) = self.map.get_mut(&component) else {
             return log::trace!("Cannot remove from {:X?} {:X?} does not exist", entity, component);
         };
@@ -148,16 +148,19 @@ impl Ecs {
 
     /// Convenient get function
     pub fn get<C: Component>(&self, entity: EntityId) -> Option<C> {
-        Some(deserialize(self.get_raw(entity, C::ID)?).expect("Failed to deserialize component"))
+        Some(
+            deserialize(self.get_raw(entity, &C::ID.into())?)
+                .expect("Failed to deserialize component"),
+        )
     }
 
     /// Get data associated with a component
-    pub fn get_raw(&self, entity: EntityId, component: ComponentId) -> Option<&[u8]> {
-        Some(self.map.get(&component)?.get(&entity)?.as_slice())
+    pub fn get_raw(&self, entity: EntityId, component: &ComponentId) -> Option<&[u8]> {
+        Some(self.map.get(component)?.get(&entity)?.as_slice())
     }
 
     /// Get data associated with a component, mutably
-    pub fn get_mut(&mut self, entity: EntityId, component: ComponentId) -> Option<&mut [u8]> {
+    pub fn get_mut(&mut self, entity: EntityId, component: &ComponentId) -> Option<&mut [u8]> {
         Some(
             self.map
                 .get_mut(&component)?
@@ -236,7 +239,7 @@ impl Ecs {
 
         let mut exp = EcsMap::new();
         for (id, comp) in &mut self.map {
-            let map = exp.entry(*id).or_default();
+            let map = exp.entry(id.clone()).or_default();
             for ent in &entities {
                 if let Some(data) = comp.get(ent) {
                     map.insert(*ent, data.clone());
@@ -272,7 +275,7 @@ pub fn query_ecs_data(ecs: &mut Ecs, query: &Query) -> Result<EcsData> {
 
     for &entity in &entities {
         for (term, comp) in query.iter().zip(&mut components) {
-            if let Some(v) = ecs.get_raw(entity, term.component) {
+            if let Some(v) = ecs.get_raw(entity, &term.component) {
                 comp.extend_from_slice(v);
             }
         }
@@ -293,7 +296,7 @@ pub fn apply_ecs_commands(ecs: &mut Ecs, commands: &[EcsCommand]) -> Result<()> 
             EcsCommand::Create(id) => ecs.import_entity(*id),
             EcsCommand::Delete(id) => ecs.remove_entity(*id),
             EcsCommand::AddComponent(entity, component, data) => {
-                ecs.add_component_raw(*entity, *component, data)
+                ecs.add_component_raw(*entity, component, data)
             }
         }
     }
@@ -310,21 +313,21 @@ mod tests {
         let mut ecs = Ecs::new();
 
         let comp_a = ComponentId {
-            id: 0xDEADBEEF,
+            id: "djfaklsjdf".into(),
             size: 8,
         };
 
         let test_val = 0x1337_3621_0420_6969_u64;
         let e = ecs.create_entity();
-        ecs.add_component_raw(e, comp_a, &test_val.to_le_bytes());
+        ecs.add_component_raw(e, &comp_a, &test_val.to_le_bytes());
 
         let entities = ecs.query(&[QueryComponent {
-            component: comp_a,
+            component: comp_a.clone(),
             access: Access::Read,
         }]);
 
         for ent in entities {
-            let buf = ecs.get_raw(ent, comp_a);
+            let buf = ecs.get_raw(ent, &comp_a);
             let val = u64::from_le_bytes(buf.unwrap().try_into().unwrap());
             assert_eq!(val, test_val);
             println!("{:X}", val);
@@ -336,37 +339,37 @@ mod tests {
         let mut ecs = Ecs::new();
 
         let comp_a = ComponentId {
-            id: 0xDEADBEEF,
+            id: "adjslf".into(),
             size: 8,
         };
 
         let comp_b = ComponentId {
-            id: 0xB00FCAFE,
+            id: "dafjsdjf".into(),
             size: 8,
         };
 
         for i in 0..100u64 {
             let e = ecs.create_entity();
             if i < 50 {
-                ecs.add_component_raw(e, comp_b, &i.to_le_bytes());
+                ecs.add_component_raw(e, &comp_b, &i.to_le_bytes());
             }
-            ecs.add_component_raw(e, comp_a, &0x1337_3621_0420_6969_u64.to_le_bytes());
+            ecs.add_component_raw(e, &comp_a, &0x1337_3621_0420_6969_u64.to_le_bytes());
         }
 
         let entities = ecs.query(&[
             QueryComponent {
-                component: comp_a,
-                access: Access::Read,
+                component: comp_a.clone(),
+                access: Access::Read.clone(),
             },
             QueryComponent {
-                component: comp_b,
+                component: comp_b.clone(),
                 access: Access::Read,
             },
         ]);
 
         let mut showed_up = vec![false; 50];
         for ent in entities {
-            let buf = ecs.get_raw(ent, comp_b);
+            let buf = ecs.get_raw(ent, &comp_b);
             let val = u64::from_le_bytes(buf.unwrap().try_into().unwrap());
             showed_up[val as usize] = true;
         }
