@@ -96,7 +96,7 @@ impl RenderPlugin {
         }
 
         // Find camera, if any
-        let camera_entity = match engine.ecs().find(&[CameraComponent::ID, Transform::ID]) {
+        let camera_entity = match engine.ecs().find(&[CameraComponent::ID.into(), Transform::ID.into()]) {
             Some(c) => c,
             None => {
                 log::warn!("No Camera found! Did you attach both Transform and CameraComponent?");
