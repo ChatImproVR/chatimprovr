@@ -23,6 +23,10 @@ impl OverlayUi {
     }
 
     pub fn run(&mut self, ctx: &Context, engine: &mut Engine) {
+        if self.elements.is_empty() {
+            return;
+        }
+
         egui::SidePanel::left("my_side_panel").show(ctx, |ui| {
             ScrollArea::vertical().show(ui, |ui| {
                 for (id, elem) in self.elements.iter_mut() {
