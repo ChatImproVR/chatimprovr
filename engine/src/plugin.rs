@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use cimvr_engine_interface::serial::{
     deserialize, serialize_into, serialized_size, ReceiveBuf, SendBuf,
 };
@@ -42,6 +42,8 @@ impl Plugin {
         let random_fn = Func::wrap(&mut store, || rand::thread_rng().gen::<u64>());
 
         let mut imports: Vec<Extern> = vec![];
+        let warn = "Did you try to use an IO function from outside the sandbox like File::open()?\n\
+                    You may only use io functions supplied by the host! Maybe you want include_bytes!()";
         for imp in module.imports() {
             match (imp.name(), imp.ty()) {
                 ("_print", wasmtime::ExternType::Func(_)) => {
@@ -50,7 +52,7 @@ impl Plugin {
                 ("_random", wasmtime::ExternType::Func(_)) => {
                     imports.push(random_fn.into());
                 }
-                _ => log::warn!("Unhandled import {:#?}", imp),
+                _ => log::warn!("{}\nUnhandled import {:#?}", warn, imp),
             }
         }
 
@@ -58,7 +60,9 @@ impl Plugin {
 
         let mem = instance.get_memory(&mut store, "memory").unwrap();
 
-        let dispatch_fn = instance.get_typed_func::<(), u32, _>(&mut store, "_dispatch")?;
+        let dispatch_fn = instance
+            .get_typed_func::<(), u32, _>(&mut store, "_dispatch")
+            .context("Getting dispatch function. Did you forget to use make_app_state!()? RTFM!")?;
         let reserve_fn = instance.get_typed_func::<u32, u32, _>(&mut store, "_reserve")?;
 
         Ok(Self {
@@ -77,15 +81,21 @@ impl Plugin {
     pub fn dispatch(&mut self, recv: &ReceiveBuf) -> Result<SendBuf> {
         // Rerve needed space within the plugin's memory
         let size = serialized_size(&recv)?;
-        let ptr = self.reserve_fn.call(&mut self.store, size as u32)?;
+        let ptr = self
+            .reserve_fn
+            .call(&mut self.store, size as u32)
+            .context("Reserve")?;
 
         // Serialize directly into the module's memory. Saves time!
         let mem = self.mem.data_mut(&mut self.store);
         let cursor = Cursor::new(&mut mem[ptr as usize..][..size]);
-        serialize_into(cursor, &recv)?;
+        serialize_into(cursor, &recv).expect("Serializing plugin input. This is a bug!");
 
         // Call the plugin
-        let ptr = self.dispatch_fn.call(&mut self.store, ())?;
+        let ptr = self
+            .dispatch_fn
+            .call(&mut self.store, ())
+            .context("Dispatch")?;
 
         // Also deserialize directly from the module's memory
         let mem = self.mem.data_mut(&mut self.store);
@@ -100,6 +110,6 @@ impl Plugin {
         let slice = &forever_after[..payload_len];
 
         // Deserialize it
-        Ok(deserialize(Cursor::new(slice))?)
+        Ok(deserialize(Cursor::new(slice)).context("Deserializing bincode")?)
     }
 }
