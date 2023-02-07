@@ -4,7 +4,7 @@ pub mod network;
 pub mod plugin;
 use std::{collections::HashMap, path::PathBuf};
 
-use anyhow::{Ok, Result};
+use anyhow::{format_err, Context, Ok, Result};
 pub use cimvr_engine_interface as interface;
 use ecs::{apply_ecs_commands, query_ecs_data, Ecs};
 use interface::{
@@ -74,10 +74,15 @@ impl Engine {
     /// Load plugins at the given paths
     pub fn new(plugins: &[PathBuf], cfg: Config) -> Result<Self> {
         let wasm = wasmtime::Engine::new(&Default::default())?;
+
         let plugins: Vec<PluginState> = plugins
             .iter()
-            .map(|p| PluginState::new(p.clone(), &wasm))
+            .map(|p| {
+                PluginState::new(p.clone(), &wasm)
+                    .with_context(|| format_err!("Initializing plugin {}", p.display()))
+            })
             .collect::<Result<_>>()?;
+
         let ecs = Ecs::new();
 
         Ok(Self {
@@ -97,14 +102,17 @@ impl Engine {
     pub fn init_plugins(&mut self) -> Result<()> {
         // Dispatch all plugins
         for plugin_idx in 0..self.plugins.len() {
-            self.init_plugin(plugin_idx)?;
+            let name = self.plugins[plugin_idx].name();
+            self.init_plugin(plugin_idx)
+                .with_context(|| format_err!("Plugin {}", name))?;
         }
 
         // Distribute messages
         self.propagate();
 
         // Run PostInit stage
-        self.dispatch(Stage::PostInit)?;
+        self.dispatch(Stage::PostInit)
+            .context("Running PostInit stage")?;
 
         Ok(())
     }
@@ -155,7 +163,7 @@ impl Engine {
                 }
 
                 // Query ECS
-                let ecs_data = query_ecs_data(&mut self.ecs, &system.query)?;
+                let ecs_data = query_ecs_data(&mut self.ecs, &system.query).context("ECS query")?;
 
                 // Write input data
                 let recv_buf = ReceiveBuf {
@@ -166,11 +174,16 @@ impl Engine {
                 };
 
                 // Run plugin
-                let ret = plugin.code.dispatch(&recv_buf)?;
+                let name = plugin.name();
+                let ret = plugin
+                    .code
+                    .dispatch(&recv_buf)
+                    .with_context(|| format_err!("Running plugin {}", name))?;
 
                 // Write back to ECS
                 // TODO: Defer this? It's currently in Arbitrary order!
-                apply_ecs_commands(&mut self.ecs, &ret.commands)?;
+                apply_ecs_commands(&mut self.ecs, &ret.commands)
+                    .context("Updating ECS after dispatch")?;
 
                 // Receive outbox
                 plugin.outbox.extend(ret.outbox);
@@ -266,17 +279,21 @@ impl Engine {
             .expect("Requested plugin is not loaded");
 
         // Replace old plugin
-        let new_plugin = PluginState::new(path, &self.wasm)?;
-        _ = std::mem::replace(&mut self.plugins[i], new_plugin);
+        let new_plugin = PluginState::new(path.clone(), &self.wasm)?;
+        let name = new_plugin.name();
+
+        self.plugins[i] = new_plugin;
 
         // Initialize new plugin
-        self.init_plugin(i)?;
+        self.init_plugin(i)
+            .with_context(|| format_err!("Initializing reloaded plugin {}", name))?;
 
         // Propagate startup messages
         self.propagate();
 
         // Run PostInit stage
-        self.dispatch(Stage::PostInit)?;
+        self.dispatch(Stage::PostInit)
+            .with_context(|| format_err!("Initializing reloaded plugin {}", name))?;
 
         Ok(())
     }
