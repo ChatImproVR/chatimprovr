@@ -6,8 +6,12 @@ struct ClientState;
 impl UserState for ClientState {
     // Implement a constructor
     fn new(_io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
-        // NOTE: We are using the println defined by cimvr_engine_interface here, NOT the standard library!
         println!("Hello, client!");
+
+        // NOTE: We are using the println defined by cimvr_engine_interface here, NOT the standard library!
+        cimvr_engine_interface::println!("This prints");
+        std::println!("But this doesn't");
+
         Self
     }
 }
