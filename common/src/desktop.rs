@@ -3,6 +3,8 @@ use cimvr_engine_interface::{pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 
 // TODO: Gamepad support!
+// TODO: Touchscreen support!
+
 /// Input events reported each frame
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct InputEvents(pub Vec<InputEvent>);
