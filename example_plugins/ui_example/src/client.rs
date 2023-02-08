@@ -2,7 +2,7 @@ use cimvr_common::{
     render::{Mesh, RenderData, RenderHandle, Vertex},
     ui::{Schema, State, UiHandle, UiStateHelper, UiUpdate},
 };
-use cimvr_engine_interface::{dbg, prelude::*};
+use cimvr_engine_interface::{dbg, pkg_namespace, prelude::*};
 
 use crate::ChangeColor;
 
@@ -65,8 +65,6 @@ impl ClientState {
     }
 }
 
-const CUBE_HANDLE: RenderHandle = RenderHandle(3402894324);
-
 fn cube() -> RenderData {
     let vertices = vec![
         Vertex::new([-1.0, -1.0, -1.0], [0.0, 1.0, 1.0]),
@@ -86,6 +84,6 @@ fn cube() -> RenderData {
 
     RenderData {
         mesh: Mesh { vertices, indices },
-        id: CUBE_HANDLE,
+        id: RenderHandle::new(pkg_namespace!("Cube")),
     }
 }

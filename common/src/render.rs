@@ -4,6 +4,8 @@ use cimvr_engine_interface::{pkg_namespace, prelude::*};
 use nalgebra::Matrix4;
 use serde::{Deserialize, Serialize};
 
+use crate::{make_handle, GenericHandle};
+
 /// The default vertex shader
 pub const DEFAULT_VERTEX_SHADER: &str = include_str!("shaders/unlit.vert");
 /// The default fragment shader
@@ -22,11 +24,13 @@ pub struct Vertex {
 
 /// Unique identifier for a remote RenderData resource
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub struct RenderHandle(pub u128);
+pub struct RenderHandle(GenericHandle);
+make_handle!(RenderHandle);
 
 /// Unique identifier for a remote Shader program
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub struct ShaderHandle(pub u128);
+pub struct ShaderHandle(GenericHandle);
+make_handle!(ShaderHandle);
 
 /// Component denotes a camera
 /// The Transform on the entity this is attached to will correspond to:

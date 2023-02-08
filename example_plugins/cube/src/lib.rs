@@ -2,7 +2,7 @@ use cimvr_common::{
     render::{Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
     Transform,
 };
-use cimvr_engine_interface::{make_app_state, prelude::*};
+use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
 
 struct ServerState;
 struct ClientState;
@@ -11,7 +11,9 @@ make_app_state!(ClientState, ServerState);
 
 /// This handle uniquely identifies the mesh data between all clients, and the server.
 /// When the server copies the ECS data to the clients, they immediately know which mesh to render!
-const CUBE_HANDLE: RenderHandle = RenderHandle(46980492701314917430691420214820489797);
+///
+/// Note how we've used pkg_namespace!() to ensure that the name is closer to universally unique
+const CUBE_HANDLE: RenderHandle = RenderHandle::new(pkg_namespace!("Cube"));
 
 impl UserState for ClientState {
     fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
