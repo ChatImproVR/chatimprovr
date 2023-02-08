@@ -79,6 +79,16 @@ impl Transform {
             orient: UnitQuaternion::identity(),
         }
     }
+
+    pub fn with_positionn(mut self, pos: Point3<f32>) -> Self {
+        self.pos = pos;
+        self
+    }
+
+    pub fn with_rotation(mut self, orient: UnitQuaternion<f32>) -> Self {
+        self.orient = orient;
+        self
+    }
 }
 
 /// A generic handle type, which is integer sized but represents a namespace

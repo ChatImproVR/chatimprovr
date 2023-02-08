@@ -1,4 +1,5 @@
 use cimvr_common::{
+    nalgebra::Point3,
     render::{
         Mesh, Primitive, Render, RenderData, RenderExtra, RenderHandle, ShaderData, ShaderHandle,
         Vertex,
@@ -83,9 +84,10 @@ impl UserState for ClientState {
 }
 
 impl ClientState {
-    fn deleteme(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+    fn deleteme(&mut self, _io: &mut EngineIo, query: &mut QueryResult) {
         for key in query.iter() {
-            dbg!(query.read::<RenderExtra>(key).0[0]);
+            let time = query.read::<RenderExtra>(key).0[0];
+            dbg!((time, key.entity()));
         }
     }
 }
@@ -116,9 +118,13 @@ impl ServerState {
         let time = io.inbox_first::<FrameTime>().unwrap();
 
         let mut extra = [0.; 4 * 4];
-        extra[0] = dbg!(time.time);
+        extra[0] = time.time;
 
         io.add_component(self.cube_ent, &RenderExtra(extra));
+        io.add_component(
+            self.cube_ent,
+            &Transform::identity().with_positionn(Point3::new(time.time.cos(), 0., 0.)),
+        );
     }
 }
 
