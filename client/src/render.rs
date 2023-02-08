@@ -3,9 +3,8 @@ use anyhow::format_err;
 use anyhow::Result;
 use cimvr_common::FrameTime;
 use cimvr_common::{render::*, Transform};
-use cimvr_engine::interface::prelude::Component;
-use cimvr_engine::interface::prelude::QueryComponent;
-use cimvr_engine::{interface::prelude::Access, Engine};
+use cimvr_engine::interface::prelude::*;
+use cimvr_engine::{interface::pkg_namespace, Engine};
 use gl::HasContext;
 use glow::NativeUniformLocation;
 
@@ -14,7 +13,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 
-const DEFAULT_SHADER: ShaderHandle = ShaderHandle(0);
+const DEFAULT_SHADER: ShaderHandle = ShaderHandle::new(pkg_namespace!("Default shader"));
 
 /// Rendering Plugin, containing interfacing with ChatImproVR for RenderEngine
 pub struct RenderPlugin {

@@ -28,9 +28,9 @@ impl Component for FluidStuff {
 }
 
 const VEL_Z: f32 = 0.5;
-const FLUID_ID: RenderHandle = RenderHandle(0xBEEF_BEEF);
-const FLUID_VEL_ID: RenderHandle = RenderHandle(0xC0CE_C0CE);
-const CUBE_ID: RenderHandle = RenderHandle(0x50Ce);
+const FLUID_ID: RenderHandle = RenderHandle::new(pkg_namespace!("Fluid"));
+const FLUID_VEL_ID: RenderHandle = RenderHandle::new(pkg_namespace!("Fluid velocity"));
+const CUBE_ID: RenderHandle = RenderHandle::new(pkg_namespace!("Cube"));
 
 struct ServerState;
 

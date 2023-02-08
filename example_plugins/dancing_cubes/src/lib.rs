@@ -159,8 +159,9 @@ impl ServerState {
     }
 }
 
-const CUBE_HANDLE: RenderHandle = RenderHandle(3984203840);
-const CUBE_SHADER: ShaderHandle = ShaderHandle(4320432);
+// Note that these can share a name because they have different types!
+const CUBE_HANDLE: RenderHandle = RenderHandle::new(pkg_namespace!("Cube"));
+const CUBE_SHADER: ShaderHandle = ShaderHandle::new(pkg_namespace!("Cube"));
 
 fn cube() -> RenderData {
     let s = 0.25;

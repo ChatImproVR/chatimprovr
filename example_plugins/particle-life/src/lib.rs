@@ -3,7 +3,7 @@ use cimvr_common::{
     render::{Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
     Transform,
 };
-use cimvr_engine_interface::{dbg, make_app_state, pcg::Pcg, prelude::*, println};
+use cimvr_engine_interface::{dbg, make_app_state, pcg::Pcg, pkg_namespace, prelude::*, println};
 mod sim;
 use sim::*;
 mod query_accel;
@@ -14,7 +14,7 @@ struct ClientState {
     mesh: Mesh,
 }
 
-const SIM_RENDER_ID: RenderHandle = RenderHandle(0xBEEF_BEEF);
+const SIM_RENDER_ID: RenderHandle = RenderHandle::new(pkg_namespace!("Simulation"));
 
 impl UserState for ClientState {
     // Implement a constructor

@@ -1,5 +1,8 @@
 for x in */; do
     pushd $x
-    cargo build --release
-    popd
+    if cargo build --release; then
+        popd
+    else
+        break
+    fi
 done

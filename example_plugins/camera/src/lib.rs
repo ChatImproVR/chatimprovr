@@ -10,7 +10,7 @@ use cimvr_common::{
     vr::{VrFov, VrUpdate},
     Transform,
 };
-use cimvr_engine_interface::{dbg, make_app_state, prelude::*};
+use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*};
 
 struct ClientState {
     arcball: ArcBall,
@@ -22,7 +22,7 @@ struct ClientState {
 
 make_app_state!(ClientState, DummyUserState);
 
-const HAND_RDR_ID: RenderHandle = RenderHandle(283490834298);
+const HAND_RDR_ID: RenderHandle = RenderHandle::new(pkg_namespace!("Hand"));
 
 impl UserState for ClientState {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
