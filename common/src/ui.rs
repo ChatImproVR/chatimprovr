@@ -3,12 +3,15 @@ use cimvr_engine_interface::{pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use crate::{GenericHandle, make_handle};
+
 // TODO: Create a derive macro which generates Vec<Schema> and Vec<State>, and consumes Vec<State>
 // to do two-way data bindings for data structures. This could be implemented on components!
 
 /// Handle to a unique UI element
 #[derive(Serialize, Deserialize, Hash, Copy, Clone, Debug, Eq, PartialEq)]
-pub struct UiHandle(u64);
+pub struct UiHandle(GenericHandle);
+make_handle!(UiHandle);
 
 /// UI element schema
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -82,9 +85,8 @@ impl UiStateHelper {
         // (Hopefully) unique per plugin(!)
         // Kinda cursed
         let hashname = module_path!().to_string() + name;
-        let hash = simple_string_hash(hashname.as_bytes());
 
-        let id = UiHandle(hash);
+        let id = UiHandle::new(&hashname);
 
         self.map.insert(id, init_state.clone());
 
@@ -142,12 +144,6 @@ impl UiStateHelper {
             }
         }
     }
-}
-
-// https://stackoverflow.com/questions/7666509/hash-function-for-string
-fn simple_string_hash(b: &[u8]) -> u64 {
-    b.iter()
-        .fold(5381, |hash, c| ((hash << 5) + hash) + u64::from(*c))
 }
 
 impl Message for UiRequest {
