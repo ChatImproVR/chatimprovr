@@ -155,43 +155,50 @@ impl Engine {
     /// Dispatch plugin code on the given stage
     pub fn dispatch(&mut self, stage: Stage) -> Result<()> {
         // Run plugins
-        for plugin in &mut self.plugins {
-            for (system_idx, system) in plugin.systems.iter().enumerate() {
-                // Filter to the requested stage
-                if system.stage != stage {
-                    continue;
-                }
-
-                // Query ECS
-                let ecs_data = query_ecs_data(&mut self.ecs, &system.query).context("ECS query")?;
-
-                // Write input data
-                let recv_buf = ReceiveBuf {
-                    system: Some(system_idx),
-                    inbox: std::mem::take(&mut plugin.inbox[system_idx]),
-                    is_server: self.cfg.is_server,
-                    ecs: ecs_data,
-                };
-
-                // Run plugin
-                let name = plugin.name();
-                let ret = plugin
-                    .code
-                    .dispatch(&recv_buf)
-                    .with_context(|| format_err!("Running plugin {}", name))?;
-
-                // Write back to ECS
-                // TODO: Defer this? It's currently in Arbitrary order!
-                apply_ecs_commands(&mut self.ecs, &ret.commands)
-                    .context("Updating ECS after dispatch")?;
-
-                // Receive outbox
-                plugin.outbox.extend(ret.outbox);
-            }
+        for i in 0..self.plugins.len() {
+            self.dispatch_plugin(stage, i)?;
         }
 
         // Distribute messages
         self.propagate();
+
+        Ok(())
+    }
+
+    pub fn dispatch_plugin(&mut self, stage: Stage, i: usize) -> Result<()> {
+        let plugin = &mut self.plugins[i];
+        for (system_idx, system) in plugin.systems.iter().enumerate() {
+            // Filter to the requested stage
+            if system.stage != stage {
+                continue;
+            }
+
+            // Query ECS
+            let ecs_data = query_ecs_data(&mut self.ecs, &system.query).context("ECS query")?;
+
+            // Write input data
+            let recv_buf = ReceiveBuf {
+                system: Some(system_idx),
+                inbox: std::mem::take(&mut plugin.inbox[system_idx]),
+                is_server: self.cfg.is_server,
+                ecs: ecs_data,
+            };
+
+            // Run plugin
+            let name = plugin.name();
+            let ret = plugin
+                .code
+                .dispatch(&recv_buf)
+                .with_context(|| format_err!("Running plugin {}", name))?;
+
+            // Write back to ECS
+            // TODO: Defer this? It's currently in Arbitrary order!
+            apply_ecs_commands(&mut self.ecs, &ret.commands)
+                .context("Updating ECS after dispatch")?;
+
+            // Receive outbox
+            plugin.outbox.extend(ret.outbox);
+        }
 
         Ok(())
     }
@@ -292,9 +299,6 @@ impl Engine {
         self.propagate();
 
         // Run PostInit stage
-        self.dispatch(Stage::PostInit)
-            .with_context(|| format_err!("Initializing reloaded plugin {}", name))?;
-
-        Ok(())
+        self.dispatch_plugin(Stage::PostInit, i)
     }
 }

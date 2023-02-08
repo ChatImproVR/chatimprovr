@@ -103,7 +103,7 @@ impl ServerState {
         io.add_component(cube_ent, &Synchronized);
 
         // Add cubes
-        let n = 100;
+        let n = 2000;
         for i in 0..n {
             let i = i as f32 / n as f32;
             let cube_ent = io.create_entity();

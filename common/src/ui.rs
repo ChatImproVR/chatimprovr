@@ -3,7 +3,7 @@ use cimvr_engine_interface::{pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::{GenericHandle, make_handle};
+use crate::{make_handle, GenericHandle};
 
 // TODO: Create a derive macro which generates Vec<Schema> and Vec<State>, and consumes Vec<State>
 // to do two-way data bindings for data structures. This could be implemented on components!
