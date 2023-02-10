@@ -47,6 +47,11 @@ macro_rules! pkg_namespace {
 }
 
 /// Marks an ECS entity as persistent between plugin restarts
+///
+/// Server-side, this will be saved to disk too.
+///
+/// Client-side these are not saved to disk, but they are still useful for plugins maintaining
+/// local ECS data in between plugin reloads
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Saved;
 
