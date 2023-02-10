@@ -35,7 +35,6 @@ pub mod prelude {
     pub use super::stdout::*;
     pub use super::system::*;
 }
-
 // TODO: Is this a million dollar mistake?
 // It might be better to be explicit about it. Let people be lazy by making their own specialized
 // macros.
@@ -44,5 +43,19 @@ pub mod prelude {
 macro_rules! pkg_namespace {
     ($name:expr) => {
         concat!(env!("CARGO_PKG_NAME"), "/", $name)
+    };
+}
+
+/// Marks an ECS entity as persistent between plugin restarts
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Saved;
+
+use ecs::{Component, ComponentIdStatic};
+use serde::{Deserialize, Serialize};
+
+impl Component for Saved {
+    const ID: ComponentIdStatic = ComponentIdStatic {
+        id: pkg_namespace!("Saved"),
+        size: 0,
     };
 }

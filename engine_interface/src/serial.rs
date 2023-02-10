@@ -5,6 +5,26 @@ use crate::prelude::*;
 use bincode::Options;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
+/// Serialize the message in the standard binary format
+pub fn serialize<T: Serialize>(val: &T) -> bincode::Result<Vec<u8>> {
+    bincode_opts().serialize(val)
+}
+
+/// Serialize the message in the standard binary format
+pub fn serialize_into<W: Write, T: Serialize>(w: W, val: &T) -> bincode::Result<()> {
+    bincode_opts().serialize_into(w, val)
+}
+
+/// Get the serialized size of the message.
+pub fn serialized_size<T: Serialize>(val: &T) -> bincode::Result<usize> {
+    Ok(bincode_opts().serialized_size(val)? as usize)
+}
+
+/// Deserialize the message in the standard binary format
+pub fn deserialize<R: Read, T: DeserializeOwned>(r: R) -> bincode::Result<T> {
+    bincode_opts().deserialize_from(r)
+}
+
 // (TODO: Make this just a header containing references to a dense buffer
 /// Plugin-local ECS data
 /// Represents the data returned by a query
@@ -53,20 +73,4 @@ fn bincode_opts() -> impl Options {
     bincode::DefaultOptions::new()
         .with_fixint_encoding()
         .allow_trailing_bytes()
-}
-
-pub fn serialize<T: Serialize>(val: &T) -> bincode::Result<Vec<u8>> {
-    bincode_opts().serialize(val)
-}
-
-pub fn serialize_into<W: Write, T: Serialize>(w: W, val: &T) -> bincode::Result<()> {
-    bincode_opts().serialize_into(w, val)
-}
-
-pub fn serialized_size<T: Serialize>(val: &T) -> bincode::Result<usize> {
-    Ok(bincode_opts().serialized_size(val)? as usize)
-}
-
-pub fn deserialize<R: Read, T: DeserializeOwned>(r: R) -> bincode::Result<T> {
-    bincode_opts().deserialize_from(r)
 }
