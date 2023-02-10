@@ -14,6 +14,7 @@ members = [
     "example_plugins/fluid-sim",
     "example_plugins/particle-life",
     "example_plugins/shader",
+    "example_plugins/randomly_moving_cube",
 ]
 # Causes a build issue with OpenXR if included in workspace
 exclude = [
