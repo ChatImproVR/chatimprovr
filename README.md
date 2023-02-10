@@ -26,13 +26,13 @@ First, compile the plugins. Currently you must `cd` into each plugin and build i
 
 Next, execute:
 ```sh
-cd server
+cd server && \
 cargo run --release --bin cimvr_server -- ../target/wasm32-unknown-unknown/release/plugin*.wasm
 ```
 
 Finally, in **another terminal**, execute:
 ```sh
-cd client
+cd client && \
 cargo run --release --bin cimvr_client -- ../target/wasm32-unknown-unknown/release/plugin*.wasm
 ```
 
