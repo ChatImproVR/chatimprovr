@@ -80,7 +80,7 @@ impl Transform {
         }
     }
 
-    pub fn with_positionn(mut self, pos: Point3<f32>) -> Self {
+    pub fn with_position(mut self, pos: Point3<f32>) -> Self {
         self.pos = pos;
         self
     }

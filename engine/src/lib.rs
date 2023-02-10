@@ -54,6 +54,8 @@ struct PluginState {
     // TODO: Make this Vec<Arc<Message>>? Faster! (No unnecessary copying)
     /// Message outbox
     outbox: Vec<MessageData>,
+    /// If true, the plugin is run each frame
+    enabled: bool,
 }
 
 /// Marker of plugin ownership, by plugin index
@@ -69,6 +71,7 @@ impl PluginState {
             outbox: vec![],
             systems: vec![],
             inbox: Default::default(),
+            enabled: true,
         })
     }
 
@@ -327,6 +330,6 @@ impl Engine {
 impl Component for PluginIndex {
     const ID: ComponentIdStatic = ComponentIdStatic {
         id: pkg_namespace!("Owner"),
-        size: 0,
+        size: 8,
     };
 }

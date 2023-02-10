@@ -123,7 +123,7 @@ impl ServerState {
         io.add_component(self.cube_ent, &RenderExtra(extra));
         io.add_component(
             self.cube_ent,
-            &Transform::identity().with_positionn(Point3::new(time.time.cos(), 0., 0.)),
+            &Transform::identity().with_position(Point3::new(time.time.cos(), 0., 0.)),
         );
     }
 }
