@@ -229,10 +229,10 @@ mod tests {
     #[test]
     fn test_render_component() {
         let example = Render {
-            id: RenderHandle(23910),
+            id: RenderHandle::new(pkg_namespace!("Test render")),
             primitive: Primitive::Lines,
             limit: Some(90),
-            shader: Some(ShaderHandle(93420)),
+            shader: Some(ShaderHandle::new(pkg_namespace!("Test shader"))),
         };
         assert_eq!(
             serialized_size(&example).unwrap(),

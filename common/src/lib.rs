@@ -1,3 +1,4 @@
+#![cfg(not(doctest))]
 //! # Common
 //! This crate is intended to facilitate communication with the specific server and client
 //! implementations provided alongside ChatimproVR. This library is always used in conjunction with
@@ -110,6 +111,8 @@ impl GenericHandle {
 
 /// A pretty bad hash function. Made constant so you can have things like
 /// ```rust
+/// use cimvr_engine_interface::{pkg_namespace, prelude::*};
+/// use cimvr_common::render::RenderHandle;
 /// const CUBE_HANDLE: RenderHandle = RenderHandle::new(pkg_namespace!("Cube"));
 /// ```
 const fn const_hash(s: &str) -> u128 {
