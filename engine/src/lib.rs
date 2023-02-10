@@ -2,15 +2,18 @@ pub mod ecs;
 pub mod hotload;
 pub mod network;
 pub mod plugin;
+use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::PathBuf};
 
 use anyhow::{format_err, Context, Ok, Result};
 pub use cimvr_engine_interface as interface;
 use ecs::{apply_ecs_commands, query_ecs_data, Ecs};
 use interface::{
+    pkg_namespace,
     prelude::*,
     serial::{deserialize, serialize, EcsData, ReceiveBuf},
     system::Stage,
+    Saved,
 };
 use plugin::Plugin;
 
@@ -29,7 +32,7 @@ pub struct Engine {
     /// Entity and Component data
     ecs: Ecs,
     /// Message distribution indices, maps (channel id) -> (plugin index, system index)
-    indices: HashMap<ChannelId, Vec<(usize, usize)>>,
+    indices: HashMap<ChannelId, Vec<(PluginIndex, usize)>>,
     /// Host inboxes
     external_inbox: Inbox,
     /// Network inbox; messages to be sent from plugins to the remote(s)
@@ -52,6 +55,10 @@ struct PluginState {
     /// Message outbox
     outbox: Vec<MessageData>,
 }
+
+/// Marker of plugin ownership, by plugin index
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PluginIndex(usize);
 
 impl PluginState {
     pub fn new(path: PathBuf, wasm: &wasmtime::Engine) -> Result<Self> {
@@ -129,7 +136,7 @@ impl Engine {
         let recv = self.plugins[plugin_idx].code.dispatch(&send)?;
 
         // Apply ECS commands
-        apply_ecs_commands(&mut self.ecs, &recv.commands)?;
+        apply_ecs_commands(&mut self.ecs, &recv.commands, PluginIndex(plugin_idx))?;
 
         // Setup message indices for each system
         for (sys_idx, sys) in recv.systems.iter().enumerate() {
@@ -138,7 +145,7 @@ impl Engine {
                 self.indices
                     .entry(channel.clone())
                     .or_default()
-                    .push((plugin_idx, sys_idx));
+                    .push((PluginIndex(plugin_idx), sys_idx));
             }
 
             // Initialize system's inbox
@@ -165,8 +172,8 @@ impl Engine {
         Ok(())
     }
 
-    pub fn dispatch_plugin(&mut self, stage: Stage, i: usize) -> Result<()> {
-        let plugin = &mut self.plugins[i];
+    pub fn dispatch_plugin(&mut self, stage: Stage, plugin_idx: usize) -> Result<()> {
+        let plugin = &mut self.plugins[plugin_idx];
         for (system_idx, system) in plugin.systems.iter().enumerate() {
             // Filter to the requested stage
             if system.stage != stage {
@@ -193,7 +200,7 @@ impl Engine {
 
             // Write back to ECS
             // TODO: Defer this? It's currently in Arbitrary order!
-            apply_ecs_commands(&mut self.ecs, &ret.commands)
+            apply_ecs_commands(&mut self.ecs, &ret.commands, PluginIndex(plugin_idx))
                 .context("Updating ECS after dispatch")?;
 
             // Receive outbox
@@ -226,14 +233,14 @@ impl Engine {
     /// Broadcast the message locally, without checkint to see if it's marked with local locality
     pub fn broadcast_local(&mut self, msg: MessageData) {
         if let Some(destinations) = self.indices.get(&msg.channel) {
-            for (plugin_idx, system_idx) in destinations {
+            for (PluginIndex(plugin_idx), system_idx) in destinations {
                 self.plugins[*plugin_idx].inbox[*system_idx]
                     .entry(msg.channel.clone())
                     .or_default()
                     .push(msg.clone());
             }
         } else {
-            log::trace!("Message on channel {:?} has no destination", msg.channel,);
+            log::trace!("Message on channel {:?} has no destination", msg.channel);
         }
 
         if let Some(inbox) = self.external_inbox.get_mut(&msg.channel) {
@@ -291,6 +298,20 @@ impl Engine {
 
         self.plugins[i] = new_plugin;
 
+        // Delete all unsaved entities from that plugin
+        let indices = self
+            .ecs
+            .query(&[QueryComponent::new::<PluginIndex>(Access::Read)]);
+        for ent in indices {
+            if let Some(PluginIndex(idx)) = self.ecs().get::<PluginIndex>(ent) {
+                // Only those from the plugin that have no Saved component
+                if idx == i && self.ecs().get::<Saved>(ent).is_none() {
+                    // TODO: This is slow lol
+                    self.ecs.remove_entity(ent);
+                }
+            }
+        }
+
         // Initialize new plugin
         self.init_plugin(i)
             .with_context(|| format_err!("Initializing reloaded plugin {}", name))?;
@@ -301,4 +322,11 @@ impl Engine {
         // Run PostInit stage
         self.dispatch_plugin(Stage::PostInit, i)
     }
+}
+
+impl Component for PluginIndex {
+    const ID: ComponentIdStatic = ComponentIdStatic {
+        id: pkg_namespace!("Owner"),
+        size: 0,
+    };
 }

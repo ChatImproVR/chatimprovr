@@ -6,6 +6,8 @@ use cimvr_engine_interface::{
 };
 use rand::prelude::*;
 
+use crate::PluginIndex;
+
 // TODO: FxHash
 
 pub type ComponentData = Vec<u8>;
@@ -288,7 +290,11 @@ pub fn query_ecs_data(ecs: &mut Ecs, query: &Query) -> Result<EcsData> {
 }
 
 /// Apply the given commands to the given ecs
-pub fn apply_ecs_commands(ecs: &mut Ecs, commands: &[EcsCommand]) -> Result<()> {
+pub fn apply_ecs_commands(
+    ecs: &mut Ecs,
+    commands: &[EcsCommand],
+    plugin_idx: PluginIndex,
+) -> Result<()> {
     // Apply commands
     for command in commands {
         // TODO: Throw error on modification of non-queried data...
@@ -296,6 +302,7 @@ pub fn apply_ecs_commands(ecs: &mut Ecs, commands: &[EcsCommand]) -> Result<()> 
             EcsCommand::Create(id) => ecs.import_entity(*id),
             EcsCommand::Delete(id) => ecs.remove_entity(*id),
             EcsCommand::AddComponent(entity, component, data) => {
+                ecs.add_component(*entity, &plugin_idx);
                 ecs.add_component_raw(*entity, component, data)
             }
         }

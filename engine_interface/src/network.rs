@@ -14,7 +14,7 @@ pub struct Synchronized;
 
 impl Component for Synchronized {
     const ID: ComponentIdStatic = ComponentIdStatic {
-        id: pkg_namespace!("Thang"),
+        id: pkg_namespace!("Synchronized"),
         size: 0,
     };
 }
