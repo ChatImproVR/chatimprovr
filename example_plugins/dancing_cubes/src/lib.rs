@@ -1,7 +1,7 @@
 use cimvr_common::{
     nalgebra::{Point3, UnitQuaternion, Vector3},
     render::{
-        Mesh, MeshHandle, Primitive, Render, ShaderData, ShaderHandle, UploadMesh, Vertex,
+        Mesh, MeshHandle, Primitive, Render, ShaderHandle, ShaderSource, UploadMesh, Vertex,
         DEFAULT_VERTEX_SHADER,
     },
     FrameTime, Transform,
@@ -187,7 +187,7 @@ fn cube() -> UploadMesh {
     }
 }
 
-fn cube_shader() -> ShaderData {
+fn cube_shader() -> ShaderSource {
     let fragment_src = "
 #version 450
 precision mediump float;
@@ -201,7 +201,7 @@ void main() {
     out_color = vec4(color, 1.);
 }"
     .into();
-    ShaderData {
+    ShaderSource {
         vertex_src: DEFAULT_VERTEX_SHADER.to_string(),
         fragment_src,
         id: CUBE_SHADER,

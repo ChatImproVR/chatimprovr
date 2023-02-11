@@ -28,7 +28,7 @@ pub struct RenderPlugin {
 // TODO: destructors! (lol)
 /// Rendering engine state
 struct RenderEngine {
-    meshes: HashMap<RenderHandle, GpuMesh>,
+    meshes: HashMap<MeshHandle, GpuMesh>,
     shaders: HashMap<ShaderHandle, GpuShader>,
 }
 
@@ -53,8 +53,8 @@ struct GpuShader {
 
 impl RenderPlugin {
     pub fn new(gl: Arc<gl::Context>, engine: &mut Engine) -> Result<Self> {
-        engine.subscribe::<RenderData>();
-        engine.subscribe::<ShaderData>();
+        engine.subscribe::<UploadMesh>();
+        engine.subscribe::<ShaderSource>();
 
         let rdr = RenderEngine::new(&gl)?;
 
@@ -81,14 +81,14 @@ impl RenderPlugin {
         camera_idx: usize,
     ) -> Result<()> {
         // Upload render data
-        for msg in engine.inbox::<RenderData>() {
+        for msg in engine.inbox::<UploadMesh>() {
             if let Err(e) = self.rdr.upload_render_data(&self.gl, &msg) {
                 log::error!("Error uploading render data at id {:?}; {:?}", msg.id, e);
             }
         }
 
         // Upload shader
-        for msg in engine.inbox::<ShaderData>() {
+        for msg in engine.inbox::<ShaderSource>() {
             if let Err(e) = self.rdr.upload_shader(&self.gl, &msg) {
                 log::error!("Error uploading shader at id {:?}; {:?}", msg.id, e);
             }
@@ -181,7 +181,7 @@ impl RenderEngine {
     }
 
     /// Upload shader data
-    pub fn upload_shader(&mut self, gl: &gl::Context, data: &ShaderData) -> Result<()> {
+    pub fn upload_shader(&mut self, gl: &gl::Context, data: &ShaderSource) -> Result<()> {
         // TODO: Unload old shader
         let shader = GpuShader::new(gl, &data.fragment_src, &data.vertex_src)?;
         self.shaders.insert(data.id, shader);
@@ -189,7 +189,7 @@ impl RenderEngine {
     }
 
     /// Make the given render data available to the GPU
-    pub fn upload_render_data(&mut self, gl: &gl::Context, data: &RenderData) -> Result<()> {
+    pub fn upload_render_data(&mut self, gl: &gl::Context, data: &UploadMesh) -> Result<()> {
         // TODO: Use a different mesh type? Switch for upload frequency? Hmmm..
         if let Some(buf) = self.meshes.get_mut(&data.id) {
             update_mesh(gl, buf, &data.mesh);

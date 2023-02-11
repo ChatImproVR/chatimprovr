@@ -1,7 +1,7 @@
 use cimvr_common::{
     nalgebra::Point3,
     render::{
-        Mesh, MeshHandle, Primitive, Render, RenderExtra, ShaderData, ShaderHandle, UploadMesh,
+        Mesh, MeshHandle, Primitive, Render, RenderExtra, ShaderHandle, ShaderSource, UploadMesh,
         Vertex,
     },
     FrameTime, Transform,
@@ -66,7 +66,7 @@ impl UserState for ClientState {
             id: CUBE_HANDLE,
         });
 
-        io.send(&ShaderData {
+        io.send(&ShaderSource {
             vertex_src: VERTEX_SRC.into(),
             fragment_src: FRAGMENT_SRC.into(),
             id: CUBE_SHADER,

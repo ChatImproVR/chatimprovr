@@ -57,7 +57,7 @@ pub struct UploadMesh {
 
 /// A complete description of a shader (sources)
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ShaderData {
+pub struct ShaderSource {
     // TODO: Use SPIRV here? It's much more stable!
     /// Vertex shader source (GLSL)
     pub vertex_src: String,
@@ -142,7 +142,7 @@ impl Message for UploadMesh {
     };
 }
 
-impl Message for ShaderData {
+impl Message for ShaderSource {
     const CHANNEL: ChannelIdStatic = ChannelIdStatic {
         id: pkg_namespace!("ShaderData"),
         locality: Locality::Local,
