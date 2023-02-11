@@ -1,7 +1,7 @@
 use cimvr_common::{
     nalgebra::{Point3, UnitQuaternion, Vector3},
     render::{
-        Mesh, Primitive, Render, RenderData, RenderHandle, ShaderData, ShaderHandle, Vertex,
+        Mesh, MeshHandle, Primitive, Render, ShaderData, ShaderHandle, UploadMesh, Vertex,
         DEFAULT_VERTEX_SHADER,
     },
     FrameTime, Transform,
@@ -160,10 +160,10 @@ impl ServerState {
 }
 
 // Note that these can share a name because they have different types!
-const CUBE_HANDLE: RenderHandle = RenderHandle::new(pkg_namespace!("Cube"));
+const CUBE_HANDLE: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
 const CUBE_SHADER: ShaderHandle = ShaderHandle::new(pkg_namespace!("Cube"));
 
-fn cube() -> RenderData {
+fn cube() -> UploadMesh {
     let s = 0.25;
     let vertices = vec![
         Vertex::new([-s, -s, -s], [0.0, 1.0, 1.0]),
@@ -181,7 +181,7 @@ fn cube() -> RenderData {
         0, 5, 4, 1, 5, 0,
     ];
 
-    RenderData {
+    UploadMesh {
         mesh: Mesh { vertices, indices },
         id: CUBE_HANDLE,
     }

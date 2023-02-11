@@ -1,6 +1,6 @@
 use cimvr_common::{
     nalgebra::Point3,
-    render::{Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
+    render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, Saved};
@@ -14,12 +14,12 @@ make_app_state!(ClientState, ServerState);
 /// When the server copies the ECS data to the clients, they immediately know which mesh to render!
 ///
 /// Note how we've used pkg_namespace!() to ensure that the name is closer to universally unique
-const CUBE_HANDLE: RenderHandle = RenderHandle::new(pkg_namespace!("Cube"));
+const CUBE_HANDLE: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
 
 impl UserState for ClientState {
     fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
         // Make the cube mesh available to the rendering engine
-        io.send(&RenderData {
+        io.send(&UploadMesh {
             mesh: cube(),
             id: CUBE_HANDLE,
         });

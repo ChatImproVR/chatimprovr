@@ -24,8 +24,8 @@ pub struct Vertex {
 
 /// Unique identifier for a remote RenderData resource
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub struct RenderHandle(GenericHandle);
-make_handle!(RenderHandle);
+pub struct MeshHandle(GenericHandle);
+make_handle!(MeshHandle);
 
 /// Unique identifier for a remote Shader program
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
@@ -48,11 +48,11 @@ pub struct CameraComponent {
 
 /// All information required to define a renderable mesh
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct RenderData {
+pub struct UploadMesh {
     /// Mesh data
     pub mesh: Mesh,
     /// Unique ID
-    pub id: RenderHandle,
+    pub id: MeshHandle,
 }
 
 /// A complete description of a shader (sources)
@@ -80,7 +80,7 @@ pub struct Mesh {
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Render {
     /// Id of the associated RenderData
-    pub id: RenderHandle,
+    pub id: MeshHandle,
     /// Primitive to construct this object
     pub primitive: Primitive,
     // /// * If no vertices, no indices: Vertex shader procedurally generates vertices
@@ -135,7 +135,7 @@ impl Component for RenderExtra {
     };
 }
 
-impl Message for RenderData {
+impl Message for UploadMesh {
     const CHANNEL: ChannelIdStatic = ChannelIdStatic {
         id: pkg_namespace!("RenderData"),
         locality: Locality::Local,
@@ -166,7 +166,7 @@ unsafe impl Pod for Vertex {}
 unsafe impl Zeroable for Vertex {}
 
 impl Render {
-    pub fn new(id: RenderHandle) -> Self {
+    pub fn new(id: MeshHandle) -> Self {
         Self {
             id,
             primitive: Primitive::Triangles,
@@ -229,7 +229,7 @@ mod tests {
     #[test]
     fn test_render_component() {
         let example = Render {
-            id: RenderHandle::new(pkg_namespace!("Test render")),
+            id: MeshHandle::new(pkg_namespace!("Test render")),
             primitive: Primitive::Lines,
             limit: Some(90),
             shader: Some(ShaderHandle::new(pkg_namespace!("Test shader"))),
