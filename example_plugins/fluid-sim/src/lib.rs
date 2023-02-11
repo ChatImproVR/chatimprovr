@@ -36,8 +36,6 @@ struct ServerState;
 
 impl UserState for ServerState {
     fn new(_io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
-        println!("Hewwo am sevew");
-
         sched.add_system(
             Self::init,
             SystemDescriptor::new(Stage::PostInit).query::<FluidStuff>(Access::Read),
