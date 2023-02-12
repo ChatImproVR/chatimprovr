@@ -30,10 +30,10 @@ egui_glow = { version = "0.19.0", features = ["winit"], git = "https://github.co
 egui-winit = { version = "0.19.0", default-features = false }
 raw-window-handle = "0.5.0"
 
-glutin-openxr-opengl-helper = { git = "https://github.com/ChatImproVR/rust-opengl-openxr-example.git", rev = "c56b2dc" }
-
 [target.'cfg(target_os = "linux")'.dependencies]
 openxr = { version = "0.17.0", optional = true, features = ["loaded"] }
+glutin-openxr-opengl-helper = { git = "https://github.com/ChatImproVR/rust-opengl-openxr-example.git", rev = "c56b2dc" }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 openxr = { version = "0.17.0", optional = true, features = ["static"] }
+glutin-openxr-opengl-helper = { git = "https://github.com/ChatImproVR/rust-opengl-openxr-example.git", rev = "c56b2dc" }
