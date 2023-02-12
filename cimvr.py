@@ -16,21 +16,25 @@ def main():
     )
     parser.add_argument(
         "plugins",
-        nargs='+',
+        nargs='*',
         help=""",
         Plugins can be the truncated
         (thing.wasm -> thing) form, or full paths.
         """
     )
     parser.add_argument(
-        "--client",
+        "--client", "-c",
         action='store_true',
         help="Only run the client"
     )
     parser.add_argument(
-        "--server",
+        "--server", "-s",
         action='store_true',
         help="Only run the server"
+    )
+    parser.add_argument(
+        "--verbose", "-v",
+        help="Verbose debug output"
     )
     args = parser.parse_args()
 
