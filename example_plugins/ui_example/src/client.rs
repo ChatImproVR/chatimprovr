@@ -1,5 +1,5 @@
 use cimvr_common::{
-    render::{Mesh, RenderData, RenderHandle, Vertex},
+    render::{Mesh, MeshHandle, UploadMesh, Vertex},
     ui::{Schema, State, UiHandle, UiStateHelper, UiUpdate},
 };
 use cimvr_engine_interface::{dbg, pkg_namespace, prelude::*};
@@ -65,7 +65,7 @@ impl ClientState {
     }
 }
 
-fn cube() -> RenderData {
+fn cube() -> UploadMesh {
     let vertices = vec![
         Vertex::new([-1.0, -1.0, -1.0], [0.0, 1.0, 1.0]),
         Vertex::new([1.0, -1.0, -1.0], [1.0, 0.0, 1.0]),
@@ -82,8 +82,8 @@ fn cube() -> RenderData {
         0, 5, 4, 1, 5, 0,
     ];
 
-    RenderData {
+    UploadMesh {
         mesh: Mesh { vertices, indices },
-        id: RenderHandle::new(pkg_namespace!("Cube")),
+        id: MeshHandle::new(pkg_namespace!("Cube")),
     }
 }

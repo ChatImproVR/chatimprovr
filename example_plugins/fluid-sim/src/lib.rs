@@ -1,6 +1,6 @@
 use cimvr_common::{
     nalgebra::{Point3, UnitQuaternion, Vector3},
-    render::{Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
+    render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, println};
@@ -9,8 +9,8 @@ use serde::{Deserialize, Serialize};
 make_app_state!(ClientState, ServerState);
 
 struct ClientState {
-    fluid_render_buf: RenderData,
-    fluid_vel_render_buf: RenderData,
+    fluid_render_buf: UploadMesh,
+    fluid_vel_render_buf: UploadMesh,
     fluid_sim: FluidSim,
     particles: ParticleState,
     frame: usize,
@@ -28,16 +28,14 @@ impl Component for FluidStuff {
 }
 
 const VEL_Z: f32 = 0.5;
-const FLUID_ID: RenderHandle = RenderHandle::new(pkg_namespace!("Fluid"));
-const FLUID_VEL_ID: RenderHandle = RenderHandle::new(pkg_namespace!("Fluid velocity"));
-const CUBE_ID: RenderHandle = RenderHandle::new(pkg_namespace!("Cube"));
+const FLUID_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Fluid"));
+const FLUID_VEL_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Fluid velocity"));
+const CUBE_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
 
 struct ServerState;
 
 impl UserState for ServerState {
     fn new(_io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
-        println!("Hewwo am sevew");
-
         sched.add_system(
             Self::init,
             SystemDescriptor::new(Stage::PostInit).query::<FluidStuff>(Access::Read),
@@ -92,13 +90,13 @@ impl UserState for ClientState {
         let mut line_mesh = Mesh::default();
         draw_velocity_lines(&mut line_mesh, fluid_sim.uvw(), 0.);
 
-        let fluid_render_buf = RenderData {
+        let fluid_render_buf = UploadMesh {
             id: FLUID_ID,
             mesh: grid_mesh,
         };
         io.send(&fluid_render_buf);
 
-        let fluid_vel_render_buf = RenderData {
+        let fluid_vel_render_buf = UploadMesh {
             id: FLUID_VEL_ID,
             mesh: line_mesh,
         };
@@ -130,7 +128,7 @@ impl UserState for ClientState {
     }
 }
 
-fn cube(s: f32) -> RenderData {
+fn cube(s: f32) -> UploadMesh {
     let mut mesh = Mesh::new();
     let color = [1.; 3];
 
@@ -148,7 +146,7 @@ fn cube(s: f32) -> RenderData {
         a, b, c, d, e, f, g, h, a, c, b, d, e, g, f, h, a, f, b, e, c, h, d, g,
     ]);
 
-    RenderData { mesh, id: CUBE_ID }
+    UploadMesh { mesh, id: CUBE_ID }
 }
 
 impl ClientState {
@@ -221,14 +219,14 @@ impl ClientState {
 
 pub struct ParticleState {
     particles: Vec<[f32; 3]>,
-    render: RenderData,
+    render: UploadMesh,
 }
 
 impl ParticleState {
     pub fn new(n: usize, io: &mut EngineIo, u: &Array3D<f32>) -> Self {
         Self {
             particles: (0..n).map(|_| Self::random_vert(u, io)).collect(),
-            render: RenderData {
+            render: UploadMesh {
                 mesh: Mesh::new(),
                 id: FLUID_VEL_ID,
             },

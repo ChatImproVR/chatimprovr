@@ -1,7 +1,7 @@
 use cimvr_common::{
     nalgebra::{Point3, UnitQuaternion, Vector3},
     render::{
-        Mesh, Primitive, Render, RenderData, RenderHandle, ShaderData, ShaderHandle, Vertex,
+        Mesh, MeshHandle, Primitive, Render, ShaderHandle, ShaderSource, UploadMesh, Vertex,
         DEFAULT_VERTEX_SHADER,
     },
     FrameTime, Transform,
@@ -15,53 +15,22 @@ struct ClientState;
 
 make_app_state!(ClientState, ServerState);
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct MyMessage {
-    hewwo: String,
-}
-
-impl Message for MyMessage {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("MyMessage"),
-        locality: Locality::Remote,
-    };
-}
-
 #[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct MoveCube {
     pub r: f32,
 }
 
 impl UserState for ClientState {
-    fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
+    fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
         io.send(&cube());
         io.send(&cube_shader());
-
-        io.send(&MyMessage {
-            hewwo: "I'm a client!".to_string(),
-        });
-
-        sched.add_system(
-            Self::recv_server_msg,
-            SystemDescriptor::new(Stage::Update).subscribe::<MyMessage>(),
-        );
 
         Self
     }
 }
 
-impl ClientState {
-    fn recv_server_msg(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
-        for msg in io.inbox::<MyMessage>() {
-            dbg!(msg);
-        }
-    }
-}
-
 impl UserState for ServerState {
     fn new(_io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
-        println!("HEWWO");
-
         // Schedule the systems
         schedule.add_system(
             Self::cube_move,
@@ -69,11 +38,6 @@ impl UserState for ServerState {
                 .subscribe::<FrameTime>()
                 .query::<Transform>(Access::Write)
                 .query::<MoveCube>(Access::Read),
-        );
-
-        schedule.add_system(
-            Self::report_clients,
-            SystemDescriptor::new(Stage::Update).subscribe::<MyMessage>(),
         );
 
         schedule.add_system(
@@ -117,19 +81,6 @@ impl ServerState {
         }
     }
 
-    fn report_clients(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
-        let msgs: Vec<_> = io.inbox_clients::<MyMessage>().collect();
-        for (client, msg) in msgs {
-            dbg!(&msg);
-            io.send(&MyMessage {
-                hewwo: format!(
-                    "Haiiiii :3 I'm the server and you're {:?}. You said {}",
-                    client, msg.hewwo
-                ),
-            });
-        }
-    }
-
     fn cube_move(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         if let Some(FrameTime { time, .. }) = io.inbox_first() {
             for key in query.iter() {
@@ -160,10 +111,10 @@ impl ServerState {
 }
 
 // Note that these can share a name because they have different types!
-const CUBE_HANDLE: RenderHandle = RenderHandle::new(pkg_namespace!("Cube"));
+const CUBE_HANDLE: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
 const CUBE_SHADER: ShaderHandle = ShaderHandle::new(pkg_namespace!("Cube"));
 
-fn cube() -> RenderData {
+fn cube() -> UploadMesh {
     let s = 0.25;
     let vertices = vec![
         Vertex::new([-s, -s, -s], [0.0, 1.0, 1.0]),
@@ -181,13 +132,13 @@ fn cube() -> RenderData {
         0, 5, 4, 1, 5, 0,
     ];
 
-    RenderData {
+    UploadMesh {
         mesh: Mesh { vertices, indices },
         id: CUBE_HANDLE,
     }
 }
 
-fn cube_shader() -> ShaderData {
+fn cube_shader() -> ShaderSource {
     let fragment_src = "
 #version 450
 precision mediump float;
@@ -201,7 +152,7 @@ void main() {
     out_color = vec4(color, 1.);
 }"
     .into();
-    ShaderData {
+    ShaderSource {
         vertex_src: DEFAULT_VERTEX_SHADER.to_string(),
         fragment_src,
         id: CUBE_SHADER,

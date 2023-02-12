@@ -1,6 +1,6 @@
 use cimvr_common::{
     nalgebra::{self, Point2, Vector2},
-    render::{Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
+    render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
 use cimvr_engine_interface::{dbg, make_app_state, pcg::Pcg, prelude::*, println};

@@ -6,7 +6,7 @@ use cimvr_common::{
         MouseEvent, WindowEvent,
     },
     nalgebra::{Matrix4, Point3, UnitQuaternion, Vector3, Vector4},
-    render::{CameraComponent, Mesh, Render, RenderData, RenderHandle, Vertex},
+    render::{CameraComponent, Mesh, MeshHandle, Render, UploadMesh, Vertex},
     vr::{VrFov, VrUpdate},
     Transform,
 };
@@ -22,7 +22,7 @@ struct ClientState {
 
 make_app_state!(ClientState, DummyUserState);
 
-const HAND_RDR_ID: RenderHandle = RenderHandle::new(pkg_namespace!("Hand"));
+const HAND_RDR_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Hand"));
 
 impl UserState for ClientState {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
@@ -53,6 +53,7 @@ impl UserState for ClientState {
 
         let left_hand = io.create_entity();
         let right_hand = io.create_entity();
+
         io.add_component(left_hand, &Render::new(HAND_RDR_ID));
         io.add_component(right_hand, &Render::new(HAND_RDR_ID));
 
@@ -293,7 +294,7 @@ pub fn vr_projection_from_fov(fov: &VrFov, near: f32, far: f32) -> Matrix4<f32> 
     )
 }
 
-fn hand() -> RenderData {
+fn hand() -> UploadMesh {
     let s = 0.15;
 
     let vertices = vec![
@@ -312,7 +313,7 @@ fn hand() -> RenderData {
         0, 5, 4, 1, 5, 0,
     ];
 
-    RenderData {
+    UploadMesh {
         mesh: Mesh { vertices, indices },
         id: HAND_RDR_ID,
     }

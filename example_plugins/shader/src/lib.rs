@@ -1,7 +1,7 @@
 use cimvr_common::{
     nalgebra::Point3,
     render::{
-        Mesh, Primitive, Render, RenderData, RenderExtra, RenderHandle, ShaderData, ShaderHandle,
+        Mesh, MeshHandle, Primitive, Render, RenderExtra, ShaderHandle, ShaderSource, UploadMesh,
         Vertex,
     },
     FrameTime, Transform,
@@ -20,7 +20,7 @@ make_app_state!(ClientState, ServerState);
 /// When the server copies the ECS data to the clients, they immediately know which mesh to render!
 ///
 /// Note how we've used pkg_namespace!() to ensure that the name is closer to universally unique
-const CUBE_HANDLE: RenderHandle = RenderHandle::new(pkg_namespace!("Cube"));
+const CUBE_HANDLE: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
 const CUBE_SHADER: ShaderHandle = ShaderHandle::new(pkg_namespace!("Cube"));
 
 const VERTEX_SRC: &str = r#"
@@ -61,12 +61,12 @@ void main() {
 impl UserState for ClientState {
     fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
         // Make the cube mesh available to the rendering engine
-        io.send(&RenderData {
+        io.send(&UploadMesh {
             mesh: cube(),
             id: CUBE_HANDLE,
         });
 
-        io.send(&ShaderData {
+        io.send(&ShaderSource {
             vertex_src: VERTEX_SRC.into(),
             fragment_src: FRAGMENT_SRC.into(),
             id: CUBE_SHADER,

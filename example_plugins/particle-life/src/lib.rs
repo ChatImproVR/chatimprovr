@@ -1,6 +1,6 @@
 use cimvr_common::{
     nalgebra::{self, Point2, Vector2},
-    render::{Mesh, Primitive, Render, RenderData, RenderHandle, Vertex},
+    render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
 use cimvr_engine_interface::{dbg, make_app_state, pcg::Pcg, pkg_namespace, prelude::*, println};
@@ -14,7 +14,7 @@ struct ClientState {
     mesh: Mesh,
 }
 
-const SIM_RENDER_ID: RenderHandle = RenderHandle::new(pkg_namespace!("Simulation"));
+const SIM_RENDER_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Simulation"));
 
 impl UserState for ClientState {
     // Implement a constructor
@@ -63,7 +63,7 @@ impl ClientState {
         self.sim.step(dt);
 
         let mesh = draw_particles(&self.sim);
-        io.send(&RenderData {
+        io.send(&UploadMesh {
             mesh,
             id: SIM_RENDER_ID,
         })
