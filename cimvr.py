@@ -5,8 +5,7 @@ import argparse
 from subprocess import Popen
 from time import sleep
 
-# Get script's location, for reference
-script_path = dirname(__file__)
+# TODO: Enable this script to `cargo run` the server and client.
 
 
 def main():
@@ -35,18 +34,29 @@ def main():
     )
     args = parser.parse_args()
 
+    # The script is assumed to be at the root of the project
+    root_path = dirname(__file__)
+
     # Client + Server behaviour
     if not args.client and not args.server:
         args.client = True
         args.server = True
 
     # Find executables
-    server_exe = find_exe("CIMVR_SERVER", ["cimvr_server", "cimvr_server.exe"])
+    server_exe = find_exe(
+        "CIMVR_SERVER",
+        ["cimvr_server", "cimvr_server.exe"],
+        root_path
+    )
     if not server_exe:
         print("Failed to find server executable")
         return
 
-    client_exe = find_exe("CIMVR_CLIENT", ["cimvr_client", "cimvr_client.exe"])
+    client_exe = find_exe(
+        "CIMVR_CLIENT",
+        ["cimvr_client", "cimvr_client.exe"],
+        root_path
+    )
     if not client_exe:
         print("Failed to find client executable")
         return
@@ -54,13 +64,20 @@ def main():
     # Find all plugins
     plugins = []
     for name in args.plugins:
-        path = find_wasm(name)
+        # Just a file
+        if isfile(name):
+            plugins.append(name)
+            continue
+
+        # Truncated name of some search folder
+        path = find_wasm(name, root_path)
         if path:
             plugins.append(path)
         else:
             print(f"No plugin named \"{name}\" found.")
             return
 
+    # Decide on a list of executables
     exes = []
     if args.server:
         exes += [server_exe]
@@ -80,12 +97,12 @@ def main():
         p.wait()
 
 
-def find_wasm(name):
+def find_wasm(name, root_path):
     # Search the build path, and a local "plugins" folder
     wasm_target = "wasm32-unknown-unknown"
-    build_path = join(script_path, "target", wasm_target, "release")
+    build_path = join(root_path, "target", wasm_target, "release")
 
-    plugin_folders = [join(script_path, "plugins"), build_path]
+    plugin_folders = [join(root_path, "plugins"), build_path]
 
     # Also check CIMVR_PLUGINS, which is a semicolon-seperated list
     wasm_env_var = "CIMVR_PLUGINS"
@@ -102,7 +119,7 @@ def find_wasm(name):
     return None
 
 
-def find_exe(env_var, names):
+def find_exe(env_var, names, root_path):
     """
     Look for the given environment variable, or try looking adjacent to the
     script, or in the build path adjacent the script. Returns None if it cannot
@@ -111,10 +128,10 @@ def find_exe(env_var, names):
     if env_var in os.environ:
         return os.environ[env_var]
     else:
-        build_path = join(script_path, "target", "release")
-        client_build_path = join(script_path, "client", "target", "release")
+        build_path = join(root_path, "target", "release")
+        client_build_path = join(root_path, "client", "target", "release")
         possible_locations = \
-            [join(script_path, x) for x in names]\
+            [join(root_path, x) for x in names]\
             + [join(build_path, x) for x in names]\
             + [join(client_build_path, x) for x in names]
 
