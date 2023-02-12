@@ -140,7 +140,7 @@ fn cube() -> UploadMesh {
 
 fn cube_shader() -> ShaderSource {
     let fragment_src = "
-#version 450
+#version 330
 precision mediump float;
 
 in vec4 f_color;

@@ -1,4 +1,4 @@
-#version 450
+#version 330
 precision mediump float;
 
 in vec4 f_color;
