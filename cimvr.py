@@ -15,8 +15,30 @@ def main():
         description='Launches the client and server, finds plugin paths',
         epilog='Also searches CIMVR_PLUGINS for WASM paths'
     )
-    parser.add_argument("plugins", nargs='+')
+    parser.add_argument(
+        "plugins",
+        nargs='+',
+        help=""",
+        Plugins can be the truncated
+        (thing.wasm -> thing) form, or full paths.
+        """
+    )
+    parser.add_argument(
+        "--client",
+        action='store_true',
+        help="Only run the client"
+    )
+    parser.add_argument(
+        "--server",
+        action='store_true',
+        help="Only run the server"
+    )
     args = parser.parse_args()
+
+    # Client + Server behaviour
+    if not args.client and not args.server:
+        args.client = True
+        args.server = True
 
     # Find executables
     server_exe = find_exe("CIMVR_SERVER", ["cimvr_server", "cimvr_server.exe"])
@@ -39,9 +61,17 @@ def main():
             print(f"No plugin named \"{name}\" found.")
             return
 
+    exes = []
+    if args.server:
+        exes += [server_exe]
+
+    if args.client:
+        exes += [client_exe]
+
     # Launch client an server
     procs = []
-    for exe in [server_exe, client_exe]:
+    for exe in exes:
+        print(exe)
         procs.append(Popen([exe] + plugins))
         # Wait for server to start
         sleep(0.1)
