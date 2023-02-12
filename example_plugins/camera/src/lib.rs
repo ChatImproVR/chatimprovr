@@ -53,6 +53,7 @@ impl UserState for ClientState {
 
         let left_hand = io.create_entity();
         let right_hand = io.create_entity();
+
         io.add_component(left_hand, &Render::new(HAND_RDR_ID));
         io.add_component(right_hand, &Render::new(HAND_RDR_ID));
 

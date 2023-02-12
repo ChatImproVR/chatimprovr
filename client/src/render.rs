@@ -141,7 +141,7 @@ impl RenderPlugin {
             }
 
             if let Err(e) = self.rdr.draw(&self.gl, rdr_comp) {
-                log::error!("Error drawing render component {:?}; {:?}", rdr_comp, e);
+                log::error!("Error drawing render component {:?} on entity {:?}; {:?}", rdr_comp, entity, e);
                 continue;
             }
         }
