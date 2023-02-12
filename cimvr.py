@@ -41,6 +41,9 @@ def main():
     # The script is assumed to be at the root of the project
     root_path = dirname(__file__)
 
+    if args.verbose:
+        print(f"Root path: {root_path}")
+
     # Client + Server behaviour
     if not args.client and not args.server:
         args.client = True
@@ -52,6 +55,8 @@ def main():
         ["cimvr_server", "cimvr_server.exe"],
         root_path
     )
+    if args.verbose:
+        print(f"Server exe: {server_exe}")
     if not server_exe:
         print("Failed to find server executable")
         return
@@ -61,6 +66,8 @@ def main():
         ["cimvr_client", "cimvr_client.exe"],
         root_path
     )
+    if args.verbose:
+        print(f"Client exe: {client_exe}")
     if not client_exe:
         print("Failed to find client executable")
         return
@@ -80,6 +87,11 @@ def main():
         else:
             print(f"No plugin named \"{name}\" found.")
             return
+
+    if args.verbose:
+        print("Plugins:")
+        for p in plugins:
+            print(f"Plugin {p}")
 
     # Decide on a list of executables
     exes = []
