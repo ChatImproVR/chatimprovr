@@ -9,6 +9,7 @@ use nalgebra::{Matrix4, Point3, UnitQuaternion};
 use serde::{Deserialize, Serialize};
 
 pub mod desktop;
+pub mod gamepad;
 pub mod render;
 pub mod ui;
 pub mod vr;
