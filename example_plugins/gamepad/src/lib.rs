@@ -1,19 +1,23 @@
+use std::collections::HashMap;
+
 use cimvr_common::{
-    gamepad::GamepadState,
+    gamepad::{Axis, GamepadState},
+    nalgebra::{Point3, UnitQuaternion},
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
 use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*};
+use serde::{Deserialize, Serialize};
 
-struct ServerState;
 struct ClientState;
+
+#[derive(Serialize, Deserialize, Debug)]
+struct AxisMessage {
+    axis: f32,
+}
 
 make_app_state!(ClientState, ServerState);
 
-/// This handle uniquely identifies the mesh data between all clients, and the server.
-/// When the server copies the ECS data to the clients, they immediately know which mesh to render!
-///
-/// Note how we've used pkg_namespace!() to ensure that the name is closer to universally unique
 const CUBE_HANDLE: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
 
 impl UserState for ClientState {
@@ -37,23 +41,73 @@ impl ClientState {
     fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
         println!("Update");
         if let Some(gamepad) = io.inbox_first::<GamepadState>() {
-            dbg!(gamepad);
+            let axis = gamepad.0[0].axes[&Axis::LeftStickX];
+            io.send(&AxisMessage { axis });
         }
     }
 }
 
-impl UserState for ServerState {
-    fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
-        // Define how the cube should be rendered
-        let cube_rdr = Render::new(CUBE_HANDLE).primitive(Primitive::Triangles);
+#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
+struct SpinningCube(ClientId);
 
-        // Create one cube entity at the origin, and make it synchronize to clients
-        let cube_ent = io.create_entity();
-        io.add_component(cube_ent, &Transform::default());
-        io.add_component(cube_ent, &cube_rdr);
-        io.add_component(cube_ent, &Synchronized);
+struct ServerState;
+
+impl UserState for ServerState {
+    fn new(_io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
+        sched.add_system(
+            Self::update,
+            SystemDescriptor::new(Stage::Update)
+                .query::<SpinningCube>(Access::Read)
+                .query::<Transform>(Access::Write)
+                .subscribe::<AxisMessage>()
+                .subscribe::<Connections>(),
+        );
 
         Self
+    }
+}
+
+impl ServerState {
+    fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        let Some(conns) = io.inbox_first::<Connections>() else { return };
+
+        // Find spinning cubes by their client ids
+        let mut client_to_entity = HashMap::new();
+
+        // For each entity mapping to a client that we know about, store the mapping
+        // client -> entity
+        // If the entity exists but the client doesn't, remove the entity
+        for key in query.iter() {
+            let SpinningCube(client_id) = query.read::<SpinningCube>(key);
+            if conns.clients.contains(&client_id) {
+                client_to_entity.insert(client_id, key);
+            } else {
+                io.remove_entity(key.entity());
+            }
+        }
+
+        // For each update message
+        for (client_id, msg) in io.inbox_clients::<AxisMessage>().collect::<Vec<_>>() {
+            if let Some(key) = client_to_entity.get(&client_id) {
+                // If the client already has a cube, update it's position
+                let ClientId(number) = client_id;
+                let transf = Transform {
+                    orient: UnitQuaternion::from_euler_angles(0., msg.axis, 0.),
+                    pos: Point3::new(number as f32 * 1.5, 0., 0.),
+                };
+                query.write(*key, &transf);
+            } else {
+                // Otherwise create a new cube
+                let cube_rdr = Render::new(CUBE_HANDLE).primitive(Primitive::Triangles);
+
+                let ent = io.create_entity();
+                dbg!(ent);
+                io.add_component(ent, &Transform::default());
+                io.add_component(ent, &cube_rdr);
+                io.add_component(ent, &Synchronized);
+                io.add_component(ent, &SpinningCube(client_id));
+            }
+        }
     }
 }
 
@@ -77,4 +131,18 @@ fn cube() -> Mesh {
     ];
 
     Mesh { vertices, indices }
+}
+
+impl Message for AxisMessage {
+    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+        id: pkg_namespace!("AxisMessage"),
+        locality: Locality::Remote,
+    };
+}
+
+impl Component for SpinningCube {
+    const ID: ComponentIdStatic = ComponentIdStatic {
+        id: pkg_namespace!("ClientOwner"),
+        size: 4,
+    };
 }
