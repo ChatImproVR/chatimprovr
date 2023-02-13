@@ -26,19 +26,27 @@ impl GamepadPlugin {
     pub fn update(&mut self) -> GamepadState {
         let mut state = vec![];
 
+        while self.gilrs.next_event().is_some() {}
+
         for &id in &self.gamepads {
             let mut pad_state = Gamepad::new();
             let pad = self.gilrs.gamepad(id);
             for button in Button::BUTTONS {
-                if let Some(data) = pad.button_data(button_to_gilrs(button)) {
-                    pad_state.buttons.insert(button, data.is_pressed());
-                }
+                let data = pad.button_data(button_to_gilrs(button));
+                let data = match data {
+                    Some(d) => d.is_pressed(),
+                    None => false,
+                };
+                pad_state.buttons.insert(button, data);
             }
                 
             for axis in Axis::AXES {
-                if let Some(data) = pad.axis_data(axis_to_gilrs(axis)) {
-                    pad_state.axes.insert(axis, data.value());
-                }
+                let data = pad.axis_data(axis_to_gilrs(axis));
+                let data = match data {
+                    Some(d) => d.value(),
+                    None => 0.0,
+                };
+                pad_state.axes.insert(axis, data);
             }
 
             state.push(pad_state);

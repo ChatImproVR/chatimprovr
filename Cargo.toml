@@ -15,6 +15,7 @@ members = [
     "example_plugins/particle-life",
     "example_plugins/shader",
     "example_plugins/randomly_moving_cube",
+    "example_plugins/gamepad",
 ]
 # Causes a build issue with OpenXR if included in workspace
 exclude = [
