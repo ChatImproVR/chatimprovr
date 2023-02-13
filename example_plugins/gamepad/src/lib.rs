@@ -80,7 +80,7 @@ impl ServerState {
         for key in query.iter() {
             let SpinningCube(client_id) = query.read::<SpinningCube>(key);
             if conns.clients.contains(&client_id) {
-                client_to_entity.insert(client_id, key);
+                client_to_entity.insert(client_id, key.entity());
             } else {
                 io.remove_entity(key.entity());
             }
@@ -88,24 +88,26 @@ impl ServerState {
 
         // For each update message
         for (client_id, msg) in io.inbox_clients::<AxisMessage>().collect::<Vec<_>>() {
-            if let Some(key) = client_to_entity.get(&client_id) {
+            if let Some(entity) = client_to_entity.get(&client_id) {
                 // If the client already has a cube, update it's position
                 let ClientId(number) = client_id;
                 let transf = Transform {
                     orient: UnitQuaternion::from_euler_angles(0., msg.axis, 0.),
                     pos: Point3::new(number as f32 * 1.5, 0., 0.),
                 };
-                query.write(*key, &transf);
+                io.add_component(*entity, &transf);
             } else {
                 // Otherwise create a new cube
                 let cube_rdr = Render::new(CUBE_HANDLE).primitive(Primitive::Triangles);
 
                 let ent = io.create_entity();
-                dbg!(ent);
                 io.add_component(ent, &Transform::default());
                 io.add_component(ent, &cube_rdr);
                 io.add_component(ent, &Synchronized);
                 io.add_component(ent, &SpinningCube(client_id));
+
+                // Add the entity to the list so it appears we don't add anything twice
+                client_to_entity.insert(client_id, ent);
             }
         }
     }
