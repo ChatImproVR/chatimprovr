@@ -48,6 +48,8 @@ pub fn mainloop(args: Opt) -> Result<()> {
 
                 // Send input history
                 client.engine().send(input.get_history());
+                let gamepad_state = client.gamepad.update();
+                client.engine().send(gamepad_state);
 
                 // Pre update stage
                 client

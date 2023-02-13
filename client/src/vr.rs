@@ -256,6 +256,10 @@ impl MainLoop {
         // Download messages from server
         self.client.download().expect("Message download");
 
+        // Get gamepad state
+        let gamepad_state = self.client.gamepad.update();
+        self.client.engine().send(gamepad_state);
+
         // Pre update stage
         self.client
             .engine()

@@ -12,6 +12,7 @@ use cimvr_engine::network::{
 };
 use cimvr_engine::Config;
 use cimvr_engine::Engine;
+use gamepad::GamepadPlugin;
 use nalgebra::Matrix4;
 use render::RenderPlugin;
 use std::io::Write;
@@ -26,6 +27,7 @@ mod vr;
 mod desktop;
 mod desktop_input;
 mod render;
+mod gamepad;
 mod ui;
 
 use structopt::StructOpt;
@@ -54,6 +56,7 @@ struct Client {
     recv_buf: AsyncBufferedReceiver,
     conn: TcpStream,
     hotload: Hotloader,
+    gamepad: GamepadPlugin,
     ui: OverlayUi,
 }
 
@@ -75,6 +78,9 @@ fn main() -> Result<()> {
     }
 }
 
+// TODO: Make it easier to add more plugins to both VR and Desktop, without introducing any more
+// code uplication!
+
 impl Client {
     pub fn new(gl: Arc<gl::Context>, plugins: &[PathBuf], addr: SocketAddr) -> Result<Self> {
         // Connect to remote host
@@ -92,11 +98,14 @@ impl Client {
 
         let ui = OverlayUi::new(&mut engine);
 
+        let gamepad = GamepadPlugin::new()?;
+
         // Initialize plugins AFTER we set up our plugins
         engine.init_plugins()?;
 
         Ok(Self {
             hotload,
+            gamepad,
             conn,
             ui,
             recv_buf: AsyncBufferedReceiver::new(),
