@@ -40,9 +40,11 @@ impl UserState for ClientState {
 impl ClientState {
     fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
         println!("Update");
-        if let Some(gamepad) = io.inbox_first::<GamepadState>() {
-            let axis = gamepad.0[0].axes[&Axis::LeftStickX];
-            io.send(&AxisMessage { axis });
+        if let Some(GamepadState(gamepads)) = io.inbox_first::<GamepadState>() {
+            if let Some(gamepad) = gamepads.get(0) {
+                let axis = gamepad.axes[&Axis::LeftStickX];
+                io.send(&AxisMessage { axis });
+            }
         }
     }
 }
