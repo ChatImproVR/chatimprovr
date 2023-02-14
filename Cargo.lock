@@ -144,8 +144,8 @@ checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
 name = "camera"
 version = "0.1.0"
 dependencies = [
- "cimvr_common",
- "cimvr_engine_interface",
+ "cimvr_common 0.1.0",
+ "cimvr_engine_interface 0.1.0",
  "serde",
 ]
 
@@ -168,8 +168,8 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 name = "channels"
 version = "0.1.0"
 dependencies = [
- "cimvr_common",
- "cimvr_engine_interface",
+ "cimvr_common 0.1.0",
+ "cimvr_engine_interface 0.1.0",
  "serde",
 ]
 
@@ -178,7 +178,18 @@ name = "cimvr_common"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
- "cimvr_engine_interface",
+ "cimvr_engine_interface 0.1.0",
+ "nalgebra",
+ "serde",
+]
+
+[[package]]
+name = "cimvr_common"
+version = "0.1.0"
+source = "git+https://github.com/ChatImproVR/iteration0.git?branch=main#f2e38b77f1e161073357596eae03de55078f4021"
+dependencies = [
+ "bytemuck",
+ "cimvr_engine_interface 0.1.0 (git+https://github.com/ChatImproVR/iteration0.git?branch=main)",
  "nalgebra",
  "serde",
 ]
@@ -189,7 +200,7 @@ version = "0.1.0"
 dependencies = [
  "ahash 0.8.2",
  "anyhow",
- "cimvr_engine_interface",
+ "cimvr_engine_interface 0.1.0",
  "log",
  "notify",
  "rand",
@@ -207,11 +218,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "cimvr_engine_interface"
+version = "0.1.0"
+source = "git+https://github.com/ChatImproVR/iteration0.git?branch=main#f2e38b77f1e161073357596eae03de55078f4021"
+dependencies = [
+ "bincode",
+ "once_cell",
+ "serde",
+]
+
+[[package]]
 name = "cimvr_server"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "cimvr_common",
+ "cimvr_common 0.1.0",
  "cimvr_engine",
  "env_logger 0.10.0",
  "log",
@@ -426,8 +447,8 @@ dependencies = [
 name = "cube"
 version = "0.1.0"
 dependencies = [
- "cimvr_common",
- "cimvr_engine_interface",
+ "cimvr_common 0.1.0",
+ "cimvr_engine_interface 0.1.0",
  "serde",
 ]
 
@@ -435,8 +456,8 @@ dependencies = [
 name = "dancing_cubes"
 version = "0.1.0"
 dependencies = [
- "cimvr_common",
- "cimvr_engine_interface",
+ "cimvr_common 0.1.0",
+ "cimvr_engine_interface 0.1.0",
  "serde",
 ]
 
@@ -475,8 +496,8 @@ dependencies = [
 name = "ecs"
 version = "0.1.0"
 dependencies = [
- "cimvr_common",
- "cimvr_engine_interface",
+ "cimvr_common 0.1.0",
+ "cimvr_engine_interface 0.1.0",
  "serde",
 ]
 
@@ -565,8 +586,8 @@ dependencies = [
 name = "fluid-sim"
 version = "0.1.0"
 dependencies = [
- "cimvr_common",
- "cimvr_engine_interface",
+ "cimvr_common 0.1.0",
+ "cimvr_engine_interface 0.1.0",
  "serde",
 ]
 
@@ -592,8 +613,8 @@ dependencies = [
 name = "gamepad"
 version = "0.1.0"
 dependencies = [
- "cimvr_common",
- "cimvr_engine_interface",
+ "cimvr_common 0.1.0",
+ "cimvr_engine_interface 0.1.0",
  "serde",
 ]
 
@@ -651,8 +672,8 @@ dependencies = [
 name = "hello"
 version = "0.1.0"
 dependencies = [
- "cimvr_common",
- "cimvr_engine_interface",
+ "cimvr_common 0.1.0",
+ "cimvr_engine_interface 0.1.0",
  "serde",
 ]
 
@@ -996,6 +1017,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "obj_parser"
+version = "0.1.0"
+dependencies = [
+ "cimvr_common 0.1.0 (git+https://github.com/ChatImproVR/iteration0.git?branch=main)",
+ "cimvr_engine_interface 0.1.0 (git+https://github.com/ChatImproVR/iteration0.git?branch=main)",
+ "serde",
+]
+
+[[package]]
 name = "object"
 version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1017,8 +1047,8 @@ checksum = "86f0b0d4bf799edbc74508c1e8bf170ff5f41238e5f8225603ca7caaae2b7860"
 name = "particle-life"
 version = "0.1.0"
 dependencies = [
- "cimvr_common",
- "cimvr_engine_interface",
+ "cimvr_common 0.1.0",
+ "cimvr_engine_interface 0.1.0",
  "serde",
  "zwohash",
 ]
@@ -1120,8 +1150,8 @@ dependencies = [
 name = "randomly_moving_cube"
 version = "0.1.0"
 dependencies = [
- "cimvr_common",
- "cimvr_engine_interface",
+ "cimvr_common 0.1.0",
+ "cimvr_engine_interface 0.1.0",
  "serde",
 ]
 
@@ -1295,8 +1325,8 @@ dependencies = [
 name = "shader"
 version = "0.1.0"
 dependencies = [
- "cimvr_common",
- "cimvr_engine_interface",
+ "cimvr_common 0.1.0",
+ "cimvr_engine_interface 0.1.0",
  "serde",
 ]
 
@@ -1429,8 +1459,8 @@ checksum = "497961ef93d974e23eb6f433eb5fe1b7930b659f06d12dec6fc44a8f554c0bba"
 name = "ui_example"
 version = "0.1.0"
 dependencies = [
- "cimvr_common",
- "cimvr_engine_interface",
+ "cimvr_common 0.1.0",
+ "cimvr_engine_interface 0.1.0",
  "serde",
 ]
 
