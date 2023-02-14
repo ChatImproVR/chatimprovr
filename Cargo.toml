@@ -18,6 +18,7 @@ members = [
     "example_plugins/gamepad",
     "example_plugins/keyboard",
     "example_plugins/chat",
+    "obj_parser"
 ]
 
 # Causes a build issue with OpenXR if included in workspace
