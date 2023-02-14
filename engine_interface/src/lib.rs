@@ -7,6 +7,7 @@
 /// Code specific to WASM plugins
 pub mod plugin;
 
+pub use log;
 /// Printing functions for plugins
 pub mod stdout;
 
@@ -27,6 +28,7 @@ pub mod network;
 pub mod pcg;
 
 /// Convenience imports for the lazy
+// #[macro_use]
 pub mod prelude {
     pub use super::channels::*;
     pub use super::ecs::*;
@@ -34,6 +36,7 @@ pub mod prelude {
     pub use super::plugin::*;
     pub use super::stdout::*;
     pub use super::system::*;
+    pub use super::log::*;
 }
 // TODO: Is this a million dollar mistake?
 // It might be better to be explicit about it. Let people be lazy by making their own specialized

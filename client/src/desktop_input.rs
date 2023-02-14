@@ -49,7 +49,7 @@ impl DesktopInputHandler {
             glutin::event::WindowEvent::CursorLeft { .. } => {
                 self.events.push(InputEvent::Mouse(MouseEvent::Exited))
             }
-            #[allow(deprecated)] // lol
+            #[allow(deprecated)] // lol, uwu
             glutin::event::WindowEvent::MouseInput {
                 state,
                 button,
