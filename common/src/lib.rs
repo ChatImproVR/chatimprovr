@@ -55,6 +55,11 @@ impl Default for Transform {
 }
 
 impl Transform {
+    /// Alias for Self::identity()
+    pub fn new() -> Self {
+        Self::identity()
+    }
+
     /// Turn it into a Matrix;
     /// Represent the transformation as a linear transformation of homogeneous coordinates.
     pub fn to_homogeneous(&self) -> Matrix4<f32> {
