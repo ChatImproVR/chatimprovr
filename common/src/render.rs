@@ -240,3 +240,13 @@ mod tests {
         );
     }
 }
+
+impl Default for CameraComponent {
+    /// The default is an identity projection with a black clear color.
+    fn default() -> Self {
+        Self {
+            clear_color: [0.; 3],
+            projection: [Matrix4::identity(); 2],
+        }
+    }
+}
