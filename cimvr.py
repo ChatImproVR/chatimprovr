@@ -36,6 +36,11 @@ def main():
         "--verbose", "-v",
         help="Verbose debug output"
     )
+    parser.add_argument(
+        "--vr",
+        action='store_true',
+        help="Run the client in VR mode"
+    )
     args = parser.parse_args()
 
     # The script is assumed to be at the root of the project
@@ -94,18 +99,22 @@ def main():
             print(f"Plugin {p}")
 
     # Decide on a list of executables
-    exes = []
+    cmds = []
     if args.server:
-        exes += [server_exe]
+        cmd = [server_exe] + plugins
+        cmds += [cmd]
 
     if args.client:
-        exes += [client_exe]
+        cmd = [client_exe] + plugins
+        if args.vr:
+            cmd.append("--vr")
+        cmds += [cmd]
 
     # Launch client an server
     procs = []
-    for exe in exes:
-        print(exe)
-        procs.append(Popen([exe] + plugins))
+    for cmd in cmds:
+        print(cmd)
+        procs.append(Popen(cmd))
         # Wait for server to start
         sleep(0.1)
 
