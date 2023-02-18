@@ -12,6 +12,7 @@ pub mod desktop;
 pub mod gamepad;
 pub mod render;
 pub mod ui;
+pub mod utils;
 pub mod vr;
 
 /// Component representing position and orientation
