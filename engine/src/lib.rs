@@ -168,10 +168,13 @@ impl Engine {
 
     /// Dispatch plugin code on the given stage
     pub fn dispatch(&mut self, stage: Stage) -> Result<()> {
+        // TODO: Should this be the responsibility of something else?
         // Pre-update formally marks the start of a new frame
         if stage == Stage::PreUpdate {
             self.time.frame();
         }
+        // Send time each frame
+        self.send(self.time.time());
 
         // Run plugins
         for i in 0..self.plugins.len() {

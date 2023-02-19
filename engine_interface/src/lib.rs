@@ -70,7 +70,7 @@ impl Component for Saved {
 }
 
 /// Frame information
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct FrameTime {
     /// Delta time, in seconds
     pub delta: f32,
