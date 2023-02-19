@@ -3,6 +3,8 @@
 //! This crate is intended to facilitate communication with the specific server and client
 //! implementations provided alongside ChatimproVR. This library is always used in conjunction with
 //! `engine_interface`.
+use std::ops::Mul;
+
 use cimvr_engine_interface::{pkg_namespace, prelude::*};
 pub use nalgebra;
 use nalgebra::{Isometry3, Matrix4, Point3, Translation3, UnitQuaternion};
@@ -15,7 +17,11 @@ pub mod ui;
 pub mod utils;
 pub mod vr;
 
-/// Component representing position and orientation
+/// # Component representing position and orientation
+///
+/// Represents a rotation, followed by a translation.
+/// Composable through the multiplication (`*`) operator.
+/// Features `From`/`Into` for `Isometry3<f32>`.
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
 pub struct Transform {
     /// Position
@@ -26,7 +32,6 @@ pub struct Transform {
 
 impl Component for Transform {
     const ID: ComponentIdStatic = ComponentIdStatic {
-        // steakhouse
         id: pkg_namespace!("Transform"),
         size: 44,
     };
@@ -43,7 +48,6 @@ pub struct FrameTime {
 
 impl Message for FrameTime {
     const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        // That's what I've been waitin for, that's what it's all about! Wahoo!
         id: pkg_namespace!("FrameTime"),
         locality: Locality::Local,
     };
@@ -173,5 +177,14 @@ impl From<Isometry3<f32>> for Transform {
             pos: value.translation.vector.into(),
             orient: value.rotation,
         }
+    }
+}
+
+impl Mul for Transform {
+    type Output = Self;
+    fn mul(self, rhs: Self) -> Self::Output {
+        let lhs: Isometry3<f32> = self.into();
+        let rhs: Isometry3<f32> = rhs.into();
+        (lhs * rhs).into()
     }
 }
