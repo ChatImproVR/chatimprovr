@@ -37,22 +37,6 @@ impl Component for Transform {
     };
 }
 
-/// Frame information
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FrameTime {
-    /// Delta time, in seconds
-    pub delta: f32,
-    /// Time since engine start, in seconds
-    pub time: f32,
-}
-
-impl Message for FrameTime {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("FrameTime"),
-        locality: Locality::Local,
-    };
-}
-
 impl Default for Transform {
     fn default() -> Self {
         Self::identity()

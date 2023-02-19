@@ -2,8 +2,10 @@ pub mod ecs;
 pub mod hotload;
 pub mod network;
 pub mod plugin;
+pub mod timing;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::PathBuf};
+use timing::Timing;
 
 use anyhow::{format_err, Context, Ok, Result};
 pub use cimvr_engine_interface as interface;
@@ -39,6 +41,8 @@ pub struct Engine {
     network_inbox: Vec<MessageData>,
     /// Configuration we were constructed with
     cfg: Config,
+    /// Timing
+    time: Timing,
 }
 
 /// Plugin management structure
@@ -80,6 +84,8 @@ impl PluginState {
 impl Engine {
     /// Load plugins at the given paths
     pub fn new(plugins: &[PathBuf], cfg: Config) -> Result<Self> {
+        let time = Timing::init();
+
         let wasm = wasmtime::Engine::new(&Default::default())?;
 
         let plugins: Vec<PluginState> = plugins
@@ -93,6 +99,7 @@ impl Engine {
         let ecs = Ecs::new();
 
         Ok(Self {
+            time,
             wasm,
             indices: HashMap::new(),
             plugins,
@@ -161,6 +168,11 @@ impl Engine {
 
     /// Dispatch plugin code on the given stage
     pub fn dispatch(&mut self, stage: Stage) -> Result<()> {
+        // Pre-update formally marks the start of a new frame
+        if stage == Stage::PreUpdate {
+            self.time.frame();
+        }
+
         // Run plugins
         for i in 0..self.plugins.len() {
             self.dispatch_plugin(stage, i)?;

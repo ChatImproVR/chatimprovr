@@ -59,11 +59,28 @@ macro_rules! pkg_namespace {
 pub struct Saved;
 
 use ecs::{Component, ComponentIdStatic};
+use prelude::{ChannelIdStatic, Locality, Message};
 use serde::{Deserialize, Serialize};
 
 impl Component for Saved {
     const ID: ComponentIdStatic = ComponentIdStatic {
         id: pkg_namespace!("Saved"),
         size: 0,
+    };
+}
+
+/// Frame information
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FrameTime {
+    /// Delta time, in seconds
+    pub delta: f32,
+    /// Time since engine start, in seconds
+    pub time: f32,
+}
+
+impl Message for FrameTime {
+    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+        id: pkg_namespace!("FrameTime"),
+        locality: Locality::Local,
     };
 }
