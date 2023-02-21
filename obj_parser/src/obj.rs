@@ -51,21 +51,19 @@ pub fn obj_lines_to_mesh(obj: &str) -> Mesh {
                 // At this point all vertices have been declared
                 // Treat the line as a list of indices to be divided into triangles
                 // Drawing faces as a triangle fan
+
+                // Take in the first index
                 
                 // While there are still indices to be read on the line:
+                // A face must have at least 3 vertices. We can extend for more
+                let mut faces = [0; 3];
 
-                
-                let mut indices = [0; 3]; // Array of 3 vertices, initialize with zeros
-
-                // Allocate indexes for the next triangle
-                for dim in &mut indices {
-
-                    // Take the next index in
+                // Allocate index array so we can better manage the vertices
+                for dim in &mut faces {
                     let Some(text) = rest.next() else { break }; // Refutable pattern match
                     // Index from string to int, check if index exists
                     *dim = text.parse().expect("Invalid index");
 
-                    // OBJ files are one-indexed - what do we mean by this?
                     *dim -= 1;
                 }
 
@@ -75,8 +73,12 @@ pub fn obj_lines_to_mesh(obj: &str) -> Mesh {
                 // read in [0,1,2] as a triangle, [0,2,3] as another triangle, [0,3,4] as the next triangle
                 // Delimit first by whitespace -- then need to check for slashes to delimit texture/vertex normals
 
+                for i in 0..2 {
+
+                }
+
                 // Add those indices to be rendered
-                m.indices.extend(indices);
+                m.indices.extend(faces);
             },
             // Some("vn") => { // Vertex normals
 
