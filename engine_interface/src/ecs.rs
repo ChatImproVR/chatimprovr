@@ -161,6 +161,17 @@ impl QueryResult {
         (component_idx, begin..end)
     }
 
+    /// Get the corresponding key for an entity, if it was included in the query
+    pub fn key_for_entity(&self, entity: EntityId) -> Option<Key> {
+        // TODO: This lookup is slow! (O(n) when it could be O(1))
+        self.ecs
+            .entities
+            .clone()
+            .into_iter()
+            .position(|e| e == entity)
+            .map(|idx| Key { idx, entity })
+    }
+
     /// Read the data in the given component
     pub fn read<T: Component>(&self, key: Key) -> T {
         // TODO: Cache query lookups!
