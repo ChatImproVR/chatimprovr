@@ -39,7 +39,7 @@ pub fn obj_lines_to_mesh(obj: &str) -> Mesh {
                 // Do the same for indices
                 let mut indices = [0; 2]; 
                 for dim in &mut indices {
-                    let Some(text) = rest.next() else { break };
+                    let Some(text) = rest.next() else { break }; 
                     *dim = text.parse().expect("Invalid index");
 
                     // OBJ files are one-indexed
@@ -49,25 +49,33 @@ pub fn obj_lines_to_mesh(obj: &str) -> Mesh {
             },
             Some("f") => { // Faces
                 // At this point all vertices have been declared
-                // Treat the line as a list of indices
-                let mut indices = [0; 5]; // Array of 5 elements?
-                                                    // Need to make this more dynamic(?) to hold faces with different nums of vertices
-                // Goes through each of the index values on the line
+                // Treat the line as a list of indices to be divided into triangles
+                // Drawing faces as a triangle fan
+                
+                // While there are still indices to be read on the line:
+
+                
+                let mut indices = [0; 3]; // Array of 3 vertices, initialize with zeros
+
+                // Allocate indexes for the next triangle
                 for dim in &mut indices {
-                    let Some(text) = rest.next() else { break };
+
+                    // Take the next index in
+                    let Some(text) = rest.next() else { break }; // Refutable pattern match
+                    // Index from string to int, check if index exists
                     *dim = text.parse().expect("Invalid index");
 
-                    // OBJ files are one-indexed
+                    // OBJ files are one-indexed - what do we mean by this?
                     *dim -= 1;
                 }
 
                 // When we read the entire line, we need to divide the indexes
                 // into triangles
                 // i.e. if we have a face with 5 verts:
-                // read in [0,1,2] as a triangle, [2,3,0] as another triangle, [3,4,0] as the next triangle
+                // read in [0,1,2] as a triangle, [0,2,3] as another triangle, [0,3,4] as the next triangle
+                // Delimit first by whitespace -- then need to check for slashes to delimit texture/vertex normals
 
                 // Add those indices to be rendered
-
                 m.indices.extend(indices);
             },
             // Some("vn") => { // Vertex normals
