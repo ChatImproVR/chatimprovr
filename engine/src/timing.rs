@@ -2,6 +2,8 @@ use std::time::Instant;
 
 use cimvr_engine_interface::FrameTime;
 
+/// Handles the management of the engine's clock,
+/// which is available to plugins in the form of `FrameTime`
 pub struct Timing {
     init: Instant,
     last_frame: Instant,
@@ -22,6 +24,8 @@ impl Timing {
     }
 
     /// Begin the frame, as far as this clock is concerned.
+    /// This resets the delta time to the instant this function is called, so that future calls to
+    /// `self.time()` will always return the same delta until the next call to `self.frame()`
     pub fn frame(&mut self) {
         let frame_start = Instant::now();
         let delta = frame_start - self.last_frame;
@@ -35,7 +39,7 @@ impl Timing {
     }
 
     /// Get the current frame timing
-    pub fn time(&self) -> FrameTime {
+    pub fn get_frame_time(&self) -> FrameTime {
         self.time
     }
 }

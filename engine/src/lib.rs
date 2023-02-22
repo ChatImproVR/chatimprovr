@@ -41,7 +41,7 @@ pub struct Engine {
     network_inbox: Vec<MessageData>,
     /// Configuration we were constructed with
     cfg: Config,
-    /// Timing
+    /// Manages FrameTime
     time: Timing,
 }
 
@@ -174,7 +174,7 @@ impl Engine {
             self.time.frame();
         }
         // Send time each frame
-        self.send(self.time.time());
+        self.send(self.time.get_frame_time());
 
         // Run plugins
         for i in 0..self.plugins.len() {
