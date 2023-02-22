@@ -213,6 +213,7 @@ name = "cimvr_engine_interface"
 version = "0.1.0"
 dependencies = [
  "bincode",
+ "log",
  "once_cell",
  "serde",
 ]
