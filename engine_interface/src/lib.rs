@@ -69,7 +69,10 @@ impl Component for Saved {
     };
 }
 
-/// Frame information
+// TODO: Use an integer of nanoseconds instead?
+/// Frame timing information, denotes time since last frame
+/// Note that a frame consists of PreUpdate, Update, and PostUpdate. This
+/// time is captured before PreUpdate, and stays the same throughout.
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct FrameTime {
     /// Delta time, in seconds
