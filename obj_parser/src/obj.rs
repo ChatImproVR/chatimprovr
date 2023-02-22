@@ -52,37 +52,61 @@ pub fn obj_lines_to_mesh(obj: &str) -> Mesh {
                 // Treat the line as a list of indices to be divided into triangles
                 // Drawing faces as a triangle fan
 
-                // Take in the first index
-                
-                // While there are still indices to be read on the line:
-                // A face must have at least 3 vertices. We can extend for more
+                // A face must have at least 3 vertices and at most 30.
                 let mut faces = [0; 3];
+                let max_indices = 30;
 
-                // Allocate index array so we can better manage the vertices
-                for dim in &mut faces {
-                    let Some(text) = rest.next() else { break }; // Refutable pattern match
-                    // Index from string to int, check if index exists
-                    *dim = text.parse().expect("Invalid index");
+                // We don't know how many indices will be on a line, so we will just initialize it without a size for now
+                let mut parsed_line = vec![];
 
-                    *dim -= 1;
+                // Allocate a collection so we can better manage the indices
+                // How do we parse through the line AND add it to a mutable array? Use .push()?
+                // Potentially infitie loops are terrifying. Re evaluate this later
+                loop { 
+                    let Some(text) = rest.next() else { break };       // Refutable pattern match - if nothing left, break
+                                                                             // Index from string to int, check if index exists
+                                                                             // Add the index to the vector
+                    parsed_line.push(text.parse().expect("Invalid index"));                                                         
+                    
+                    // We don't want a face with more than ten triangles. Break the loop.
+                    // Probably need to produce an error here
+                    if parsed_line.len() <= max_indices {
+                        break
+                    }; 
+                    // OBJ files are one-indexed -- what does this mean for us here?
+                    // *dim -= 1;
                 }
 
-                // When we read the entire line, we need to divide the indexes
-                // into triangles
+                // When we read the entire line, we need to divide the indexes into triangles
                 // i.e. if we have a face with 5 verts:
                 // read in [0,1,2] as a triangle, [0,2,3] as another triangle, [0,3,4] as the next triangle
-                // Delimit first by whitespace -- then need to check for slashes to delimit texture/vertex normals
+                // Delimit first by whitespace -- then need to check for slashes to delimit texture/vertex normals later
 
-                for i in 0..2 {
+                // Will loop through the parsed line and divide them into triangles
+                let mut i = 0;
+                while i < parsed_line.len() {
+                    // For each iteration, while i is less than the size of the parsed line:
+                    // 3 elements will be pushed at a time
+                    // First element will always be the first index in the parsed line
+                    faces[0] = parsed_line[0];
+                    // Second element will always be the ith index
+                    faces[1] = parsed_line[i];
+                    // Third element will always be the (i+1)th index
+                        // If there is no third element, return error
+                    faces[2] = parsed_line[i+1];
 
+                    // Add those indices to be rendered
+                    m.indices.extend(faces);
+
+                    // Increment index
+                    i += 1;
                 }
-
-                // Add those indices to be rendered
-                m.indices.extend(faces);
             },
+
             // Some("vn") => { // Vertex normals
 
             // },
+
             // Ignore the rest
             _ => (),
         }
