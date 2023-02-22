@@ -63,24 +63,24 @@ pub fn obj_lines_to_mesh(obj: &str) -> Mesh {
                 // How do we parse through the line AND add it to a mutable array? Use .push()?
                 // Potentially infitie loops are terrifying. Re evaluate this later
                 loop { 
-                    let Some(text) = rest.next() else { break };       // Refutable pattern match - if nothing left, break
-                                                                             // Index from string to int, check if index exists
-                                                                             // Add the index to the vector
-                    parsed_line.push(text.parse().expect("Invalid index"));                                                         
+                    let Some(text) = rest.next() else { break };            // Refutable pattern match - if nothing left, break
+                                                                            // Index from string to int, check if index exists
+                                                                            // Add the index to the vector
+                    let idx: u32 = text.parse().expect("Invalid index");
+                    parsed_line.push(idx - 1);                              // OBJ files are one-indexed                                                
                     
                     // We don't want a face with more than ten triangles. Break the loop.
                     // Probably need to produce an error here
-                    if parsed_line.len() <= max_indices {
+                    if parsed_line.len() > max_indices {
                         break
                     }; 
-                    // OBJ files are one-indexed -- what does this mean for us here?
-                    // *dim -= 1;
                 }
 
                 // When we read the entire line, we need to divide the indexes into triangles
                 // i.e. if we have a face with 5 verts:
                 // read in [0,1,2] as a triangle, [0,2,3] as another triangle, [0,3,4] as the next triangle
                 // Delimit first by whitespace -- then need to check for slashes to delimit texture/vertex normals later
+                
 
                 // Will loop through the parsed line and divide them into triangles
                 let mut i = 0;
@@ -92,7 +92,7 @@ pub fn obj_lines_to_mesh(obj: &str) -> Mesh {
                     // Second element will always be the ith index
                     faces[1] = parsed_line[i];
                     // Third element will always be the (i+1)th index
-                        // TODO: If there is no third element, return error
+                        //If there is no third element, return error
                     faces[2] = parsed_line[i+1];
 
                     // Add those indices to be rendered
