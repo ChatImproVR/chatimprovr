@@ -17,7 +17,7 @@ impl UserState for ClientState {
     // Implement a constructor
     fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
         //let mesh = obj_lines_to_mesh(include_str!("assets/ship.obj"));
-        let mesh = obj_lines_to_mesh(include_str!("assets/ship.obj"));
+        let mesh = obj_lines_to_mesh(include_str!("assets/dodecahedron.obj"));
         io.send(&UploadMesh { mesh, id: SHIP_RDR });
 
         // NOTE: We are using the println defined by cimvr_engine_interface here, NOT the standard library!
