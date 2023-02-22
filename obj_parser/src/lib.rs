@@ -36,7 +36,7 @@ impl UserState for ServerState {
     fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
         let ent = io.create_entity();
         io.add_component(ent, &Transform::identity());
-        io.add_component(ent, &Render::new(SHIP_RDR).primitive(Primitive::Lines));
+        io.add_component(ent, &Render::new(SHIP_RDR).primitive(Primitive::Triangles));
         io.add_component(ent, &Synchronized);
 
         println!("Hello, server!");
