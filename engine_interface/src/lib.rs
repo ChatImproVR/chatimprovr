@@ -7,6 +7,7 @@
 /// Code specific to WASM plugins
 pub mod plugin;
 
+pub use log;
 /// Printing functions for plugins
 pub mod stdout;
 
@@ -27,9 +28,11 @@ pub mod network;
 pub mod pcg;
 
 /// Convenience imports for the lazy
+// #[macro_use]
 pub mod prelude {
     pub use super::channels::*;
     pub use super::ecs::*;
+    pub use super::log::*;
     pub use super::network::*;
     pub use super::plugin::*;
     pub use super::stdout::*;

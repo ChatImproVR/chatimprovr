@@ -5,7 +5,7 @@
 //! `engine_interface`.
 use cimvr_engine_interface::{pkg_namespace, prelude::*};
 pub use nalgebra;
-use nalgebra::{Matrix4, Point3, UnitQuaternion};
+use nalgebra::{Isometry3, Matrix4, Point3, Translation3, UnitQuaternion};
 use serde::{Deserialize, Serialize};
 
 pub mod desktop;
@@ -55,6 +55,11 @@ impl Default for Transform {
 }
 
 impl Transform {
+    /// Alias for Self::identity()
+    pub fn new() -> Self {
+        Self::identity()
+    }
+
     /// Turn it into a Matrix;
     /// Represent the transformation as a linear transformation of homogeneous coordinates.
     pub fn to_homogeneous(&self) -> Matrix4<f32> {
@@ -150,4 +155,22 @@ macro_rules! make_handle {
             }
         }
     };
+}
+
+impl Into<Isometry3<f32>> for Transform {
+    fn into(self) -> Isometry3<f32> {
+        Isometry3 {
+            rotation: self.orient,
+            translation: Translation3::from(self.pos),
+        }
+    }
+}
+
+impl From<Isometry3<f32>> for Transform {
+    fn from(value: Isometry3<f32>) -> Self {
+        Self {
+            pos: value.translation.vector.into(),
+            orient: value.rotation,
+        }
+    }
 }
