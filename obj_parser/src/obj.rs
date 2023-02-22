@@ -84,7 +84,7 @@ pub fn obj_lines_to_mesh(obj: &str) -> Mesh {
 
                 // Will loop through the parsed line and divide them into triangles
                 let mut i = 0;
-                while i < parsed_line.len() {
+                while i+1 < parsed_line.len() {
                     // For each iteration, while i is less than the size of the parsed line:
                     // 3 elements will be pushed at a time
                     // First element will always be the first index in the parsed line
@@ -92,7 +92,7 @@ pub fn obj_lines_to_mesh(obj: &str) -> Mesh {
                     // Second element will always be the ith index
                     faces[1] = parsed_line[i];
                     // Third element will always be the (i+1)th index
-                        // If there is no third element, return error
+                        // TODO: If there is no third element, return error
                     faces[2] = parsed_line[i+1];
 
                     // Add those indices to be rendered
