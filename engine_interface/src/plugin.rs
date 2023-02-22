@@ -247,6 +247,9 @@ impl EngineIo {
     }
 
     /// Add a component to an entity
+    /// You may also use this to update existing component data, but it's better to write to the
+    /// query for large batches instead
+    #[track_caller]
     pub fn add_component<C: Component>(&mut self, entity: EntityId, data: &C) {
         let data = serialize(data).expect("Failed to serialize component data");
 
