@@ -1,7 +1,6 @@
 use anyhow::bail;
 use anyhow::format_err;
 use anyhow::Result;
-use cimvr_common::FrameTime;
 use cimvr_common::{render::*, Transform};
 use cimvr_engine::interface::prelude::*;
 use cimvr_engine::{interface::pkg_namespace, Engine};
@@ -11,7 +10,6 @@ use glow::NativeUniformLocation;
 use nalgebra::Matrix4;
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Instant;
 
 const DEFAULT_SHADER: ShaderHandle = ShaderHandle::new(pkg_namespace!("Default shader"));
 
@@ -19,10 +17,6 @@ const DEFAULT_SHADER: ShaderHandle = ShaderHandle::new(pkg_namespace!("Default s
 pub struct RenderPlugin {
     gl: Arc<glow::Context>,
     rdr: RenderEngine,
-    /// Start time
-    start_time: Instant,
-    /// Time since last frame
-    last_frame: Instant,
 }
 
 // TODO: destructors! (lol)
@@ -61,8 +55,6 @@ impl RenderPlugin {
         Ok(Self {
             gl,
             rdr,
-            start_time: Instant::now(),
-            last_frame: Instant::now(),
         })
     }
 
@@ -108,12 +100,6 @@ impl RenderPlugin {
         let proj = camera_comp.projection[camera_idx];
         let view = camera_transf.view() * vr_view;
 
-        // Send frame timing info
-        engine.send(FrameTime {
-            delta: self.last_frame.elapsed().as_secs_f32(),
-            time: self.start_time.elapsed().as_secs_f32(),
-        });
-
         // Draw!
         self.rdr.start_frame(&self.gl, camera_comp.clear_color)?;
 
@@ -145,9 +131,6 @@ impl RenderPlugin {
                 continue;
             }
         }
-
-        // Reset timing
-        self.last_frame = Instant::now();
 
         Ok(())
     }

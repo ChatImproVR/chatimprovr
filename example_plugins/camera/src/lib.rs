@@ -7,6 +7,7 @@ use cimvr_common::{
     },
     nalgebra::{Matrix4, Point3, UnitQuaternion, Vector3, Vector4},
     render::{CameraComponent, Mesh, MeshHandle, Render, UploadMesh, Vertex},
+    utils::camera::Perspective,
     vr::{VrFov, VrUpdate},
     Transform,
 };
@@ -15,7 +16,7 @@ use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*};
 struct ClientState {
     arcball: ArcBall,
     arcball_control: ArcBallController,
-    screen_size: (u32, u32),
+    proj: Perspective,
     left_hand: EntityId,
     right_hand: EntityId,
 }
@@ -60,7 +61,7 @@ impl UserState for ClientState {
         Self {
             arcball: ArcBall::default(),
             arcball_control: ArcBallController::default(),
-            screen_size: (1920, 1080),
+            proj: Perspective::new(),
             left_hand,
             right_hand,
         }
@@ -69,55 +70,18 @@ impl UserState for ClientState {
 
 impl ClientState {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
-        let clear_color = [0.; 3];
-
         // Handle input events for desktop mode
-        if let Some(InputEvents(events)) = io.inbox_first() {
-            for event in events {
+        if let Some(input) = io.inbox_first::<InputEvents>() {
+            self.proj.handle_input_events(&input);
+
+            for event in input.0 {
                 self.arcball_control.handle_event(&event, &mut self.arcball);
-                if let InputEvent::Window(WindowEvent::Resized { width, height }) = event {
-                    self.screen_size = (width, height);
-                }
-            }
-
-            // Get projection matrix
-            let proj = Matrix4::new_perspective(
-                self.screen_size.0 as f32 / self.screen_size.1 as f32,
-                45_f32.to_radians(),
-                0.01,
-                1000.,
-            );
-
-            // Set camera position
-            for key in query.iter() {
-                query.write::<Transform>(key, &self.arcball.camera_transf());
-                query.write::<CameraComponent>(
-                    key,
-                    &CameraComponent {
-                        clear_color,
-                        projection: [proj, proj],
-                    },
-                );
             }
         }
 
         // Handle events for VR
         if let Some(update) = io.inbox_first::<VrUpdate>() {
-            // Set correct FOV for each eye
-            let near = 0.01;
-            let far = 1000.;
-            let left_proj = vr_projection_from_fov(&update.fov_left, near, far);
-            let right_proj = vr_projection_from_fov(&update.fov_right, near, far);
-
-            for key in query.iter() {
-                query.write::<CameraComponent>(
-                    key,
-                    &CameraComponent {
-                        clear_color,
-                        projection: [left_proj, right_proj],
-                    },
-                );
-            }
+            self.proj.handle_vr_update(&update);
 
             if let Some(pos) = update.grip_left {
                 io.add_component(self.left_hand, &pos);
@@ -126,6 +90,21 @@ impl ClientState {
             if let Some(pos) = update.grip_right {
                 io.add_component(self.right_hand, &pos);
             }
+        }
+
+        let projection = self.proj.matrices();
+
+        let clear_color = [0.; 3];
+
+        for key in query.iter() {
+            query.write::<Transform>(key, &self.arcball.camera_transf());
+            query.write::<CameraComponent>(
+                key,
+                &CameraComponent {
+                    clear_color,
+                    projection,
+                },
+            );
         }
     }
 }
@@ -260,38 +239,6 @@ impl Default for ArcBall {
             distance: 10.,
         }
     }
-}
-
-/// Creates a projection matrix for the given fov
-pub fn vr_projection_from_fov(fov: &VrFov, near: f32, far: f32) -> Matrix4<f32> {
-    // See https://gitlab.freedesktop.org/monado/demos/openxr-simple-example/-/blob/master/main.c
-    // XrMatrix4x4f_CreateProjectionFov()
-
-    let tan_left = fov.angle_left.tan();
-    let tan_right = fov.angle_right.tan();
-
-    let tan_up = fov.angle_up.tan();
-    let tan_down = fov.angle_down.tan();
-
-    let tan_width = tan_right - tan_left;
-    let tan_height = tan_up - tan_down;
-
-    let a11 = 2.0 / tan_width;
-    let a22 = 2.0 / tan_height;
-
-    let a31 = (tan_right + tan_left) / tan_width;
-    let a32 = (tan_up + tan_down) / tan_height;
-
-    let a33 = -far / (far - near);
-
-    let a43 = -(far * near) / (far - near);
-
-    Matrix4::new(
-        a11, 0.0, a31, 0.0, //
-        0.0, a22, a32, 0.0, //
-        0.0, 0.0, a33, a43, //
-        0.0, 0.0, -1.0, 0.0, //
-    )
 }
 
 fn hand() -> UploadMesh {

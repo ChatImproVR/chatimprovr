@@ -59,11 +59,31 @@ macro_rules! pkg_namespace {
 pub struct Saved;
 
 use ecs::{Component, ComponentIdStatic};
+use prelude::{ChannelIdStatic, Locality, Message};
 use serde::{Deserialize, Serialize};
 
 impl Component for Saved {
     const ID: ComponentIdStatic = ComponentIdStatic {
         id: pkg_namespace!("Saved"),
         size: 0,
+    };
+}
+
+// TODO: Use an integer of nanoseconds instead?
+/// Frame timing information, denotes time since last frame
+/// Note that a frame consists of PreUpdate, Update, and PostUpdate. This
+/// time is captured before PreUpdate, and stays the same throughout.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+pub struct FrameTime {
+    /// Delta time, in seconds
+    pub delta: f32,
+    /// Time since engine start, in seconds
+    pub time: f32,
+}
+
+impl Message for FrameTime {
+    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+        id: pkg_namespace!("FrameTime"),
+        locality: Locality::Local,
     };
 }

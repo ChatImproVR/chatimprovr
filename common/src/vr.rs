@@ -32,7 +32,7 @@ pub struct VrUpdate {
 
 /// Field of view of OpenXR camera
 /// Matches <https://registry.khronos.org/OpenXR/specs/1.0/html/xrspec.html#XrFovf>
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Copy, Debug, Clone, PartialEq)]
 pub struct VrFov {
     /// Angle of the left side of the field of view. For a symmetric field of view this value is negative.
     pub angle_left: f32,

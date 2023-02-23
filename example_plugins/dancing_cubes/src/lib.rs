@@ -4,9 +4,9 @@ use cimvr_common::{
         Mesh, MeshHandle, Primitive, Render, ShaderHandle, ShaderSource, UploadMesh, Vertex,
         DEFAULT_VERTEX_SHADER,
     },
-    FrameTime, Transform,
+    Transform,
 };
-use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*, println};
+use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*, println, FrameTime};
 use serde::{Deserialize, Serialize};
 use std::f32::consts::TAU;
 
