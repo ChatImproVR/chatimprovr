@@ -33,9 +33,11 @@ cargo build --release
 popd
 ```
 
-You can compile all of the example plugins with the `compile_all.sh` script. If you're on windows, sorry! Please open a PR.
+You can compile all of the example plugins at once with the `compile_all` script.
 
 While most crates _are_ in a workspace, the client crate is unfortunately excluded due to an issue with the `openxr` crate. 
+
+We also cannot compile all of the crates in the workspace from the root level, because only the server is compiled for your native platform, but the plugins must be compiled for wasm32. Currently, [cargo will only compile a workspace for the native target](https://github.com/rust-lang/cargo/issues/7004).
 
 # Hosting a server
 You may host a server with
