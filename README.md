@@ -56,26 +56,4 @@ The default port is 5031, but this can be configured in the server with `--bind 
 # Organization 
 ![Visual aid for crate graph](./graph.svg)
 
-Plugins are required to import `engine_interface`. Most plugins will need to import `common`, as it provides interfacing with the provided client and server. The `engine` and `engine_interface` crates are all that are needed to set up arbitrary new platforms...
-
-# TODO
-* [x] Use the `log` crate for errors and warnings host-size
-* [x] Interface for server-client messaging
-* [ ] Display plugin names along with print. Should happen in log...
-* [ ] Use real UUIDs instead of these random numbers and silly ID constants
-* [ ] All of the other TODOs... `grep -ir 'todo' */src/*`
-* [ ] Loading bar for plugins
-* [x] Networking!
-* [ ] Optionally-unreliable networking (faster but tradeoff packet loss, streamed instead of diff'd) 
-* [x] Figure out how to organize code for serverside/clientside easier. Should be able to compile for both...
-* [x] Hot-reloading
-* [x] Trigger hot reload on wasm file change
-* [ ] Limits on plugin resources; execution time, message and component sizes, etc
-* [ ] VR support (OpenXR)
-* [ ] VR support for GUI (OpenXR keyboard?)
-
-Access components:
-* `Synchronized`: Object is sent from server to client periodically
-* `Saved`: Entity and associated components written to disk 
-    * Different owners? Like clients' loaded plugins should be able to retrieve data on exit
-    * 'Guest' plugins alongside client and server...
+Plugins are required to import `engine_interface`. Most plugins will need to import `common`, as it provides interfacing with the specific functionality implemented in the provided client and server.
