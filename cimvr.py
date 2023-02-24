@@ -11,15 +11,18 @@ from time import sleep
 def main():
     parser = argparse.ArgumentParser(
         prog='ChatImproVR helper script',
-        description='Launches the client and server, finds plugin paths',
-        epilog='Also searches CIMVR_PLUGINS for WASM paths'
+        description='Launches the client and server, searches plugin paths',
+        epilog="""
+        Also searches the CIMVR_PLUGINS environment variable for WASM plugins.
+        Multiple paths can be searched by seperating them with a semicolon (;) 
+        """
     )
     parser.add_argument(
         "plugins",
         nargs='*',
-        help=""",
-        Plugins can be the truncated
-        (thing.wasm -> thing) form, or full paths.
+        help="""
+        Plugins to launch. Plugins can be the truncated form
+        ("thing.wasm" becomes "thing"), or full paths /home/me/plugin.wasm/...
         """
     )
     parser.add_argument(
@@ -35,6 +38,11 @@ def main():
     parser.add_argument(
         "--verbose", "-v",
         help="Verbose debug output"
+    )
+    parser.add_argument(
+        "--vr",
+        action='store_true',
+        help="Run the client in VR mode"
     )
     args = parser.parse_args()
 
@@ -86,6 +94,9 @@ def main():
             plugins.append(path)
         else:
             print(f"No plugin named \"{name}\" found.")
+            print("Searched:")
+            for folder in get_plugin_folders(root_path):
+                print("\t" + folder)
             return
 
     if args.verbose:
@@ -94,18 +105,22 @@ def main():
             print(f"Plugin {p}")
 
     # Decide on a list of executables
-    exes = []
+    cmds = []
     if args.server:
-        exes += [server_exe]
+        cmd = [server_exe] + plugins
+        cmds += [cmd]
 
     if args.client:
-        exes += [client_exe]
+        cmd = [client_exe] + plugins
+        if args.vr:
+            cmd.append("--vr")
+        cmds += [cmd]
 
     # Launch client an server
     procs = []
-    for exe in exes:
-        print(exe)
-        procs.append(Popen([exe] + plugins))
+    for cmd in cmds:
+        print(cmd)
+        procs.append(Popen(cmd))
         # Wait for server to start
         sleep(0.1)
 
@@ -113,8 +128,8 @@ def main():
         p.wait()
 
 
-def find_wasm(name, root_path):
-    # Search the build path, and a local "plugins" folder
+def get_plugin_folders(root_path):
+    """Search the build path, and a local "plugins" folder"""
     wasm_target = "wasm32-unknown-unknown"
     build_path = join(root_path, "target", wasm_target, "release")
 
@@ -125,6 +140,11 @@ def find_wasm(name, root_path):
     if wasm_env_var in os.environ:
         plugin_folders += os.environ[wasm_env_var].split(';')
 
+    return plugin_folders
+
+
+def find_wasm(name, root_path):
+    plugin_folders = get_plugin_folders(root_path)
     file_name = name + ".wasm"
 
     for folder in plugin_folders:

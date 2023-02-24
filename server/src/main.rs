@@ -1,5 +1,4 @@
 use anyhow::Result;
-use cimvr_common::FrameTime;
 
 use cimvr_engine::hotload::Hotloader;
 use cimvr_engine::interface::prelude::{
@@ -87,8 +86,6 @@ struct Server {
     conn_rx: Receiver<(TcpStream, SocketAddr)>,
     conns: Vec<Connection>,
     hotload: Hotloader,
-    start_time: Instant,
-    last_frame: Instant,
     id_counter: u32,
 }
 
@@ -97,8 +94,6 @@ impl Server {
         Self {
             hotload,
             engine,
-            last_frame: Instant::now(),
-            start_time: Instant::now(),
             conn_rx,
             conns: vec![],
             id_counter: 0,
@@ -161,12 +156,6 @@ impl Server {
             }
         }
 
-        // Send frame timing
-        self.engine.send(FrameTime {
-            time: self.start_time.elapsed().as_secs_f32(),
-            delta: self.last_frame.elapsed().as_secs_f32(),
-        });
-
         // Send connection list
         self.engine.send(Connections {
             clients: conns_tmp.iter().map(|c| c.id).collect(),
@@ -208,8 +197,6 @@ impl Server {
                 self.conns.push(conn);
             }
         }
-
-        self.last_frame = Instant::now();
 
         Ok(())
     }

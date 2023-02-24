@@ -3,18 +3,25 @@
 //! This crate is intended to facilitate communication with the specific server and client
 //! implementations provided alongside ChatimproVR. This library is always used in conjunction with
 //! `engine_interface`.
+use std::ops::Mul;
+
 use cimvr_engine_interface::{pkg_namespace, prelude::*};
 pub use nalgebra;
-use nalgebra::{Matrix4, Point3, UnitQuaternion};
+use nalgebra::{Isometry3, Matrix4, Point3, Translation3, UnitQuaternion};
 use serde::{Deserialize, Serialize};
 
 pub mod desktop;
 pub mod gamepad;
 pub mod render;
 pub mod ui;
+pub mod utils;
 pub mod vr;
 
-/// Component representing position and orientation
+/// # Component representing position and orientation
+///
+/// Represents a rotation, followed by a translation.
+/// Composable through the multiplication (`*`) operator.
+/// Features `From`/`Into` for `Isometry3<f32>`.
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
 pub struct Transform {
     /// Position
@@ -25,26 +32,8 @@ pub struct Transform {
 
 impl Component for Transform {
     const ID: ComponentIdStatic = ComponentIdStatic {
-        // steakhouse
         id: pkg_namespace!("Transform"),
         size: 44,
-    };
-}
-
-/// Frame information
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FrameTime {
-    /// Delta time, in seconds
-    pub delta: f32,
-    /// Time since engine start, in seconds
-    pub time: f32,
-}
-
-impl Message for FrameTime {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        // That's what I've been waitin for, that's what it's all about! Wahoo!
-        id: pkg_namespace!("FrameTime"),
-        locality: Locality::Local,
     };
 }
 
@@ -55,6 +44,11 @@ impl Default for Transform {
 }
 
 impl Transform {
+    /// Alias for Self::identity()
+    pub fn new() -> Self {
+        Self::identity()
+    }
+
     /// Turn it into a Matrix;
     /// Represent the transformation as a linear transformation of homogeneous coordinates.
     pub fn to_homogeneous(&self) -> Matrix4<f32> {
@@ -150,4 +144,31 @@ macro_rules! make_handle {
             }
         }
     };
+}
+
+impl Into<Isometry3<f32>> for Transform {
+    fn into(self) -> Isometry3<f32> {
+        Isometry3 {
+            rotation: self.orient,
+            translation: Translation3::from(self.pos),
+        }
+    }
+}
+
+impl From<Isometry3<f32>> for Transform {
+    fn from(value: Isometry3<f32>) -> Self {
+        Self {
+            pos: value.translation.vector.into(),
+            orient: value.rotation,
+        }
+    }
+}
+
+impl Mul for Transform {
+    type Output = Self;
+    fn mul(self, rhs: Self) -> Self::Output {
+        let lhs: Isometry3<f32> = self.into();
+        let rhs: Isometry3<f32> = rhs.into();
+        (lhs * rhs).into()
+    }
 }

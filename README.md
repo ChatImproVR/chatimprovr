@@ -33,9 +33,11 @@ cargo build --release
 popd
 ```
 
-You can compile all of the example plugins with the `compile_all.sh` script. If you're on windows, sorry! Please open a PR.
+You can compile all of the example plugins at once with the `compile_all` script.
 
 While most crates _are_ in a workspace, the client crate is unfortunately excluded due to an issue with the `openxr` crate. 
+
+We also cannot compile all of the crates in the workspace from the root level, because only the server is compiled for your native platform, but the plugins must be compiled for wasm32. Currently, [cargo will only compile a workspace for the native target](https://github.com/rust-lang/cargo/issues/7004).
 
 # Hosting a server
 You may host a server with
@@ -54,26 +56,4 @@ The default port is 5031, but this can be configured in the server with `--bind 
 # Organization 
 ![Visual aid for crate graph](./graph.svg)
 
-Plugins are required to import `engine_interface`. Most plugins will need to import `common`, as it provides interfacing with the provided client and server. The `engine` and `engine_interface` crates are all that are needed to set up arbitrary new platforms...
-
-# TODO
-* [x] Use the `log` crate for errors and warnings host-size
-* [x] Interface for server-client messaging
-* [ ] Display plugin names along with print. Should happen in log...
-* [ ] Use real UUIDs instead of these random numbers and silly ID constants
-* [ ] All of the other TODOs... `grep -ir 'todo' */src/*`
-* [ ] Loading bar for plugins
-* [x] Networking!
-* [ ] Optionally-unreliable networking (faster but tradeoff packet loss, streamed instead of diff'd) 
-* [x] Figure out how to organize code for serverside/clientside easier. Should be able to compile for both...
-* [x] Hot-reloading
-* [x] Trigger hot reload on wasm file change
-* [ ] Limits on plugin resources; execution time, message and component sizes, etc
-* [ ] VR support (OpenXR)
-* [ ] VR support for GUI (OpenXR keyboard?)
-
-Access components:
-* `Synchronized`: Object is sent from server to client periodically
-* `Saved`: Entity and associated components written to disk 
-    * Different owners? Like clients' loaded plugins should be able to retrieve data on exit
-    * 'Guest' plugins alongside client and server...
+Plugins are required to import `engine_interface`. Most plugins will need to import `common`, as it provides interfacing with the specific functionality implemented in the provided client and server.
