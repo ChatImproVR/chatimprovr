@@ -2,7 +2,6 @@
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 
-// TODO: Builder pattern for this!
 /// A description of a system within this plugin
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SystemDescriptor {
@@ -44,13 +43,13 @@ impl SystemDescriptor {
         }
     }
 
-    /// Query the given component
+    /// Query the given component and provide an access level to it.
     pub fn query<T: Component>(mut self, access: Access) -> Self {
         self.query.push(QueryComponent::new::<T>(access));
         self
     }
 
-    /// Subscribe to the given channel
+    /// Subscribe to the given channel by telling it which message type you want.
     pub fn subscribe<M: Message>(mut self) -> Self {
         self.subscriptions.push(M::CHANNEL.into());
         self

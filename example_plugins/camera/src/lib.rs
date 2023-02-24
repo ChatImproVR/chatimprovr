@@ -12,7 +12,7 @@ use cimvr_common::{
 };
 use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*};
 
-struct ClientState {
+struct Camera {
     arcball: ArcBall,
     arcball_control: ArcBallController,
     screen_size: (u32, u32),
@@ -20,11 +20,11 @@ struct ClientState {
     right_hand: EntityId,
 }
 
-make_app_state!(ClientState, DummyUserState);
+make_app_state!(Camera, DummyUserState);
 
 const HAND_RDR_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Hand"));
 
-impl UserState for ClientState {
+impl UserState for Camera {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
         // Create camera
         let camera_ent = io.create_entity();
@@ -67,7 +67,7 @@ impl UserState for ClientState {
     }
 }
 
-impl ClientState {
+impl Camera {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         let clear_color = [0.; 3];
 

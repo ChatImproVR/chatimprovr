@@ -51,6 +51,8 @@ enum ClientOrServerState<ClientState, ServerState> {
 
 /// Basically main() for plugins; allows a struct implementing the [UserState](crate::plugin::UserState) trait to be the state and entry
 /// point for the plugin.
+/// 
+/// Order matters to define which is the client state and which is the server state. Whatever goes first is the client state, and whatever goes second is the server state.
 ///
 /// The Syntax is `make_app_state(ClientState, ServerState)`, in that order.
 ///
@@ -93,9 +95,7 @@ macro_rules! make_app_state {
     };
 }
 
-/// Contains the query result, and any received messages.
-/// Also contains the commands to be sent to the engine, and lists the modified entities and
-/// components therein
+/// Contains commands to be sent to the engine and received messages.
 /// TODO: Find a better name for this lmao
 #[derive(Serialize, Deserialize)]
 pub struct EngineIo {
