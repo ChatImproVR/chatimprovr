@@ -7,9 +7,7 @@ use cimvr_common::{
 use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*, FrameTime};
 use serde::{Deserialize, Serialize};
 
-struct ServerState {
-    cube_entity: EntityId,
-}
+struct ServerState;
 
 struct ClientState {
     w_is_pressed: bool,
@@ -24,7 +22,7 @@ pub struct MoveCommand {
     pub distance: Vector3<f32>,
 }
 
-/// Identifier component for the cube
+/// Component identifing the cube
 #[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct CubeFlag;
 
@@ -41,6 +39,7 @@ impl UserState for ClientState {
             id: CUBE_HANDLE,
         });
 
+        // Add update system, and subscribe to needed channels
         sched.add_system(
             Self::update,
             SystemDescriptor::new(Stage::Update)
@@ -48,6 +47,7 @@ impl UserState for ClientState {
                 .subscribe::<FrameTime>(),
         );
 
+        // Initialize state
         Self {
             w_is_pressed: false,
             a_is_pressed: false,
@@ -59,8 +59,10 @@ impl UserState for ClientState {
 
 impl ClientState {
     fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
+        // Read frame time (or bust!)
         let Some(frame_time) = io.inbox_first::<FrameTime>() else { return };
 
+        // Handle input events
         if let Some(InputEvents(events)) = io.inbox_first() {
             for event in events {
                 if let InputEvent::Keyboard(cimvr_common::desktop::KeyboardEvent::Key {
@@ -68,6 +70,7 @@ impl ClientState {
                     state,
                 }) = event
                 {
+                    // Update key press information
                     let is_pressed = state == ElementState::Pressed;
 
                     if key == KeyCode::W {
@@ -89,6 +92,7 @@ impl ClientState {
             }
         }
 
+        // Decide which way the cube should move based on keypresses
         let mut move_vector = Vector3::zeros();
         if self.w_is_pressed {
             move_vector += Vector3::new(1., 0., 0.)
@@ -103,6 +107,7 @@ impl ClientState {
             move_vector += Vector3::new(0., 0., 1.)
         }
 
+        // Send movement command to server
         if move_vector != Vector3::zeros() {
             let distance = move_vector.normalize() * frame_time.delta * 10.;
 
@@ -116,15 +121,19 @@ impl ClientState {
 impl UserState for ServerState {
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         // Define how the cube should be rendered
-        let cube_rdr = Render::new(CUBE_HANDLE).primitive(Primitive::Triangles);
 
         // Create one cube entity at the origin, and make it synchronize to clients
         let cube_entity = io.create_entity();
         io.add_component(cube_entity, &Transform::default());
-        io.add_component(cube_entity, &cube_rdr);
+        io.add_component(
+            cube_entity,
+            &Render::new(CUBE_HANDLE).primitive(Primitive::Triangles),
+        );
         io.add_component(cube_entity, &Synchronized);
         io.add_component(cube_entity, &CubeFlag);
 
+        // Create the Update system, which interprets movement commands and updates the transform
+        // component on the object with CubeFlag
         sched.add_system(
             Self::update,
             SystemDescriptor::new(Stage::Update)
@@ -133,13 +142,15 @@ impl UserState for ServerState {
                 .query::<Transform>(Access::Write),
         );
 
-        Self { cube_entity }
+        Self
     }
 }
 
 impl ServerState {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        // Check for movement commands
         if let Some(MoveCommand { distance }) = io.inbox_first() {
+            // Update each object accordingly
             for key in query.iter() {
                 query.modify::<Transform>(key, |tf| {
                     tf.pos += distance;
