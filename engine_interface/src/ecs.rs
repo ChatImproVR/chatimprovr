@@ -45,7 +45,7 @@ pub struct ComponentId {
     ///
     /// A: To easily move components around in memory
     ///
-    /// A: To help uniquely identify the database key with it's data type
+    /// A: To help uniquely identify the database entity with it's data type
     ///
     /// ## Q: Is this the same as the size of the associated type?
     ///
@@ -111,21 +111,6 @@ pub struct QueryResult {
     query: Query,
 }
 
-// TODO: Use only EntityId instead of this method...
-// We should be able to read/write specific ids!
-/// Opaque key to access query indices
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub struct Key {
-    idx: usize,
-    entity: EntityId,
-}
-
-impl Key {
-    pub fn entity(&self) -> EntityId {
-        self.entity
-    }
-}
-
 impl QueryResult {
     pub(crate) fn new(ecs: EcsData, query: Query) -> Self {
         Self {
@@ -136,18 +121,25 @@ impl QueryResult {
     }
 
     /// Iterate through query entities
-    pub fn iter(&self) -> impl Iterator<Item = Key> {
+    pub fn iter(&self) -> impl Iterator<Item = EntityId> {
+        self.ecs.entities.clone().into_iter()
+    }
+
+    fn get_entity_index(&self, entity: EntityId) -> usize {
+        // TODO: This is slow!!!
         self.ecs
             .entities
             .clone()
             .into_iter()
-            .enumerate()
-            .map(|(idx, entity)| Key { idx, entity })
+            .position(|e| e == entity)
+            .expect("Attempted to access entity not queried")
     }
 
     /// Get the relevant component storage indices and
     #[track_caller]
-    fn indices<T: Component>(&self, key: Key) -> (usize, Range<usize>) {
+    fn indices<T: Component>(&self, entity: EntityId) -> (usize, Range<usize>) {
+        let entity_idx = self.get_entity_index(entity);
+
         let component_idx = self
             .query
             .iter()
@@ -155,34 +147,24 @@ impl QueryResult {
             .expect("Attempted to access component not queried");
 
         let size = T::ID.size as usize;
-        let begin = key.idx * size;
+        let begin = entity_idx * size;
         let end = begin + size;
 
         (component_idx, begin..end)
     }
 
-    /// Get the corresponding key for an entity, if it was included in the query
-    pub fn key_for_entity(&self, entity: EntityId) -> Option<Key> {
-        // TODO: This lookup is slow! (O(n) when it could be O(1))
-        self.ecs
-            .entities
-            .clone()
-            .into_iter()
-            .position(|e| e == entity)
-            .map(|idx| Key { idx, entity })
-    }
-
     /// Read the data in the given component
-    pub fn read<T: Component>(&self, key: Key) -> T {
+    pub fn read<T: Component>(&self, entity: EntityId) -> T {
         // TODO: Cache query lookups!
-        let (component_idx, range) = self.indices::<T>(key);
+        let (component_idx, range) = self.indices::<T>(entity);
         let dense = &self.ecs.components[component_idx];
         deserialize(&dense[range]).expect("Failed to deserialize component for reading")
     }
 
     /// Write the given data to the component
-    pub fn write<C: Component>(&mut self, key: Key, data: &C) {
-        let entity = self.ecs.entities[key.idx];
+    pub fn write<C: Component>(&mut self, entity: EntityId, data: &C) {
+        let entity_idx = self.get_entity_index(entity);
+        let entity = self.ecs.entities[entity_idx];
         // Serialize data
         // TODO: Never allocate in hot loops!
         let data = serialize(data).expect("Failed to serialize component for writing");
@@ -190,7 +172,7 @@ impl QueryResult {
 
         // Write back to ECS storage for possible later modification. This is never read by the
         // host, but MAY be read by us!
-        let (component_idx, range) = self.indices::<C>(key);
+        let (component_idx, range) = self.indices::<C>(entity);
         let dense = &mut self.ecs.components[component_idx];
         dense[range].copy_from_slice(&data);
 
@@ -201,10 +183,10 @@ impl QueryResult {
 
     // TODO: This is dreadfully slow but there's no way around that
     /// Modify the component "in place"
-    pub fn modify<T: Component>(&mut self, key: Key, mut f: impl FnMut(&mut T)) {
-        let mut val = self.read(key);
+    pub fn modify<T: Component>(&mut self, entity: EntityId, mut f: impl FnMut(&mut T)) {
+        let mut val = self.read(entity);
         f(&mut val);
-        self.write(key, &mut val);
+        self.write(entity, &mut val);
     }
 }
 

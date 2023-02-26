@@ -51,7 +51,7 @@ enum ClientOrServerState<ClientState, ServerState> {
 
 /// Basically main() for plugins; allows a struct implementing the [UserState](crate::plugin::UserState) trait to be the state and entry
 /// point for the plugin.
-/// 
+///
 /// Order matters to define which is the client state and which is the server state. Whatever goes first is the client state, and whatever goes second is the server state.
 ///
 /// The Syntax is `make_app_state(ClientState, ServerState)`, in that order.

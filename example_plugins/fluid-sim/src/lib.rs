@@ -48,7 +48,7 @@ impl UserState for ServerState {
 impl ServerState {
     fn init(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         for key in query.iter() {
-            io.remove_entity(key.entity());
+            io.remove_entity(key);
         }
 
         // Fluid lines mesh

@@ -37,7 +37,6 @@ macro_rules! println {
     }};
 }
 
-
 #[macro_export]
 macro_rules! dbg {
     // NOTE: We cannot use `concat!` to make a static string as a format argument
