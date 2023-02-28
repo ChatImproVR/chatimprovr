@@ -52,7 +52,7 @@ impl UserState for ServerState {
 impl ServerState {
     fn startup(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         for k in query.iter() {
-            io.remove_entity(k.entity());
+            io.remove_entity(k);
         }
 
         // Cube mesh

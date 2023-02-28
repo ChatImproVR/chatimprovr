@@ -28,14 +28,12 @@ impl UserState for ServerState {
 }
 
 impl ServerState {
-    fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+    fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
         if let Some(ChangeColor { rgb }) = io.inbox_first() {
-            for key in query.iter() {
-                let mut extra = [0.; 4 * 4];
-                extra[..3].copy_from_slice(&rgb);
-                extra[3] = 1.;
-                io.add_component(key.entity(), &RenderExtra(extra));
-            }
+            let mut extra = [0.; 4 * 4];
+            extra[..3].copy_from_slice(&rgb);
+            extra[3] = 1.;
+            io.add_component(self.cube, &RenderExtra(extra));
         }
     }
 }

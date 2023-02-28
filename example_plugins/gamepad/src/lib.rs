@@ -82,9 +82,9 @@ impl ServerState {
         for key in query.iter() {
             let SpinningCube(client_id) = query.read::<SpinningCube>(key);
             if conns.clients.contains(&client_id) {
-                client_to_entity.insert(client_id, key.entity());
+                client_to_entity.insert(client_id, key);
             } else {
-                io.remove_entity(key.entity());
+                io.remove_entity(key);
             }
         }
 

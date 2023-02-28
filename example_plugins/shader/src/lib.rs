@@ -87,7 +87,7 @@ impl ClientState {
     fn deleteme(&mut self, _io: &mut EngineIo, query: &mut QueryResult) {
         for key in query.iter() {
             let time = query.read::<RenderExtra>(key).0[0];
-            dbg!((time, key.entity()));
+            dbg!((time, key));
         }
     }
 }
