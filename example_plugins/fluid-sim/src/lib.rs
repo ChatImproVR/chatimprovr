@@ -17,16 +17,6 @@ struct ClientState {
     last: [f32; 3],
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone)]
-struct FluidStuff;
-
-impl Component for FluidStuff {
-    const ID: ComponentIdStatic = ComponentIdStatic {
-        id: pkg_namespace!("FluidStuff"),
-        size: 0,
-    };
-}
-
 const VEL_Z: f32 = 0.5;
 const FLUID_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Fluid"));
 const FLUID_VEL_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Fluid velocity"));
@@ -35,29 +25,13 @@ const CUBE_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
 struct ServerState;
 
 impl UserState for ServerState {
-    fn new(_io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
-        sched.add_system(
-            Self::init,
-            SystemDescriptor::new(Stage::PostInit).query::<FluidStuff>(Access::Read),
-        );
-
-        Self
-    }
-}
-
-impl ServerState {
-    fn init(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
-        for key in query.iter() {
-            io.remove_entity(key);
-        }
-
+    fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
         // Fluid lines mesh
         let fluid_vel_rdr = Render::new(FLUID_VEL_ID).primitive(Primitive::Lines);
 
         let fluid_vel_ent = io.create_entity();
         io.add_component(fluid_vel_ent, &Transform::default());
         io.add_component(fluid_vel_ent, &fluid_vel_rdr);
-        io.add_component(fluid_vel_ent, &FluidStuff);
         io.add_component(fluid_vel_ent, &Synchronized);
 
         let cube_rdr = Render::new(CUBE_ID).primitive(Primitive::Lines);
@@ -66,6 +40,8 @@ impl ServerState {
         io.add_component(cube_ent, &Transform::default());
         io.add_component(cube_ent, &cube_rdr);
         io.add_component(cube_ent, &Synchronized);
+
+        Self
     }
 }
 
