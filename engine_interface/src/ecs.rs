@@ -125,6 +125,8 @@ impl QueryResult {
         self.ecs.entities.clone().into_iter()
     }
 
+    /// Get the index of the given entity id
+    #[track_caller]
     fn get_entity_index(&self, entity: EntityId) -> usize {
         // TODO: This is slow!!!
         self.ecs
@@ -154,6 +156,7 @@ impl QueryResult {
     }
 
     /// Read the data in the given component
+    #[track_caller]
     pub fn read<T: Component>(&self, entity: EntityId) -> T {
         // TODO: Cache query lookups!
         let (component_idx, range) = self.indices::<T>(entity);
@@ -162,6 +165,7 @@ impl QueryResult {
     }
 
     /// Write the given data to the component
+    #[track_caller]
     pub fn write<C: Component>(&mut self, entity: EntityId, data: &C) {
         let entity_idx = self.get_entity_index(entity);
         let entity = self.ecs.entities[entity_idx];
@@ -183,6 +187,7 @@ impl QueryResult {
 
     // TODO: This is dreadfully slow but there's no way around that
     /// Modify the component "in place"
+    #[track_caller]
     pub fn modify<T: Component>(&mut self, entity: EntityId, mut f: impl FnMut(&mut T)) {
         let mut val = self.read(entity);
         f(&mut val);
