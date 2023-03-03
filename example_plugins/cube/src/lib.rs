@@ -18,6 +18,7 @@ const CUBE_HANDLE: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
 impl UserState for ClientState {
     fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
         // Make the cube mesh available to the rendering engine
+        // This defines the CUBE_HANDLE id to refer to the mesh we get from cube()
         io.send(&UploadMesh {
             mesh: cube(),
             id: CUBE_HANDLE,
@@ -29,13 +30,17 @@ impl UserState for ClientState {
 
 impl UserState for ServerState {
     fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
-        // Define how the cube should be rendered
-        let cube_rdr = Render::new(CUBE_HANDLE).primitive(Primitive::Triangles);
-
-        // Create one cube entity at the origin, and make it synchronize to clients
+        // Create an entity
         let cube_ent = io.create_entity();
+        // Attach a Transform component (which defaults to the origin)
         io.add_component(cube_ent, &Transform::default());
-        io.add_component(cube_ent, &cube_rdr);
+        // Attach the Render component, which details how the object should be drawn
+        // Note that we use CUBE_HANDLE here, to tell the rendering engine to draw the cube
+        io.add_component(
+            cube_ent,
+            &Render::new(CUBE_HANDLE).primitive(Primitive::Triangles),
+        );
+        // Attach the Synchronized component, which will copy the object to clients
         io.add_component(cube_ent, &Synchronized);
 
         Self
@@ -44,7 +49,10 @@ impl UserState for ServerState {
 
 /// Defines the mesh data fro a cube
 fn cube() -> Mesh {
+    // Size of the cube mesh
     let size = 0.25;
+
+    // List of vertex positions and colors
     let vertices = vec![
         Vertex::new([-size, -size, -size], [0.0, 1.0, 1.0]),
         Vertex::new([size, -size, -size], [1.0, 0.0, 1.0]),
@@ -56,6 +64,7 @@ fn cube() -> Mesh {
         Vertex::new([-size, size, size], [1.0, 0.0, 1.0]),
     ];
 
+    // Each 3 indices (indexing into vertices) define a triangle
     let indices = vec![
         3, 1, 0, 2, 1, 3, 2, 5, 1, 6, 5, 2, 6, 4, 5, 7, 4, 6, 7, 0, 4, 3, 0, 7, 7, 2, 3, 6, 2, 7,
         0, 5, 4, 1, 5, 0,
