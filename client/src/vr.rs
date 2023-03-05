@@ -1,22 +1,46 @@
+use crate::desktop_input::DesktopInputHandler;
 use crate::{Client, Opt};
 use anyhow::{format_err, Result};
 use cimvr_common::vr::{VrFov, VrUpdate};
 use cimvr_common::Transform;
 use cimvr_engine::interface::system::Stage;
 use gl::HasContext;
+use glutin::event_loop::ControlFlow;
+use glutin::event_loop::EventLoop;
 use nalgebra::{Point3, Quaternion, Unit};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
 use xr::View;
+use glutin::event::{Event, WindowEvent};
 
 const VR_DEPTH_FORMAT: u32 = gl::DEPTH_COMPONENT24;
 
 pub fn mainloop(args: Opt) -> Result<()> {
-    let mut main = MainLoop::new(args.plugins, args.connect)?;
-    while main.frame()? {}
+    // Set up VR mainloop
+    let (mut main, event_loop) = MainLoop::new(args.plugins, args.connect)?;
 
-    Ok(())
+    // Set up desktop input
+    let mut input = DesktopInputHandler::new();
+
+    event_loop.run(move |event, _, control_flow| {
+        *control_flow = ControlFlow::Poll;
+        match event {
+            Event::WindowEvent { ref event, .. } => {
+                input.handle_winit_event(event);
+
+                match event {
+                    WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
+                    _ => (),
+                }
+            }
+            Event::MainEventsCleared => {
+                main.frame().expect("Frame caused error");
+                main.client.engine().send(input.get_history());
+            }
+            _ => (),
+        }
+    });
 }
 
 struct MainLoop {
@@ -41,7 +65,7 @@ struct MainLoop {
 }
 
 impl MainLoop {
-    pub fn new(plugins: Vec<PathBuf>, connect: SocketAddr) -> Result<Self> {
+    pub fn new(plugins: Vec<PathBuf>, connect: SocketAddr) -> Result<(Self, EventLoop<()>)> {
         // Load OpenXR from platform-specific location
         #[cfg(target_os = "linux")]
         let entry = unsafe { xr::Entry::load()? };
@@ -196,7 +220,7 @@ impl MainLoop {
 
         let plugin_interface = PluginVrInterfacing::new(&xr_instance, &xr_session)?;
 
-        Ok(Self {
+        let inst = Self {
             client,
             gl,
             gl_framebuffers,
@@ -215,7 +239,9 @@ impl MainLoop {
             _glutin_ctx: glutin_ctx,
             _glutin_window: glutin_window,
             plugin_interface,
-        })
+        };
+
+        Ok((inst, event_loop))
     }
 
     pub fn frame(&mut self) -> Result<bool> {
