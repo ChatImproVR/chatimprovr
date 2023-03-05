@@ -31,6 +31,10 @@ def main():
         help="Only run the client"
     )
     parser.add_argument(
+        "--remote", "-r",
+        help="Set remote host (--connect)"
+    )
+    parser.add_argument(
         "--server", "-s",
         action='store_true',
         help="Only run the server"
@@ -114,6 +118,9 @@ def main():
         cmd = [client_exe] + plugins
         if args.vr:
             cmd.append("--vr")
+        if args.remote:
+            cmd.append("--connect")
+            cmd.append(args.remote)
         cmds += [cmd]
 
     # Launch client an server
