@@ -16,6 +16,7 @@ members = [
     "example_plugins/shader",
     "example_plugins/randomly_moving_cube",
     "example_plugins/gamepad",
+    "example_plugins/keyboard",
 ]
 
 # Causes a build issue with OpenXR if included in workspace
