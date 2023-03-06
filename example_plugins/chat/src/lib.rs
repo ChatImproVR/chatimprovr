@@ -16,7 +16,7 @@ make_app_state!(ClientState, ServerState);
 #[derive(Serialize, Deserialize, Debug)]
 struct ChatDownload {
     username: String,
-    message: String,
+    text: String,
 }
 
 /// Client to server chat message datatype
@@ -49,8 +49,8 @@ impl UserState for ClientState {
             State::Button { clicked: false },
         ];
         for _ in 0..N_DISPLAYED_MESSAGES {
-            schema.push(Schema::Label { text: "".into() });
-            state.push(State::Label);
+            schema.push(Schema::Label);
+            state.push(State::Label { text: "".into() });
         }
         let element = ui.add(io, "Chat", schema, state);
 
@@ -66,17 +66,34 @@ impl ClientState {
     fn ui_update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
         self.ui.download(io);
 
-        for msg in io.inbox::<ChatDownload>() {
-            dbg!(msg);
-        }
-
         if io.inbox::<UiUpdate>().next().is_some() {
-            let ret = self.ui.read(self.element);
-            let State::TextInput { text } = &ret[0] else { panic!() };
+            let ui_state = self.ui.read(self.element);
+            let State::TextInput { text } = &ui_state[0] else { panic!() };
 
-            if let State::Button { clicked: true } = ret[1] {
+            if let State::Button { clicked: true } = ui_state[1] {
                 io.send(&ChatUpload(text.to_string()));
             }
+        }
+
+        let mut needs_update = false;
+        for msg in io.inbox::<ChatDownload>() {
+            let disp = format!("{}: {}", msg.username, msg.text);
+            self.displayed_messages.push(disp);
+            if self.displayed_messages.len() > N_DISPLAYED_MESSAGES {
+                self.displayed_messages.rotate_left(1);
+                self.displayed_messages.pop();
+            }
+            needs_update = true;
+        }
+
+        if needs_update {
+            self.ui.modify(io, self.element, |state| {
+                for (label, disp) in state[2..].iter_mut().zip(&self.displayed_messages) {
+                    if let State::Label { text } = label {
+                        *text = disp.clone();
+                    }
+                }
+            })
         }
     }
 }
@@ -106,11 +123,10 @@ impl ServerState {
         for (sender_client_id, ChatUpload(msg)) in msgs {
             let sender = clients.iter().find(|c| c.id == sender_client_id);
 
-            dbg!(clients.len());
             if let Some(sender) = sender {
                 let msg = ChatDownload {
                     username: sender.username.clone(),
-                    message: msg.clone(),
+                    text: msg.clone(),
                 };
 
                 for client in &clients {

@@ -115,7 +115,7 @@ impl Element {
 
 fn show(ui: &mut Ui, schema: &Schema, state: &mut State) -> bool {
     match (schema, state) {
-        (Schema::Label { text }, State::Label) => ui.label(text).changed(),
+        (Schema::Label, State::Label { text }) => ui.label(text.to_owned()).changed(),
         (Schema::TextInput, State::TextInput { text }) => {
             ui.add(TextEdit::singleline(text)).changed()
         }
