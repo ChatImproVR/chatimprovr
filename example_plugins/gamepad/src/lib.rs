@@ -81,7 +81,7 @@ impl ServerState {
         // If the entity exists but the client doesn't, remove the entity
         for key in query.iter() {
             let SpinningCube(client_id) = query.read::<SpinningCube>(key);
-            if conns.clients.contains(&client_id) {
+            if conns.clients.iter().find(|c| c.id == client_id).is_some() {
                 client_to_entity.insert(client_id, key);
             } else {
                 io.remove_entity(key);

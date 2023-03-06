@@ -1,5 +1,5 @@
 use anyhow::{format_err, Result};
-use cimvr_common::gamepad::{Axis, Button, GamepadState, Gamepad};
+use cimvr_common::gamepad::{Axis, Button, Gamepad, GamepadState};
 use gilrs::{GamepadId, Gilrs};
 use log::info;
 
@@ -39,7 +39,7 @@ impl GamepadPlugin {
                 };
                 pad_state.buttons.insert(button, data);
             }
-                
+
             for axis in Axis::AXES {
                 let data = pad.axis_data(axis_to_gilrs(axis));
                 let data = match data {

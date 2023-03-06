@@ -2,7 +2,7 @@ use anyhow::Result;
 
 use cimvr_engine::hotload::Hotloader;
 use cimvr_engine::interface::prelude::{
-    Access, ClientId, Connections, QueryComponent, Synchronized,
+    Access, ClientId, ConnectionRequest, Connections, QueryComponent, Synchronized,
 };
 use cimvr_engine::interface::serial::deserialize;
 use cimvr_engine::Config;
@@ -67,30 +67,49 @@ fn main() -> Result<()> {
 
 /// Thread which listens for new connections and sends them to the given MPSC channel
 /// Technically we could use a non-blocking connection accepter, but it was easier not to for now
-fn connection_listener(addr: SocketAddr, conn_tx: Sender<(TcpStream, SocketAddr)>) -> Result<()> {
+fn connection_listener(addr: SocketAddr, conn_tx: Sender<(TcpStream, String)>) -> Result<()> {
     let listener = TcpListener::bind(addr)?;
     loop {
-        conn_tx.send(listener.accept()?).unwrap();
+        let (mut stream, addr) = listener.accept()?;
+        let Ok(req) = deserialize::<_, ConnectionRequest>(&mut stream) else {
+            log::warn!("Failed connection from {}; bad request", addr);
+            continue;
+        };
+
+        conn_tx.send((stream, req.username)).unwrap();
     }
 }
 
+/// A single tracked connection
 struct Connection {
+    /// TCP stream
     stream: TcpStream,
-    addr: SocketAddr,
+    // /// Address
+    // addr: SocketAddr,
+    /// Message read buffer
     msg_buf: AsyncBufferedReceiver,
+    /// Connection ID
     id: ClientId,
+    /// Username
+    username: String,
 }
 
+/// Server internals
 struct Server {
+    /// ChatImproVR engine
     engine: Engine,
-    conn_rx: Receiver<(TcpStream, SocketAddr)>,
+    /// Incoming connections (Socket, Username)
+    conn_rx: Receiver<(TcpStream, String)>,
+    /// Existing connections
     conns: Vec<Connection>,
+    /// Code hotloading
     hotload: Hotloader,
+    /// Client ID increment
     id_counter: u32,
 }
 
 impl Server {
-    fn new(conn_rx: Receiver<(TcpStream, SocketAddr)>, engine: Engine, hotload: Hotloader) -> Self {
+    fn new(conn_rx: Receiver<(TcpStream, String)>, engine: Engine, hotload: Hotloader) -> Self {
         Self {
             hotload,
             engine,
@@ -110,13 +129,14 @@ impl Server {
         let mut conns_tmp = vec![];
 
         // Check for new connections
-        for (stream, addr) in self.conn_rx.try_iter() {
+        for (stream, username) in self.conn_rx.try_iter() {
             stream.set_nonblocking(true)?;
-            log::info!("{} Connected", addr);
+            let addr = stream.peer_addr()?;
+            log::info!("{} Connected from {}", username, addr);
             self.conns.push(Connection {
                 msg_buf: AsyncBufferedReceiver::new(),
                 stream,
-                addr,
+                username,
                 id: ClientId(self.id_counter),
             });
             self.id_counter += 1;
@@ -127,7 +147,7 @@ impl Server {
             let keep_alive = loop {
                 match conn.msg_buf.read(&mut conn.stream)? {
                     ReadState::Disconnected => {
-                        log::info!("{} Disconnected", conn.addr);
+                        log::info!("{} Disconnected", conn.username);
                         break false;
                     }
                     ReadState::Complete(buf) => {
@@ -158,7 +178,13 @@ impl Server {
 
         // Send connection list
         self.engine.send(Connections {
-            clients: conns_tmp.iter().map(|c| c.id).collect(),
+            clients: conns_tmp
+                .iter()
+                .map(|c| cimvr_engine::interface::prelude::Connection {
+                    id: c.id,
+                    username: c.username.clone(),
+                })
+                .collect(),
         });
 
         // Execute update steps

@@ -33,7 +33,7 @@ pub fn mainloop(args: Opt) -> Result<()> {
     let mut input = DesktopInputHandler::new();
 
     // Setup client code
-    let mut client = Client::new(gl, &args.plugins, args.connect)?;
+    let mut client = Client::new(gl, &args.plugins, args.connect, args.username.unwrap())?;
 
     // Run event loop
     event_loop.run(move |event, _, control_flow| {
