@@ -98,7 +98,7 @@ impl RenderPlugin {
         let camera_transf = engine.ecs().get::<Transform>(camera_entity).unwrap();
         let camera_comp = engine.ecs().get::<CameraComponent>(camera_entity).unwrap();
         let proj = camera_comp.projection[camera_idx];
-        let view = camera_transf.view() * vr_view;
+        let view = vr_view * camera_transf.view();
 
         // Draw!
         self.rdr.start_frame(&self.gl, camera_comp.clear_color)?;

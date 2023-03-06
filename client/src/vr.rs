@@ -433,7 +433,7 @@ fn transform_from_pose(pose: &xr::Posef) -> Transform {
     // Convert the rotation quaternion from OpenXR to nalgebra
     let orient = pose.orientation;
     let orient = Quaternion::new(orient.w, orient.x, orient.y, orient.z);
-    let orient = Unit::try_new(orient, 0.0).expect("Not a unit orienternion");
+    let orient = Unit::new_normalize(orient);
 
     // Convert the position vector from OpenXR to nalgebra
     let pos = pose.position;
