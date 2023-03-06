@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 struct ClientState {
     ui: UiStateHelper,
     element: UiHandle,
+    displayed_messages: Vec<String>,
 }
 
 struct ServerState;
@@ -53,7 +54,11 @@ impl UserState for ClientState {
         }
         let element = ui.add(io, "Chat", schema, state);
 
-        Self { ui, element }
+        Self {
+            ui,
+            element,
+            displayed_messages: vec![],
+        }
     }
 }
 
@@ -83,7 +88,9 @@ impl UserState for ServerState {
         // and allow it to receive the ChatMessage message
         sched.add_system(
             Self::update,
-            SystemDescriptor::new(Stage::Update).subscribe::<ChatUpload>(),
+            SystemDescriptor::new(Stage::Update)
+                .subscribe::<ChatUpload>()
+                .subscribe::<Connections>(),
         );
 
         Self
@@ -92,9 +99,26 @@ impl UserState for ServerState {
 
 impl ServerState {
     fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
+        let Some(Connections { clients }) = io.inbox_first() else { return; };
+
         // Dump both the message AND the client that sent the message to the console
-        for (client, msg) in io.inbox_clients::<ChatUpload>() {
-            dbg!((client, msg));
+        let msgs = io.inbox_clients::<ChatUpload>().collect::<Vec<_>>();
+        for (sender_client_id, ChatUpload(msg)) in msgs {
+            let sender = clients.iter().find(|c| c.id == sender_client_id);
+
+            dbg!(clients.len());
+            if let Some(sender) = sender {
+                let msg = ChatDownload {
+                    username: sender.username.clone(),
+                    message: msg.clone(),
+                };
+
+                for client in &clients {
+                    if client.id != sender_client_id {
+                        io.send_to_client(&msg, client.id);
+                    }
+                }
+            }
         }
     }
 }
