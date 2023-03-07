@@ -70,7 +70,7 @@ fn main() -> Result<()> {
 
     // Parse args
     let mut args = Opt::from_args();
-    let anonymous_user = format!("anonymous{}", random_hack());
+    let anonymous_user = format!("anon{:04}", random_hack() % 10_000);
     args.username = args.username.or(Some(anonymous_user));
 
     if args.vr {
