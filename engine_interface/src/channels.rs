@@ -44,7 +44,7 @@ pub enum Locality {
 }
 
 /// A single message sent or received
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct MessageData {
     /// Channel ID
     pub channel: ChannelId,
@@ -77,5 +77,15 @@ impl From<ChannelIdStatic> for ChannelId {
             id: value.id.into(),
             locality: value.locality,
         }
+    }
+}
+
+impl std::fmt::Debug for MessageData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MessageData")
+            .field("channel", &self.channel)
+            .field("client", &self.client)
+            .field("data (length)", &self.data.len())
+            .finish()
     }
 }

@@ -156,7 +156,7 @@ impl Engine {
             }
 
             // Initialize system's inbox
-            self.plugins[plugin_idx].inbox.push(HashMap::new());
+            self.plugins[plugin_idx].inbox = vec![HashMap::new()];
         }
 
         // Set up schedule, send first messages
@@ -325,6 +325,11 @@ impl Engine {
                     self.ecs.remove_entity(ent);
                 }
             }
+        }
+
+        // Delete message indices for that plugin
+        for channel in self.indices.values_mut() {
+            channel.retain(|(PluginIndex(j), _)| *j != i);
         }
 
         // Initialize new plugin

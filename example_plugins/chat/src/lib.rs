@@ -118,7 +118,6 @@ impl ServerState {
     fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
         let Some(Connections { clients }) = io.inbox_first() else { return; };
 
-        // Dump both the message AND the client that sent the message to the console
         let msgs = io.inbox_clients::<ChatUpload>().collect::<Vec<_>>();
         for (sender_client_id, ChatUpload(msg)) in msgs {
             let sender = clients.iter().find(|c| c.id == sender_client_id);
