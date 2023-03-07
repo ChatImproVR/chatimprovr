@@ -156,7 +156,7 @@ impl Engine {
             }
 
             // Initialize system's inbox
-            self.plugins[plugin_idx].inbox = vec![HashMap::new()];
+            self.plugins[plugin_idx].inbox = vec![HashMap::new(); recv.systems.len()];
         }
 
         // Set up schedule, send first messages
