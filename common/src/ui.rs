@@ -16,7 +16,7 @@ make_handle!(UiHandle);
 /// UI element schema
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum Schema {
-    Label { text: String },
+    Label,
     Button { text: String },
     TextInput,
     DragValue { min: Option<f32>, max: Option<f32> },
@@ -26,7 +26,7 @@ pub enum Schema {
 /// UI element state
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub enum State {
-    Label,
+    Label { text: String },
     Button { clicked: bool },
     TextInput { text: String },
     DragValue { value: f32 },

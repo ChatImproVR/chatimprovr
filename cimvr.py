@@ -31,8 +31,12 @@ def main():
         help="Only run the client"
     )
     parser.add_argument(
+        "--username", "-u",
+        help="Set username on client (--username)"
+    )
+    parser.add_argument(
         "--remote", "-r",
-        help="Set remote host (--connect)"
+        help="Set remote host on client (--connect)"
     )
     parser.add_argument(
         "--server", "-s",
@@ -121,6 +125,9 @@ def main():
         if args.remote:
             cmd.append("--connect")
             cmd.append(args.remote)
+        if args.username:
+            cmd.append("--username")
+            cmd.append(args.username)
         cmds += [cmd]
 
     # Launch client an server
