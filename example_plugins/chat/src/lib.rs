@@ -1,5 +1,5 @@
 use cimvr_common::ui::{Schema, State, UiHandle, UiStateHelper, UiUpdate};
-use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*};
+use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 
 struct ClientState {

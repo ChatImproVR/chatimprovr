@@ -3,8 +3,8 @@ use cimvr_common::{
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
-use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, println};
-use serde::{Deserialize, Serialize};
+use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
+
 
 make_app_state!(ClientState, ServerState);
 

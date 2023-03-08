@@ -1,9 +1,8 @@
 use cimvr_common::{
-    nalgebra::{self, Point2, Vector2},
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
-use cimvr_engine_interface::{dbg, make_app_state, pcg::Pcg, pkg_namespace, prelude::*, println};
+use cimvr_engine_interface::{make_app_state, pcg::Pcg, pkg_namespace, prelude::*, println};
 mod sim;
 use sim::*;
 mod query_accel;
@@ -19,7 +18,7 @@ const SIM_RENDER_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Simulation"));
 impl UserState for ClientState {
     // Implement a constructor
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
-        let mut aa = Behaviour::default();
+        let aa = Behaviour::default();
 
         // NOTE: We are using the println defined by cimvr_engine_interface here, NOT the standard library!
         let palette = SimConfig {

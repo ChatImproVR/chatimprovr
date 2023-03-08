@@ -3,15 +3,15 @@ use std::f32::consts::FRAC_PI_2;
 use cimvr_common::{
     desktop::{
         ElementState, InputEvent, InputEvents, KeyboardEvent, ModifiersState, MouseButton,
-        MouseEvent, WindowEvent,
+        MouseEvent,
     },
-    nalgebra::{Matrix4, Point3, UnitQuaternion, Vector3, Vector4},
+    nalgebra::{Point3, UnitQuaternion, Vector3, Vector4},
     render::{CameraComponent, Mesh, MeshHandle, Render, UploadMesh, Vertex},
     utils::camera::Perspective,
-    vr::{VrFov, VrUpdate},
+    vr::{VrUpdate},
     Transform,
 };
-use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*};
+use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
 
 struct Camera {
     arcball: ArcBall,
