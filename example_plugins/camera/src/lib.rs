@@ -245,7 +245,7 @@ impl Default for ArcBall {
         Self {
             pivot: Point3::new(0., 0., 0.),
             pitch: 0.3,
-            yaw: -1.92,
+            yaw: 1.92,
             distance: 10.,
         }
     }
