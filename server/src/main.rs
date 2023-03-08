@@ -215,7 +215,7 @@ impl Server {
 
             // Serialize message
             conn.stream.set_nonblocking(false)?;
-            if let Err(e) = length_delmit_message(&state, &mut conn.stream) {
+            if let Err(e) = length_delimit_message(&state, &mut conn.stream) {
                 log::error!("Error writing to stream; {:?}", e);
             } else {
                 conn.stream.flush()?;

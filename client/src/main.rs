@@ -8,7 +8,7 @@ use cimvr_engine::hotload::Hotloader;
 use cimvr_engine::interface::prelude::{Access, ConnectionRequest, QueryComponent, Synchronized};
 use cimvr_engine::interface::serial::{deserialize, serialize};
 use cimvr_engine::network::{
-    length_delmit_message, AsyncBufferedReceiver, ClientToServer, ReadState, ServerToClient,
+    length_delimit_message, AsyncBufferedReceiver, ClientToServer, ReadState, ServerToClient,
 };
 use cimvr_engine::Config;
 use cimvr_engine::Engine;
@@ -70,7 +70,7 @@ fn main() -> Result<()> {
 
     // Parse args
     let mut args = Opt::from_args();
-    let anonymous_user = format!("anon{:04}", random_hack() % 10_000);
+    let anonymous_user = format!("anon{:04}", random_number() % 10_000);
     args.username = args.username.or(Some(anonymous_user));
 
     if args.vr {
@@ -181,7 +181,7 @@ impl Client {
         };
 
         self.conn.set_nonblocking(false)?;
-        length_delmit_message(&msg, &mut self.conn)?;
+        length_delimit_message(&msg, &mut self.conn)?;
         self.conn.flush()?;
         self.conn.set_nonblocking(true)?;
 
@@ -193,7 +193,7 @@ impl Client {
     }
 }
 
-fn random_hack() -> u64 {
+fn random_number() -> u64 {
     use std::collections::hash_map::RandomState;
     use std::hash::{BuildHasher, Hasher};
     RandomState::new().build_hasher().finish()
