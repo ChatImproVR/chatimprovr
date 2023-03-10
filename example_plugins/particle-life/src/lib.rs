@@ -11,6 +11,7 @@ mod query_accel;
 struct ClientState {
     sim: SimState,
     mesh: Mesh,
+    time: f32,
 }
 
 const SIM_RENDER_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Simulation"));
@@ -52,7 +53,11 @@ impl UserState for ClientState {
 
         sched.add_system(Self::update, SystemDescriptor::new(Stage::Update));
 
-        Self { sim, mesh }
+        Self {
+            sim,
+            mesh,
+            time: 0.,
+        }
     }
 }
 
@@ -61,11 +66,13 @@ impl ClientState {
         let dt = 5e-5;
         self.sim.step(dt);
 
-        let mesh = draw_particles(&self.sim);
+        let mesh = draw_particles(&self.sim, self.time);
         io.send(&UploadMesh {
             mesh,
             id: SIM_RENDER_ID,
-        })
+        });
+
+        self.time += dt;
     }
 }
 
@@ -84,11 +91,19 @@ impl UserState for ServerState {
 // Calls new() for the appropriate state.
 make_app_state!(ClientState, ServerState);
 
-fn draw_particles(sim: &SimState) -> Mesh {
+fn draw_particles(sim: &SimState, time: f32) -> Mesh {
     let mut vertices = vec![];
     let indices = (0..sim.particles().len() as u32).collect();
-    for particle in sim.particles() {
-        let color = sim.config().colors[particle.color as usize];
+
+    for (idx, particle) in sim.particles().iter().enumerate() {
+        let wav = time * 99999. + particle.pos.x * 888.;
+        let rainbow = hsv_to_rgb(wav, 1., 1.);
+
+        let color = if particle.color == 0 {
+            rainbow
+        } else {
+            sim.config().colors[particle.color as usize]
+        };
 
         let vertex = Vertex {
             pos: [particle.pos.x, 0., particle.pos.y],
@@ -99,4 +114,50 @@ fn draw_particles(sim: &SimState) -> Mesh {
     }
 
     Mesh { vertices, indices }
+}
+
+/// https://gist.github.com/fairlight1337/4935ae72bcbcc1ba5c72
+fn hsv_to_rgb(h: f32, s: f32, v: f32) -> [f32; 3] {
+    let c = v * s; // Chroma
+    let h_prime = (h / 60.0) % 6.0;
+    let x = c * (1.0 - ((h_prime % 2.0) - 1.0).abs());
+    let m = v - c;
+
+    let (mut r, mut g, mut b);
+
+    if 0. <= h_prime && h_prime < 1. {
+        r = c;
+        g = x;
+        b = 0.0;
+    } else if 1.0 <= h_prime && h_prime < 2.0 {
+        r = x;
+        g = c;
+        b = 0.0;
+    } else if 2.0 <= h_prime && h_prime < 3.0 {
+        r = 0.0;
+        g = c;
+        b = x;
+    } else if 3.0 <= h_prime && h_prime < 4.0 {
+        r = 0.0;
+        g = x;
+        b = c;
+    } else if 4.0 <= h_prime && h_prime < 5.0 {
+        r = x;
+        g = 0.0;
+        b = c;
+    } else if 5.0 <= h_prime && h_prime < 6.0 {
+        r = c;
+        g = 0.0;
+        b = x;
+    } else {
+        r = 0.0;
+        g = 0.0;
+        b = 0.0;
+    }
+
+    r += m;
+    g += m;
+    b += m;
+
+    [r, g, b]
 }
