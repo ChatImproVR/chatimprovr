@@ -18,7 +18,7 @@ pub struct Particle {
     pub color: Color,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Behaviour {
     /// Magnitude of the default repulsion force
     pub default_repulse: f32,
@@ -31,6 +31,7 @@ pub struct Behaviour {
 }
 
 /// Display colors and physical behaviour coefficients
+#[derive(Clone, Debug)]
 pub struct SimConfig {
     pub colors: Vec<[f32; 3]>,
     pub behaviours: Vec<Behaviour>,

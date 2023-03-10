@@ -56,6 +56,8 @@ impl UserState for ClientState {
             damping: 3.,
         };
 
+        dbg!(&palette);
+
         let sim = SimState::new(&mut Pcg::new(), palette, 8_000);
 
         let ent = io.create_entity();
