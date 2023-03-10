@@ -18,23 +18,26 @@ const SIM_RENDER_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Simulation"));
 impl UserState for ClientState {
     // Implement a constructor
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
-        let aa = Behaviour::default();
+        let mut aa = Behaviour::default();
+        aa.inter_threshold = 0.05;
 
         // NOTE: We are using the println defined by cimvr_engine_interface here, NOT the standard library!
         let palette = SimConfig {
-            colors: vec![[0.1, 1., 0.], [1., 0.1, 0.] /*, [0., 0.25, 1.]*/],
+            colors: vec![
+                [0.1, 1., 0.],
+                [1., 0.1, 0.],
+                [102. / 256., 30. / 256., 131. / 256.],
+            ],
             behaviours: vec![
                 aa.with_inter_strength(3.),
                 aa.with_inter_strength(-1.5),
+                aa.with_inter_strength(1.),
                 aa.with_inter_strength(2.),
                 aa.with_inter_strength(1.),
-                /*
-                aa.with_inter_strength(10.),
-                aa.with_inter_strength(2.),
-                aa.with_inter_strength(2.),
-                aa.with_inter_strength(-1.),
-                aa.with_inter_strength(10.),
-                */
+                aa.with_inter_strength(1.),
+                aa.with_inter_strength(50.),
+                aa.with_inter_strength(50.),
+                aa.with_inter_strength(-100.),
             ],
             damping: 3.,
         };
