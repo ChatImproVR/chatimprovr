@@ -22,8 +22,20 @@ impl UserState for ClientState {
         let mut aa = Behaviour::default();
         aa.inter_threshold = 0.05;
 
+        let mut rand = || io.random() as u64 as f32 / u64::MAX as f32;
+
+        let n = 10;
+
+        let colors: Vec<[f32; 3]> = (0..n).map(|_| hsv_to_rgb(rand() * 360., 1., 1.)).collect();
+        let behaviours = (0..n * n)
+            .map(|_| aa.with_inter_strength((rand() * 2. - 1.) * 15.))
+            .collect();
+
         // NOTE: We are using the println defined by cimvr_engine_interface here, NOT the standard library!
         let palette = SimConfig {
+            colors,
+            behaviours,
+            /*
             colors: vec![
                 [0.1, 1., 0.],
                 [1., 0.1, 0.],
@@ -40,6 +52,7 @@ impl UserState for ClientState {
                 aa.with_inter_strength(50.),
                 aa.with_inter_strength(-100.),
             ],
+            */
             damping: 3.,
         };
 
@@ -97,13 +110,14 @@ fn draw_particles(sim: &SimState, time: f32) -> Mesh {
 
     for (idx, particle) in sim.particles().iter().enumerate() {
         let wav = time * 99999. + particle.pos.x * 888.;
-        let rainbow = hsv_to_rgb(wav, 1., 1.);
+        /*let rainbow = hsv_to_rgb(wav, 1., 1.);
 
         let color = if particle.color == 0 {
             rainbow
         } else {
-            sim.config().colors[particle.color as usize]
-        };
+        */
+        let color = sim.config().colors[particle.color as usize];
+        //};
 
         let vertex = Vertex {
             pos: [particle.pos.x, 0., particle.pos.y],
