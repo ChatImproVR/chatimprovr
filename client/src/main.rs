@@ -5,10 +5,10 @@ extern crate openxr as xr;
 
 use anyhow::{bail, Context, Result};
 use cimvr_engine::hotload::Hotloader;
-use cimvr_engine::interface::prelude::{Access, QueryComponent, Synchronized};
-use cimvr_engine::interface::serial::deserialize;
+use cimvr_engine::interface::prelude::{Access, ConnectionRequest, QueryComponent, Synchronized};
+use cimvr_engine::interface::serial::{deserialize, serialize};
 use cimvr_engine::network::{
-    length_delmit_message, AsyncBufferedReceiver, ClientToServer, ReadState, ServerToClient,
+    length_delimit_message, AsyncBufferedReceiver, ClientToServer, ReadState, ServerToClient,
 };
 use cimvr_engine::Config;
 use cimvr_engine::Engine;
@@ -26,8 +26,8 @@ mod vr;
 
 mod desktop;
 mod desktop_input;
-mod render;
 mod gamepad;
+mod render;
 mod ui;
 
 use structopt::StructOpt;
@@ -48,6 +48,10 @@ pub struct Opt {
     /// Whether to use VR
     #[structopt(long)]
     pub vr: bool,
+
+    /// Username (optional, defaults to anonymousXXXX)
+    #[structopt(short, long)]
+    pub username: Option<String>,
 }
 
 struct Client {
@@ -65,7 +69,9 @@ fn main() -> Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
     // Parse args
-    let args = Opt::from_args();
+    let mut args = Opt::from_args();
+    let anonymous_user = format!("anon{:04}", random_number() % 10_000);
+    args.username = args.username.or(Some(anonymous_user));
 
     if args.vr {
         #[cfg(not(feature = "vr"))]
@@ -82,10 +88,18 @@ fn main() -> Result<()> {
 // code uplication!
 
 impl Client {
-    pub fn new(gl: Arc<gl::Context>, plugins: &[PathBuf], addr: SocketAddr) -> Result<Self> {
+    pub fn new(
+        gl: Arc<gl::Context>,
+        plugins: &[PathBuf],
+        addr: SocketAddr,
+        username: String,
+    ) -> Result<Self> {
         // Connect to remote host
-        let conn = TcpStream::connect(addr)?;
+        let mut conn = TcpStream::connect(addr)?;
         conn.set_nonblocking(true)?;
+        let req = ConnectionRequest::new(username);
+        let req = serialize(&req).unwrap();
+        conn.write_all(&req)?;
 
         // Set up hotloading
         let hotload = Hotloader::new(&plugins)?;
@@ -167,7 +181,7 @@ impl Client {
         };
 
         self.conn.set_nonblocking(false)?;
-        length_delmit_message(&msg, &mut self.conn)?;
+        length_delimit_message(&msg, &mut self.conn)?;
         self.conn.flush()?;
         self.conn.set_nonblocking(true)?;
 
@@ -177,4 +191,10 @@ impl Client {
     fn engine(&mut self) -> &mut Engine {
         &mut self.engine
     }
+}
+
+fn random_number() -> u64 {
+    use std::collections::hash_map::RandomState;
+    use std::hash::{BuildHasher, Hasher};
+    RandomState::new().build_hasher().finish()
 }

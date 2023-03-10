@@ -19,10 +19,19 @@ impl Component for Synchronized {
     };
 }
 
+/// Information about a connected client
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Connection {
+    /// Unique connection identifier
+    pub id: ClientId,
+    /// Username supplied by the client
+    pub username: String,
+}
+
 /// Message which lists currently connected clients. Available server-only
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Connections {
-    pub clients: Vec<ClientId>,
+    pub clients: Vec<Connection>,
 }
 
 impl Message for Connections {
@@ -30,6 +39,30 @@ impl Message for Connections {
         id: pkg_namespace!("Connections"),
         locality: Locality::Local,
     };
+}
+
+/// Connection request from client to server
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ConnectionRequest {
+    pub version: u32,
+    pub username: String,
+}
+
+impl ConnectionRequest {
+    const PROTOCOL_VERSION: u32 = 1;
+
+    /// Create a new connection request with the current protocol version
+    pub fn new(username: String) -> Self {
+        Self {
+            version: Self::PROTOCOL_VERSION,
+            username,
+        }
+    }
+
+    /// Returns `true` if this connection request is valid for this version
+    pub fn validate(&self) -> bool {
+        self.version == Self::PROTOCOL_VERSION
+    }
 }
 
 /*

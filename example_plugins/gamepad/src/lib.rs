@@ -6,7 +6,7 @@ use cimvr_common::{
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
-use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*};
+use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 
 struct ClientState;
@@ -81,7 +81,7 @@ impl ServerState {
         // If the entity exists but the client doesn't, remove the entity
         for key in query.iter() {
             let SpinningCube(client_id) = query.read::<SpinningCube>(key);
-            if conns.clients.contains(&client_id) {
+            if conns.clients.iter().find(|c| c.id == client_id).is_some() {
                 client_to_entity.insert(client_id, key);
             } else {
                 io.remove_entity(key);

@@ -103,7 +103,7 @@ impl AsyncBufferedReceiver {
     }
 }
 
-pub fn length_delmit_message<W: Write, T: Serialize>(obj: &T, mut w: W) -> anyhow::Result<()> {
+pub fn length_delimit_message<W: Write, T: Serialize>(obj: &T, mut w: W) -> anyhow::Result<()> {
     let size = serialized_size(obj)?;
     let header = (size as u32).to_le_bytes();
     w.write_all(&header)?;

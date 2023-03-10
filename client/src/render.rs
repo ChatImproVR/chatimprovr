@@ -52,10 +52,7 @@ impl RenderPlugin {
 
         let rdr = RenderEngine::new(&gl)?;
 
-        Ok(Self {
-            gl,
-            rdr,
-        })
+        Ok(Self { gl, rdr })
     }
 
     pub fn set_screen_size(&mut self, width: u32, height: u32) {
@@ -87,7 +84,10 @@ impl RenderPlugin {
         }
 
         // Find camera, if any
-        let camera_entity = match engine.ecs().find(&[CameraComponent::ID.into(), Transform::ID.into()]) {
+        let camera_entity = match engine
+            .ecs()
+            .find(&[CameraComponent::ID.into(), Transform::ID.into()])
+        {
             Some(c) => c,
             None => {
                 log::warn!("No Camera found! Did you attach both Transform and CameraComponent?");
@@ -98,7 +98,7 @@ impl RenderPlugin {
         let camera_transf = engine.ecs().get::<Transform>(camera_entity).unwrap();
         let camera_comp = engine.ecs().get::<CameraComponent>(camera_entity).unwrap();
         let proj = camera_comp.projection[camera_idx];
-        let view = camera_transf.view() * vr_view;
+        let view = vr_view * camera_transf.view();
 
         // Draw!
         self.rdr.start_frame(&self.gl, camera_comp.clear_color)?;
@@ -127,7 +127,12 @@ impl RenderPlugin {
             }
 
             if let Err(e) = self.rdr.draw(&self.gl, rdr_comp) {
-                log::error!("Error drawing render component {:?} on entity {:?}; {:?}", rdr_comp, entity, e);
+                log::error!(
+                    "Error drawing render component {:?} on entity {:?}; {:?}",
+                    rdr_comp,
+                    entity,
+                    e
+                );
                 continue;
             }
         }

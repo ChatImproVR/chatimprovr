@@ -1,9 +1,7 @@
 use cimvr_common::{
-    nalgebra::{self, Point2, Vector2},
-    render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
-    Transform,
+    nalgebra::{Point2, Vector2},
 };
-use cimvr_engine_interface::{dbg, make_app_state, pcg::Pcg, prelude::*, println};
+use cimvr_engine_interface::{pcg::Pcg, prelude::*};
 
 use crate::query_accel::QueryAccelerator;
 

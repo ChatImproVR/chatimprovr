@@ -3,15 +3,15 @@ use std::f32::consts::FRAC_PI_2;
 use cimvr_common::{
     desktop::{
         ElementState, InputEvent, InputEvents, KeyboardEvent, ModifiersState, MouseButton,
-        MouseEvent, WindowEvent,
+        MouseEvent,
     },
-    nalgebra::{Matrix4, Point3, UnitQuaternion, Vector3, Vector4},
+    nalgebra::{Point3, UnitQuaternion, Vector3, Vector4},
     render::{CameraComponent, Mesh, MeshHandle, Render, UploadMesh, Vertex},
     utils::camera::Perspective,
-    vr::{VrFov, VrUpdate},
+    vr::{VrUpdate},
     Transform,
 };
-use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*};
+use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
 
 struct Camera {
     arcball: ArcBall,
@@ -72,15 +72,26 @@ impl Camera {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         // Handle input events for desktop mode
         if let Some(input) = io.inbox_first::<InputEvents>() {
+            // Handle window resizing
             self.proj.handle_input_events(&input);
 
+            //dbg!(&input);
+
+            // Handle pivot/pan
             for event in input.0 {
                 self.arcball_control.handle_event(&event, &mut self.arcball);
+            }
+
+            // Set camera transform to arcball position
+            for key in query.iter() {
+                query.write::<Transform>(key, &self.arcball.camera_transf());
             }
         }
 
         // Handle events for VR
         if let Some(update) = io.inbox_first::<VrUpdate>() {
+            // Handle FOV changes (But NOT position. Position is extremely time-sensitive, so it
+            // is actually prepended to the view matrix)
             self.proj.handle_vr_update(&update);
 
             if let Some(pos) = update.grip_left {
@@ -97,7 +108,6 @@ impl Camera {
         let clear_color = [0.; 3];
 
         for key in query.iter() {
-            query.write::<Transform>(key, &self.arcball.camera_transf());
             query.write::<CameraComponent>(
                 key,
                 &CameraComponent {
@@ -235,7 +245,7 @@ impl Default for ArcBall {
         Self {
             pivot: Point3::new(0., 0., 0.),
             pitch: 0.3,
-            yaw: -1.92,
+            yaw: 1.92,
             distance: 10.,
         }
     }
