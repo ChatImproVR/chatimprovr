@@ -20,6 +20,7 @@ pub(crate) fn setup_panic() {
     }))
 }
 
+/// Similar to the print!() macro from the stdlib, but for plugins.
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => {{
@@ -28,6 +29,7 @@ macro_rules! print {
     }};
 }
 
+/// Similar to the println!() macro from the stdlib, but for plugins.
 #[macro_export]
 macro_rules! println {
     ($($arg:tt)*) => {{
@@ -37,6 +39,7 @@ macro_rules! println {
     }};
 }
 
+/// Similar to the dbg!() macro from the stdlib, but for plugins.
 #[macro_export]
 macro_rules! dbg {
     // NOTE: We cannot use `concat!` to make a static string as a format argument
