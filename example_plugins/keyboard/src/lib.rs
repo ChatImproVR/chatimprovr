@@ -6,6 +6,7 @@ use cimvr_common::{
 };
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, FrameTime};
 use serde::{Deserialize, Serialize};
+use cimvr_derive_macros::ComponentDerive;
 
 struct ServerState;
 
@@ -16,14 +17,16 @@ struct ClientState {
     d_is_pressed: bool,
 }
 
+
 /// Movement command sent to server
 #[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct MoveCommand {
     pub distance: Vector3<f32>,
 }
 
-/// Component identifing the cube
-#[derive(Serialize, Deserialize, Clone, Copy)]
+// #[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(ComponentDerive, Serialize, Deserialize, Clone, Copy)]
+#[size(12)]
 pub struct CubeFlag;
 
 make_app_state!(ClientState, ServerState);
@@ -32,6 +35,7 @@ make_app_state!(ClientState, ServerState);
 const CUBE_HANDLE: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
 
 impl UserState for ClientState {
+
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         // Make the cube mesh available to the rendering engine
         io.send(&UploadMesh {
@@ -182,12 +186,6 @@ fn cube() -> Mesh {
     Mesh { vertices, indices }
 }
 
-impl Component for CubeFlag {
-    const ID: ComponentIdStatic = ComponentIdStatic {
-        id: pkg_namespace!("Cube Flag"),
-        size: 0,
-    };
-}
 
 impl Message for MoveCommand {
     const CHANNEL: ChannelIdStatic = ChannelIdStatic {

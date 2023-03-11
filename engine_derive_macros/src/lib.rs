@@ -1,38 +1,41 @@
-extern crate proc_macro;
-
-use cimvr_engine_interface::pkg_namespace;
-use cimvr_engine_interface::prelude::ComponentIdStatic;
-use cimvr_engine_interface::ecs::Component;
-
-
 use proc_macro::TokenStream;
-use quote::quote;
-use syn;
+use syn::{parse_macro_input, DeriveInput, LitInt};
 
-struct Rawr {
-    pub name: String,
-}
+#[proc_macro_derive(ComponentDerive, attributes(size))]
+pub fn component_derive(input: TokenStream) -> TokenStream {
+    // Parse the input tokens into a syntax tree
+    let input: DeriveInput = parse_macro_input!(input);
 
+    // Get the name of the struct being derived
+    let name = &input.ident;
 
+    // Get the size attribute or fail at compile time
+    let size_lit = input.attrs.iter().find_map(|attr| {
+        if attr.path.is_ident("size") {
+            attr.parse_args::<LitInt>().ok()
+        } else {
+            None
+        }
+    });
 
-#[proc_macro_derive(Component)]
-pub fn component_macro_derive(input: TokenStream) -> TokenStream{
-    // Make a representation of Rust code as a syntax tree
-    // that we can manipulate
-    let ast = syn::parse(input).unwrap();
+    let size = size_lit
+        .expect("Expected size attribute. Example `#[size(12)]")
+        .base10_parse::<u16>()
+        .expect("Invalid size. Must be a u16.");
 
-    // Build the trait implementation
-    impl_component_macro(&ast)
-}
-
-fn impl_component_macro(ast: &syn::DeriveInput) -> TokenStream {
-    let name = &ast.ident; // get the name of the struct we're deriving for
-    // Use quote macro to output rust code
-    let generated_code = quote! {
+    // Generate the implementation of the `Component` trait
+    let gen = quote::quote! {
         impl Component for #name {
-            const ID: ComponentIdStatic = ComponentIdStatic::new(pkg_namespace!(#name), std::mem::size_of::<#name>());
+            // Define a constant `ID` that identifies the component type
+            const ID: ComponentIdStatic = ComponentIdStatic {
+                // Use the namespace of the current crate and the name of the struct
+                id: pkg_namespace!(stringify!(#name)),
+                // Use the provided size
+                size: #size,
+            };
         }
     };
-    // Return the generated code
-    generated_code.into()
+
+    // Convert the generated code back into tokens and return them
+    gen.into()
 }

@@ -9,4 +9,9 @@ crate-type = ["cdylib"]
 [dependencies]
 cimvr_common = { path = "../../common" }
 cimvr_engine_interface = { path = "../../engine_interface" }
+cimvr_derive_macros = { path = "../../engine_derive_macros" }
+# engine_derive_macros = { path = "/home/exiled/Documents/ChatImprovr/iteration0/engine_derive_macros" }
+# cimvr_common = { path = "/home/exiled/Documents/ChatImprovr/iteration0/common" }
+# cimvr_engine_interface = { path = "/home/exiled/Documents/ChatImprovr/iteration0/engine_interface" }
 serde = { version = "1", features = ["derive"] }
+# bincode = "1"
