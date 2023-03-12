@@ -15,7 +15,6 @@ cimvr_common = { path = "../common" }
 anyhow = "1"
 bytemuck = "1.12.3"
 glutin = "0.29.0"
-nalgebra = "0.31.4"
 glow = "0.11.2"
 env_logger = "0.10.0"
 log = "0.4.17"

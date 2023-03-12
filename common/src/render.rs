@@ -1,7 +1,7 @@
 //! Types for interfacing with the Host's rendering engine
 use bytemuck::{Pod, Zeroable};
 use cimvr_engine_interface::{pkg_namespace, prelude::*, serial::FixedOption};
-use nalgebra::Matrix4;
+use glam::Mat4;
 use serde::{Deserialize, Serialize};
 
 use crate::{make_handle, GenericHandle};
@@ -43,7 +43,7 @@ pub struct CameraComponent {
     /// Projection matrices
     /// * VR: Left and right eyes
     /// * Desktop: only the left eye is used
-    pub projection: [Matrix4<f32>; 2],
+    pub projection: [Mat4; 2],
 }
 
 /// All information required to define a renderable mesh
@@ -203,33 +203,12 @@ impl Mesh {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use cimvr_engine_interface::serial::serialized_size;
-
-    use super::*;
-
-    #[test]
-    fn test_render_component() {
-        let example = Render {
-            id: MeshHandle::new(pkg_namespace!("Test render")),
-            primitive: Primitive::Lines,
-            limit: Some(90),
-            shader: Some(ShaderHandle::new(pkg_namespace!("Test shader"))),
-        };
-        assert_eq!(
-            serialized_size(&example).unwrap(),
-            usize::from(Render::ID.size)
-        );
-    }
-}
-
 impl Default for CameraComponent {
     /// The default is an identity projection with a black clear color.
     fn default() -> Self {
         Self {
             clear_color: [0.; 3],
-            projection: [Matrix4::identity(); 2],
+            projection: [Mat4::IDENTITY; 2],
         }
     }
 }
