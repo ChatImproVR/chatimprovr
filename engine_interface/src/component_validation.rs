@@ -46,12 +46,12 @@ impl serde::Serializer for FixedSizeValidator {
 
     // Variable size
     fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
-        Err(ValidationError)
+        Err(ValidationError::Sequence)
     }
 
     // Variable size
     fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
-        Err(ValidationError)
+        Err(ValidationError::Sequence)
     }
     // Fixed size
     fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple, Self::Error> {
@@ -97,7 +97,7 @@ impl serde::Serializer for FixedSizeValidator {
         _variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeTupleVariant, Self::Error> {
-        Err(ValidationError)
+        Err(ValidationError::Enum)
     }
 
     // Definitely can't be a fixed size.
@@ -108,7 +108,7 @@ impl serde::Serializer for FixedSizeValidator {
         _variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeStructVariant, Self::Error> {
-        Err(ValidationError)
+        Err(ValidationError::Enum)
     }
 
     // Could potentially be a fixed size, but fuck checking for that. It's not worth it. Future Rudy & Duncan can deal with it.
@@ -122,12 +122,12 @@ impl serde::Serializer for FixedSizeValidator {
     where
         T: Serialize,
     {
-        Err(ValidationError)
+        Err(ValidationError::Enum)
     }
 
     // Fixed size. But we don't want to let them use Options.
     fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
-        Err(ValidationError)
+        Err(ValidationError::Option)
     }
 
     // Not a fixed size.
@@ -135,7 +135,7 @@ impl serde::Serializer for FixedSizeValidator {
     where
         T: Serialize,
     {
-        Err(ValidationError)
+        Err(ValidationError::Option)
     }
 
     // Fixed size.
@@ -146,7 +146,7 @@ impl serde::Serializer for FixedSizeValidator {
     // This ones complicated. Technically we *can* make it so that it's a fixed size. However, we should decide on that at a later date.
     // TODO: Decide whether we want to allow them to use a byte array that can only be a max size.
     fn serialize_bytes(self, _v: &[u8]) -> Result<Self::Ok, Self::Error> {
-        Err(ValidationError)
+        Err(ValidationError::Sequence)
     }
 
     // Fixed size.
@@ -200,7 +200,7 @@ impl serde::Serializer for FixedSizeValidator {
 
     // Fixed size.
     fn serialize_str(self, _v: &str) -> Result<Self::Ok, Self::Error> {
-        Err(ValidationError)
+        Err(ValidationError::Sequence)
     }
 
     // Fixed size.

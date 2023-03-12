@@ -102,10 +102,11 @@ fn max_component_size<C: Component>() -> usize {
 /// Validate that a component is fixed-size
 #[track_caller]
 fn validate_component<C: Component>(c: &C) {
-    if is_fixed_size(&c).is_err() {
+    if let Err(err) = is_fixed_size(&c) {
         panic!(
-            "The type {} is not fixed-size, and cannot be used as a component.",
-            std::any::type_name::<C>()
+            "The type {} is not fixed-size, and cannot be used as a component; {}",
+            std::any::type_name::<C>(),
+            err
         )
     }
 }
