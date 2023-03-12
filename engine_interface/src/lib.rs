@@ -11,7 +11,6 @@ use std::{
     cell::RefCell, collections::HashMap,
 };
 pub mod component_validate_error;
-pub mod component_validate;
 pub mod component_validation;
 pub use log;
 /// Printing functions for plugins
