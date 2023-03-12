@@ -9,7 +9,6 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use crate::{
     component_id, component_size_cached,
     serial::{deserialize, serialize, EcsData},
-    SIZE_CACHE,
 };
 
 /// A single requirement in a query

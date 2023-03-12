@@ -1,3 +1,4 @@
+#![allow(unreachable_code)]
 use crate::component_validate_error::Error as CompilerHappinessError;
 use serde;
 use serde::Serialize;
@@ -18,41 +19,41 @@ impl serde::Serializer for CustomSerializer {
     // Fixed size
     fn serialize_struct(
         self,
-        name: &'static str,
-        len: usize,
+        _name: &'static str,
+        _len: usize,
     ) -> Result<Self::SerializeStruct, Self::Error> {
         Ok(Self)
     }
     // Variable size
-    fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
+    fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
         Ok(todo!())
     }
     // Variable size
-    fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
+    fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
         Ok(todo!())
     }
     // Fixed size
-    fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error> {
+    fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple, Self::Error> {
         Ok(Self)
     }
     // Fixed size, legit doesn't contain data.
-    fn serialize_unit_struct(self, name: &'static str) -> Result<Self::Ok, Self::Error> {
+    fn serialize_unit_struct(self, _name: &'static str) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
     // Fixed size, idfk man. These things dont hold data.
     fn serialize_unit_variant(
         self,
-        name: &'static str,
-        variant_index: u32,
-        variant: &'static str,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
     ) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
     // This is a fixed size. It's just a wrapper around a single value. The value is what matters and can be variable size.
     fn serialize_newtype_struct<T: ?Sized>(
         self,
-        name: &'static str,
-        value: &T,
+        _name: &'static str,
+        _value: &T,
     ) -> Result<Self::Ok, Self::Error>
     where
         T: Serialize,
@@ -62,18 +63,18 @@ impl serde::Serializer for CustomSerializer {
     // Fixed size. It's a wrapper around multiple values, which could potentially have a size.
     fn serialize_tuple_struct(
         self,
-        name: &'static str,
-        len: usize,
+        _name: &'static str,
+        _len: usize,
     ) -> Result<Self::SerializeTupleStruct, Self::Error> {
         Ok(Self)
     }
     // Not a fixed size. We're not getting into fuckery with enums that have variants that could POTENTIALLY have data. Sugma.
     fn serialize_tuple_variant(
         self,
-        name: &'static str,
-        variant_index: u32,
-        variant: &'static str,
-        len: usize,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+        _len: usize,
     ) -> Result<Self::SerializeTupleVariant, Self::Error> {
         Ok(todo!())
     }
@@ -81,10 +82,10 @@ impl serde::Serializer for CustomSerializer {
     // Definitely can't be a fixed size.
     fn serialize_struct_variant(
         self,
-        name: &'static str,
-        variant_index: u32,
-        variant: &'static str,
-        len: usize,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+        _len: usize,
     ) -> Result<Self::SerializeStructVariant, Self::Error> {
         Ok(todo!())
     }
@@ -92,10 +93,10 @@ impl serde::Serializer for CustomSerializer {
     // Could potentially be a fixed size, but fuck checking for that. It's not worth it. Future Rudy & Duncan can deal with it.
     fn serialize_newtype_variant<T: ?Sized>(
         self,
-        name: &'static str,
-        variant_index: u32,
-        variant: &'static str,
-        value: &T,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+        _value: &T,
     ) -> Result<Self::Ok, Self::Error>
     where
         T: Serialize,
@@ -109,7 +110,7 @@ impl serde::Serializer for CustomSerializer {
     }
 
     // Not a fixed size.
-    fn serialize_some<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
+    fn serialize_some<T: ?Sized>(self, _value: &T) -> Result<Self::Ok, Self::Error>
     where
         T: Serialize,
     {
@@ -123,81 +124,81 @@ impl serde::Serializer for CustomSerializer {
 
     // This ones complicated. Technically we *can* make it so that it's a fixed size. However, we should decide on that at a later date.
     // TODO: Decide whether we want to allow them to use a byte array that can only be a max size.
-    fn serialize_bytes(self, v: &[u8]) -> Result<Self::Ok, Self::Error> {
+    fn serialize_bytes(self, _v: &[u8]) -> Result<Self::Ok, Self::Error> {
         Ok(todo!())
     }
 
     // Fixed size.
-    fn serialize_i8(self, v: i8) -> Result<Self::Ok, Self::Error> {
+    fn serialize_i8(self, _v: i8) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
     
     // Fixed size.
-    fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
+    fn serialize_u8(self, _v: u8) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
     
     // Fixed size.
-    fn serialize_i16(self, v: i16) -> Result<Self::Ok, Self::Error> {
+    fn serialize_i16(self, _v: i16) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
 
     // Fixed size.
-    fn serialize_i32(self, v: i32) -> Result<Self::Ok, Self::Error> {
+    fn serialize_i32(self, _v: i32) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
 
     // Fixed size.
-    fn serialize_i64(self, v: i64) -> Result<Self::Ok, Self::Error> {
+    fn serialize_i64(self, _v: i64) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
     // Fixed size.
-    fn serialize_u16(self, v: u16) -> Result<Self::Ok, Self::Error> {
-        Ok(())
-    }
-
-    // Fixed size.
-    fn serialize_u32(self, v: u32) -> Result<Self::Ok, Self::Error> {
+    fn serialize_u16(self, _v: u16) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
 
     // Fixed size.
-    fn serialize_u64(self, v: u64) -> Result<Self::Ok, Self::Error> {
+    fn serialize_u32(self, _v: u32) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
 
     // Fixed size.
-    fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {
+    fn serialize_u64(self, _v: u64) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
 
     // Fixed size.
-    fn serialize_f64(self, v: f64) -> Result<Self::Ok, Self::Error> {
+    fn serialize_f32(self, _v: f32) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
 
     // Fixed size.
-    fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
+    fn serialize_f64(self, _v: f64) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
 
     // Fixed size.
-    fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
+    fn serialize_str(self, _v: &str) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
 
     // Fixed size.
-    fn serialize_i128(self, v: i128) -> Result<Self::Ok, Self::Error> {
+    fn serialize_bool(self, _v: bool) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
 
     // Fixed size.
-    fn serialize_u128(self, v: u128) -> Result<Self::Ok, Self::Error> {
+    fn serialize_i128(self, _v: i128) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
 
     // Fixed size.
-    fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error> {
+    fn serialize_u128(self, _v: u128) -> Result<Self::Ok, Self::Error> {
+        Ok(())
+    }
+
+    // Fixed size.
+    fn serialize_char(self, _v: char) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
 }
@@ -208,7 +209,7 @@ impl SerializeSeq for CustomSerializer{
     type Error = CompilerHappinessError;
 
     // Fixed size.
-    fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
+    fn serialize_element<T: ?Sized>(&mut self, _value: &T) -> Result<(), Self::Error>
     where
         T: Serialize,
     {
@@ -227,7 +228,7 @@ impl SerializeTuple for CustomSerializer{
     type Error = CompilerHappinessError;
 
     // Fixed size.
-    fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
+    fn serialize_element<T: ?Sized>(&mut self, _value: &T) -> Result<(), Self::Error>
     where
         T: Serialize,
     {
@@ -246,7 +247,7 @@ impl SerializeTupleStruct for CustomSerializer{
     type Error = CompilerHappinessError;
 
     // Fixed size.
-    fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
+    fn serialize_field<T: ?Sized>(&mut self, _value: &T) -> Result<(), Self::Error>
     where
         T: Serialize,
     {
@@ -265,7 +266,7 @@ impl SerializeTupleVariant for CustomSerializer{
     type Error = CompilerHappinessError;
 
     // Fixed size.
-    fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
+    fn serialize_field<T: ?Sized>(&mut self, _value: &T) -> Result<(), Self::Error>
     where
         T: Serialize,
     {
@@ -284,7 +285,7 @@ impl SerializeMap for CustomSerializer{
     type Error = CompilerHappinessError;
 
     // Fixed size.
-    fn serialize_key<T: ?Sized>(&mut self, key: &T) -> Result<(), Self::Error>
+    fn serialize_key<T: ?Sized>(&mut self, _key: &T) -> Result<(), Self::Error>
     where
         T: Serialize,
     {
@@ -292,7 +293,7 @@ impl SerializeMap for CustomSerializer{
     }
 
     // Fixed size.
-    fn serialize_value<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
+    fn serialize_value<T: ?Sized>(&mut self, _value: &T) -> Result<(), Self::Error>
     where
         T: Serialize,
     {
@@ -311,7 +312,7 @@ impl SerializeStruct for CustomSerializer{
     type Error = CompilerHappinessError;
 
     // Fixed size.
-    fn serialize_field<T: ?Sized>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
+    fn serialize_field<T: ?Sized>(&mut self, _key: &'static str, _value: &T) -> Result<(), Self::Error>
     where
         T: Serialize,
     {
@@ -330,7 +331,7 @@ impl SerializeStructVariant for CustomSerializer{
     type Error = CompilerHappinessError;
 
     // Fixed size.
-    fn serialize_field<T: ?Sized>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
+    fn serialize_field<T: ?Sized>(&mut self, _key: &'static str, _value: &T) -> Result<(), Self::Error>
     where
         T: Serialize,
     {
@@ -343,3 +344,11 @@ impl SerializeStructVariant for CustomSerializer{
     }
 }
 
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works() {
+        let result = 2 + 2;
+        assert_eq!(result, 4);
+    }
+}

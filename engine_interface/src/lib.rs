@@ -8,7 +8,7 @@
 pub mod plugin;
 
 use std::{
-    borrow::BorrowMut, cell::RefCell, collections::HashMap, marker::PhantomData, sync::Mutex,
+    cell::RefCell, collections::HashMap,
 };
 pub mod component_validate_error;
 pub mod component_validate;
@@ -102,7 +102,7 @@ fn max_component_size<C: Component>() -> usize {
 
 /// Validate that a component is fixed-size
 #[track_caller]
-fn component_validate<C: Component>(c: &C) {
+fn component_validate<C: Component>(_c: &C) {
     // TODO!
     todo!();
     // c.serialize(MySerializer::new())

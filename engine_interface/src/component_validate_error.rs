@@ -13,19 +13,19 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub struct Error;
 
 impl ser::Error for Error { // Don't ask... This stuff just exists to make the compiler happy.
-    fn custom<T: Display>(msg: T) -> Self {
+    fn custom<T: Display>(_msg: T) -> Self {
         Self
     }
 }
 
 impl de::Error for Error { // Don't ask... This stuff just exists to make the compiler happy.
-    fn custom<T: Display>(msg: T) -> Self {
+    fn custom<T: Display>(_msg: T) -> Self {
         Self
     }
 }
 
 impl Display for Error { // Don't ask... This stuff just exists to make the compiler happy.
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, _f: &mut fmt::Formatter) -> fmt::Result {
         Ok(())
     }
 }
