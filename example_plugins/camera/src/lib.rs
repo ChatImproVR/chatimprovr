@@ -276,6 +276,7 @@ fn hand() -> UploadMesh {
     }
 }
 
+// TODO: Add a PR to glam?
 fn face_towards(dir: Vec3, up: Vec3) -> Quat {
     let zaxis = dir.normalize();
     let xaxis = up.cross(zaxis).normalize();

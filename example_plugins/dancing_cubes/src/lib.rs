@@ -1,5 +1,5 @@
 use cimvr_common::{
-    nalgebra::{Point3, UnitQuaternion, Vector3},
+    glam::{Mat3, Quat, Vec3},
     render::{
         Mesh, MeshHandle, Primitive, Render, ShaderHandle, ShaderSource, UploadMesh, Vertex,
         DEFAULT_VERTEX_SHADER,
@@ -93,14 +93,14 @@ impl ServerState {
                 let rad = 20. * v;
 
                 let transf = Transform {
-                    pos: Point3::new(theta.cos() * rad, rad.cos() * 1., theta.sin() * rad),
-                    orient: UnitQuaternion::face_towards(
-                        &Vector3::new(
+                    pos: Vec3::new(theta.cos() * rad, rad.cos() * 1., theta.sin() * rad),
+                    orient: face_towards(
+                        Vec3::new(
                             k * theta.cos() * (theta * k).cos() - theta.sin() * v,
                             -rad.sin() * 1.,
                             k * theta.sin() * (theta * k).cos() + theta.cos() * v,
                         ),
-                        &Vector3::y(),
+                        Vec3::Y,
                     ),
                 };
 
@@ -161,4 +161,19 @@ void main() {
 
 impl Component for MoveCube {
     const ID: &'static str = pkg_namespace!("MoveCube");
+}
+
+// TODO: Add a PR to glam?
+fn face_towards(dir: Vec3, up: Vec3) -> Quat {
+    let zaxis = dir.normalize();
+    let xaxis = up.cross(zaxis).normalize();
+    let yaxis = zaxis.cross(xaxis).normalize();
+
+    let mat = Mat3::from_cols(
+        Vec3::new(xaxis.x, yaxis.x, zaxis.x),
+        Vec3::new(xaxis.y, yaxis.y, zaxis.y),
+        Vec3::new(xaxis.z, yaxis.z, zaxis.z),
+    );
+
+    Quat::from_mat3(&mat)
 }

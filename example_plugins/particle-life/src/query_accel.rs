@@ -1,4 +1,4 @@
-use cimvr_common::nalgebra::Point2;
+use cimvr_common::glam::Vec2;
 use zwohash::HashMap;
 
 /// Euclidean neighborhood query accelerator. Uses a hashmap grid.
@@ -11,7 +11,7 @@ pub struct QueryAccelerator {
 
 impl QueryAccelerator {
     /// Construct a new query accelerator
-    pub fn new(points: &[Point2<f32>], radius: f32) -> Self {
+    pub fn new(points: &[Vec2], radius: f32) -> Self {
         let mut cells: HashMap<[i32; 2], Vec<usize>> = HashMap::default();
 
         for (idx, &point) in points.iter().enumerate() {
@@ -39,7 +39,7 @@ impl QueryAccelerator {
     // Query the neighbors of `queried_idx` in `points`
     pub fn query_neighbors<'s, 'p: 's>(
         &'s self,
-        points: &'p [Point2<f32>],
+        points: &'p [Vec2],
         queried_idx: usize,
     ) -> impl Iterator<Item = usize> + 's {
         let query_point = points[queried_idx];
@@ -51,7 +51,7 @@ impl QueryAccelerator {
                 let key = add(origin, *diff);
                 self.cells.get(&key).map(|cell_indices| {
                     cell_indices.iter().copied().filter(move |&idx| {
-                        let dist = (points[idx] - query_point).magnitude_squared();
+                        let dist = (points[idx] - query_point).length_squared();
                         idx != queried_idx && dist <= self.radius_sq
                     })
                 })
@@ -70,8 +70,8 @@ fn add(mut a: [i32; 2], b: [i32; 2]) -> [i32; 2] {
     a
 }
 
-fn quantize(p: Point2<f32>, radius: f32) -> [i32; 2] {
-    (*p.coords.as_ref()).map(|v| (v / radius).floor() as i32)
+fn quantize(p: Vec2, radius: f32) -> [i32; 2] {
+    (*p.as_ref()).map(|v| (v / radius).floor() as i32)
 }
 
 fn neighborhood<const N: usize>() -> Vec<[i32; N]> {
