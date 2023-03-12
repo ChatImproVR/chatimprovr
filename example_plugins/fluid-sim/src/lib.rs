@@ -1,5 +1,5 @@
 use cimvr_common::{
-    glam,
+    glam::{self, Quat, Vec3},
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
@@ -175,9 +175,9 @@ impl ClientState {
         // Set camera position
         let pos = self.particles.particles[0];
 
-        let v = Point3::from(pos) - Point3::from(self.last);
+        let v = Vec3::from(pos) - Vec3::from(self.last);
 
-        let orient = UnitQuaternion::rotation_between(&-Vector3::z(), &v).unwrap();
+        let orient = Quat::from_rotation_arc(-Vec3::Z, v);
 
         let transf = Transform {
             pos: pos.into(),
