@@ -10,6 +10,7 @@ pub mod plugin;
 use std::{cell::RefCell, collections::HashMap};
 pub mod component_validate_error;
 pub mod component_validation;
+use component_validation::is_fixed_size;
 pub use log;
 /// Printing functions for plugins
 pub mod stdout;
@@ -94,16 +95,19 @@ impl Message for FrameTime {
 #[track_caller]
 fn max_component_size<C: Component>() -> usize {
     let component = C::default();
-    component_validate(&component);
+    validate_component(&component);
     serialized_size(&component).unwrap()
 }
 
 /// Validate that a component is fixed-size
 #[track_caller]
-fn component_validate<C: Component>(_c: &C) {
-    // TODO!
-    todo!();
-    // c.serialize(MySerializer::new())
+fn validate_component<C: Component>(c: &C) {
+    if is_fixed_size(&c).is_err() {
+        panic!(
+            "The type {} is not fixed-size, and cannot be used as a component.",
+            std::any::type_name::<C>()
+        )
+    }
 }
 
 /// Component size cache
