@@ -1,8 +1,11 @@
 #![allow(unreachable_code)]
 use crate::component_validate_error::Error as CompilerHappinessError;
 use serde;
+use serde::ser::{
+    SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant, SerializeTuple,
+    SerializeTupleStruct, SerializeTupleVariant,
+};
 use serde::Serialize;
-use serde::ser::{SerializeSeq, SerializeTuple, SerializeTupleStruct, SerializeTupleVariant, SerializeStructVariant, SerializeStruct, SerializeMap};
 pub struct CustomSerializer;
 
 impl CustomSerializer {
@@ -28,13 +31,11 @@ impl serde::Serializer for CustomSerializer {
         _name: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeStruct, Self::Error> {
-        println!("serialize_struct");
         Ok(Self)
     }
 
     // Variable size
     fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
-        println!("serialize_seq");
         Ok(todo!())
     }
 
@@ -142,12 +143,12 @@ impl serde::Serializer for CustomSerializer {
     fn serialize_i8(self, _v: i8) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
-    
+
     // Fixed size.
     fn serialize_u8(self, _v: u8) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
-    
+
     // Fixed size.
     fn serialize_i16(self, _v: i16) -> Result<Self::Ok, Self::Error> {
         Ok(())
@@ -213,8 +214,7 @@ impl serde::Serializer for CustomSerializer {
     }
 }
 
-impl SerializeSeq for CustomSerializer{
-
+impl SerializeSeq for CustomSerializer {
     type Ok = ();
     type Error = CompilerHappinessError;
 
@@ -232,8 +232,7 @@ impl SerializeSeq for CustomSerializer{
     }
 }
 
-impl SerializeTuple for CustomSerializer{
-
+impl SerializeTuple for CustomSerializer {
     type Ok = ();
     type Error = CompilerHappinessError;
 
@@ -251,8 +250,7 @@ impl SerializeTuple for CustomSerializer{
     }
 }
 
-impl SerializeTupleStruct for CustomSerializer{
-
+impl SerializeTupleStruct for CustomSerializer {
     type Ok = ();
     type Error = CompilerHappinessError;
 
@@ -270,8 +268,7 @@ impl SerializeTupleStruct for CustomSerializer{
     }
 }
 
-impl SerializeTupleVariant for CustomSerializer{
-
+impl SerializeTupleVariant for CustomSerializer {
     type Ok = ();
     type Error = CompilerHappinessError;
 
@@ -282,14 +279,12 @@ impl SerializeTupleVariant for CustomSerializer{
         Ok(dbg!(value.serialize(Self::new()).unwrap()))
     }
 
-    
     fn end(self) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
 }
 
-impl SerializeMap for CustomSerializer{
-
+impl SerializeMap for CustomSerializer {
     type Ok = ();
     type Error = CompilerHappinessError;
 
@@ -315,13 +310,16 @@ impl SerializeMap for CustomSerializer{
     }
 }
 
-impl SerializeStruct for CustomSerializer{
-
+impl SerializeStruct for CustomSerializer {
     type Ok = ();
     type Error = CompilerHappinessError;
 
     // Fixed size.
-    fn serialize_field<T: ?Sized>(&mut self, _key: &'static str, value: &T) -> Result<(), Self::Error>
+    fn serialize_field<T: ?Sized>(
+        &mut self,
+        _key: &'static str,
+        value: &T,
+    ) -> Result<(), Self::Error>
     where
         T: Serialize,
     {
@@ -334,13 +332,16 @@ impl SerializeStruct for CustomSerializer{
     }
 }
 
-impl SerializeStructVariant for CustomSerializer{
-
+impl SerializeStructVariant for CustomSerializer {
     type Ok = ();
     type Error = CompilerHappinessError;
 
     // Fixed size.
-    fn serialize_field<T: ?Sized>(&mut self, _key: &'static str, _value: &T) -> Result<(), Self::Error>
+    fn serialize_field<T: ?Sized>(
+        &mut self,
+        _key: &'static str,
+        _value: &T,
+    ) -> Result<(), Self::Error>
     where
         T: Serialize,
     {
