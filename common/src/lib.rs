@@ -87,7 +87,7 @@ impl Transform {
         let orient = self.orient.inverse();
         Self {
             orient,
-            pos: self.orient * -self.pos,
+            pos: orient * -self.pos,
         }
     }
 }
