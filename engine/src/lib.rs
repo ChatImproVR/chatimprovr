@@ -61,7 +61,7 @@ struct PluginState {
 }
 
 /// Marker of plugin ownership, by plugin index
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PluginIndex(usize);
 
 impl PluginState {
@@ -345,8 +345,5 @@ impl Engine {
 }
 
 impl Component for PluginIndex {
-    const ID: ComponentIdStatic = ComponentIdStatic {
-        id: pkg_namespace!("Owner"),
-        size: 8,
-    };
+    const ID: &'static str = pkg_namespace!("Owner");
 }

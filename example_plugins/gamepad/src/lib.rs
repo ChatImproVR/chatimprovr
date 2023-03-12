@@ -49,7 +49,7 @@ impl ClientState {
     }
 }
 
-#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
+#[derive(Serialize, Deserialize, Default, Copy, Clone, Debug)]
 struct SpinningCube(ClientId);
 
 struct ServerState;
@@ -145,8 +145,5 @@ impl Message for AxisMessage {
 }
 
 impl Component for SpinningCube {
-    const ID: ComponentIdStatic = ComponentIdStatic {
-        id: pkg_namespace!("ClientOwner"),
-        size: 4,
-    };
+    const ID: &'static str = pkg_namespace!("ClientOwner");
 }
