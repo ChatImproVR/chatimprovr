@@ -1,6 +1,6 @@
 //! Types for interfacing with the Host's rendering engine
 use bytemuck::{Pod, Zeroable};
-use cimvr_engine_interface::{pkg_namespace, prelude::*};
+use cimvr_engine_interface::{pkg_namespace, prelude::*, serial::FixedOption};
 use nalgebra::Matrix4;
 use serde::{Deserialize, Serialize};
 
@@ -90,9 +90,9 @@ pub struct Render {
     // /// * If limit == 0: Entire defined shape is drawn
     /// Use this many indices, in order
     /// Draw everything if None
-    pub limit: Option<u32>,
+    pub limit: FixedOption<u32>,
     /// Optional shader handle; defaults to DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER
-    pub shader: Option<ShaderHandle>,
+    pub shader: FixedOption<ShaderHandle>,
 }
 
 /// Extra render data per component
@@ -153,8 +153,8 @@ impl Render {
         Self {
             id,
             primitive: Primitive::Triangles,
-            shader: None,
-            limit: None,
+            shader: None.into(),
+            limit: None.into(),
         }
     }
 
@@ -164,12 +164,12 @@ impl Render {
     }
 
     pub fn shader(mut self, shader: ShaderHandle) -> Self {
-        self.shader = Some(shader);
+        self.shader = Some(shader).into();
         self
     }
 
     pub fn limit(mut self, limit: Option<u32>) -> Self {
-        self.limit = limit;
+        self.limit = limit.into();
         self
     }
 }
