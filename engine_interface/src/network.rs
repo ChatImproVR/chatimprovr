@@ -77,3 +77,9 @@ impl Default for Reliability {
     }
 }
 */
+
+impl Default for ClientId {
+    fn default() -> Self {
+        ClientId(0xBADBADBA)
+    }
+}

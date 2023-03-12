@@ -15,7 +15,7 @@ struct ClientState;
 
 make_app_state!(ClientState, ServerState);
 
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Serialize, Deserialize, Default, Clone, Copy)]
 pub struct MoveCube {
     pub r: f32,
 }
@@ -160,8 +160,5 @@ void main() {
 }
 
 impl Component for MoveCube {
-    const ID: ComponentIdStatic = ComponentIdStatic {
-        id: pkg_namespace!("MoveCube"),
-        size: 4,
-    };
+    const ID: &'static str = pkg_namespace!("MoveCube");
 }

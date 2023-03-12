@@ -23,7 +23,7 @@ pub struct MoveCommand {
 }
 
 /// Component identifing the cube
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Serialize, Deserialize, Default, Clone, Copy)]
 pub struct CubeFlag;
 
 make_app_state!(ClientState, ServerState);
@@ -183,10 +183,7 @@ fn cube() -> Mesh {
 }
 
 impl Component for CubeFlag {
-    const ID: ComponentIdStatic = ComponentIdStatic {
-        id: pkg_namespace!("Cube Flag"),
-        size: 0,
-    };
+    const ID: &'static str = pkg_namespace!("Cube Flag");
 }
 
 impl Message for MoveCommand {
