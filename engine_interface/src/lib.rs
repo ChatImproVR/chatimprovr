@@ -7,9 +7,7 @@
 /// Code specific to WASM plugins
 pub mod plugin;
 
-use std::{
-    cell::RefCell, collections::HashMap,
-};
+use std::{cell::RefCell, collections::HashMap};
 pub mod component_validate_error;
 pub mod component_validation;
 pub use log;

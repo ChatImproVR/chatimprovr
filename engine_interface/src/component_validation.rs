@@ -1,5 +1,5 @@
 #![allow(unreachable_code)]
-use crate::component_validate_error::Error as CompilerHappinessError;
+use crate::component_validate_error::ValidationError;
 use serde;
 use serde::ser::{
     SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant, SerializeTuple,
@@ -16,7 +16,7 @@ impl CustomSerializer {
 
 impl serde::Serializer for CustomSerializer {
     type Ok = ();
-    type Error = CompilerHappinessError;
+    type Error = ValidationError;
     type SerializeSeq = Self;
     type SerializeTuple = Self;
     type SerializeTupleStruct = Self;
@@ -36,12 +36,12 @@ impl serde::Serializer for CustomSerializer {
 
     // Variable size
     fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
-        Ok(FUCK_YOUR_TYPE())
+        Err(ValidationError)
     }
 
     // Variable size
     fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
-        Ok(FUCK_YOUR_TYPE())
+        Err(ValidationError)
     }
     // Fixed size
     fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple, Self::Error> {
@@ -87,7 +87,7 @@ impl serde::Serializer for CustomSerializer {
         _variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeTupleVariant, Self::Error> {
-        Ok(FUCK_YOUR_TYPE())
+        Err(ValidationError)
     }
 
     // Definitely can't be a fixed size.
@@ -98,7 +98,7 @@ impl serde::Serializer for CustomSerializer {
         _variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeStructVariant, Self::Error> {
-        Ok(FUCK_YOUR_TYPE())
+        Err(ValidationError)
     }
 
     // Could potentially be a fixed size, but fuck checking for that. It's not worth it. Future Rudy & Duncan can deal with it.
@@ -112,12 +112,12 @@ impl serde::Serializer for CustomSerializer {
     where
         T: Serialize,
     {
-        Ok(FUCK_YOUR_TYPE())
+        Err(ValidationError)
     }
 
     // Fixed size. But we don't want to let them use Options.
     fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
-        Ok(FUCK_YOUR_TYPE())
+        Err(ValidationError)
     }
 
     // Not a fixed size.
@@ -125,7 +125,7 @@ impl serde::Serializer for CustomSerializer {
     where
         T: Serialize,
     {
-        Ok(FUCK_YOUR_TYPE())
+        Err(ValidationError)
     }
 
     // Fixed size.
@@ -136,7 +136,7 @@ impl serde::Serializer for CustomSerializer {
     // This ones complicated. Technically we *can* make it so that it's a fixed size. However, we should decide on that at a later date.
     // TODO: Decide whether we want to allow them to use a byte array that can only be a max size.
     fn serialize_bytes(self, _v: &[u8]) -> Result<Self::Ok, Self::Error> {
-        Ok(FUCK_YOUR_TYPE())
+        Err(ValidationError)
     }
 
     // Fixed size.
@@ -190,7 +190,7 @@ impl serde::Serializer for CustomSerializer {
 
     // Fixed size.
     fn serialize_str(self, _v: &str) -> Result<Self::Ok, Self::Error> {
-        Ok(FUCK_YOUR_TYPE())
+        Err(ValidationError)
     }
 
     // Fixed size.
@@ -216,7 +216,7 @@ impl serde::Serializer for CustomSerializer {
 
 impl SerializeSeq for CustomSerializer {
     type Ok = ();
-    type Error = CompilerHappinessError;
+    type Error = ValidationError;
 
     // Fixed size.
     fn serialize_element<T: ?Sized>(&mut self, _value: &T) -> Result<(), Self::Error>
@@ -234,7 +234,7 @@ impl SerializeSeq for CustomSerializer {
 
 impl SerializeTuple for CustomSerializer {
     type Ok = ();
-    type Error = CompilerHappinessError;
+    type Error = ValidationError;
 
     // Fixed size.
     fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
@@ -252,7 +252,7 @@ impl SerializeTuple for CustomSerializer {
 
 impl SerializeTupleStruct for CustomSerializer {
     type Ok = ();
-    type Error = CompilerHappinessError;
+    type Error = ValidationError;
 
     // Fixed size.
     fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
@@ -270,7 +270,7 @@ impl SerializeTupleStruct for CustomSerializer {
 
 impl SerializeTupleVariant for CustomSerializer {
     type Ok = ();
-    type Error = CompilerHappinessError;
+    type Error = ValidationError;
 
     fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
     where
@@ -286,7 +286,7 @@ impl SerializeTupleVariant for CustomSerializer {
 
 impl SerializeMap for CustomSerializer {
     type Ok = ();
-    type Error = CompilerHappinessError;
+    type Error = ValidationError;
 
     // Fixed size.
     fn serialize_key<T: ?Sized>(&mut self, _key: &T) -> Result<(), Self::Error>
@@ -312,7 +312,7 @@ impl SerializeMap for CustomSerializer {
 
 impl SerializeStruct for CustomSerializer {
     type Ok = ();
-    type Error = CompilerHappinessError;
+    type Error = ValidationError;
 
     // Fixed size.
     fn serialize_field<T: ?Sized>(
@@ -334,7 +334,7 @@ impl SerializeStruct for CustomSerializer {
 
 impl SerializeStructVariant for CustomSerializer {
     type Ok = ();
-    type Error = CompilerHappinessError;
+    type Error = ValidationError;
 
     // Fixed size.
     fn serialize_field<T: ?Sized>(
