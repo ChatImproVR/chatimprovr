@@ -1,5 +1,5 @@
 use cimvr_common::{
-    nalgebra::{Point3, UnitQuaternion, Vector3},
+    glam,
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
