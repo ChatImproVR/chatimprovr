@@ -6,15 +6,24 @@ use serde::ser::{
     SerializeTupleStruct, SerializeTupleVariant,
 };
 use serde::Serialize;
-pub struct CustomSerializer;
 
-impl CustomSerializer {
+/// Returns `Ok(())` if the given data is represented by a fixed-size data structure.
+/// The condition for fixed-sizedness is based on `bincode`'s representation.
+pub fn is_fixed_size<V: Serialize>(v: V) -> Result<(), ValidationError> {
+    v.serialize(FixedSizeValidator)
+}
+
+/// A serde "Serializer", which returns an error if the
+/// data structure is not known to be fixed-size.
+pub struct FixedSizeValidator;
+
+impl FixedSizeValidator {
     pub fn new() -> Self {
         Self
     }
 }
 
-impl serde::Serializer for CustomSerializer {
+impl serde::Serializer for FixedSizeValidator {
     type Ok = ();
     type Error = ValidationError;
     type SerializeSeq = Self;
@@ -214,7 +223,7 @@ impl serde::Serializer for CustomSerializer {
     }
 }
 
-impl SerializeSeq for CustomSerializer {
+impl SerializeSeq for FixedSizeValidator {
     type Ok = ();
     type Error = ValidationError;
 
@@ -232,7 +241,7 @@ impl SerializeSeq for CustomSerializer {
     }
 }
 
-impl SerializeTuple for CustomSerializer {
+impl SerializeTuple for FixedSizeValidator {
     type Ok = ();
     type Error = ValidationError;
 
@@ -250,7 +259,7 @@ impl SerializeTuple for CustomSerializer {
     }
 }
 
-impl SerializeTupleStruct for CustomSerializer {
+impl SerializeTupleStruct for FixedSizeValidator {
     type Ok = ();
     type Error = ValidationError;
 
@@ -268,7 +277,7 @@ impl SerializeTupleStruct for CustomSerializer {
     }
 }
 
-impl SerializeTupleVariant for CustomSerializer {
+impl SerializeTupleVariant for FixedSizeValidator {
     type Ok = ();
     type Error = ValidationError;
 
@@ -284,7 +293,7 @@ impl SerializeTupleVariant for CustomSerializer {
     }
 }
 
-impl SerializeMap for CustomSerializer {
+impl SerializeMap for FixedSizeValidator {
     type Ok = ();
     type Error = ValidationError;
 
@@ -310,7 +319,7 @@ impl SerializeMap for CustomSerializer {
     }
 }
 
-impl SerializeStruct for CustomSerializer {
+impl SerializeStruct for FixedSizeValidator {
     type Ok = ();
     type Error = ValidationError;
 
@@ -332,7 +341,7 @@ impl SerializeStruct for CustomSerializer {
     }
 }
 
-impl SerializeStructVariant for CustomSerializer {
+impl SerializeStructVariant for FixedSizeValidator {
     type Ok = ();
     type Error = ValidationError;
 
