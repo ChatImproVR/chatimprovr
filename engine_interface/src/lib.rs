@@ -8,9 +8,10 @@
 pub mod plugin;
 
 use std::{cell::RefCell, collections::HashMap};
-pub mod component_validate_error;
-pub mod component_validation;
-use component_validation::is_fixed_size;
+mod component_validate_error;
+mod component_validation;
+pub use component_validation::is_fixed_size;
+
 pub use log;
 /// Printing functions for plugins
 pub mod stdout;
