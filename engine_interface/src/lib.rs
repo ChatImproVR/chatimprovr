@@ -7,6 +7,8 @@
 /// Code specific to WASM plugins
 pub mod plugin;
 
+use std::{cell::RefCell, collections::HashMap, marker::PhantomData, sync::Mutex};
+
 pub use log;
 /// Printing functions for plugins
 pub mod stdout;
@@ -58,9 +60,11 @@ macro_rules! pkg_namespace {
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Saved;
 
-use ecs::{Component, ComponentIdStatic};
+use ecs::Component;
+use once_cell::sync::Lazy;
 use prelude::{ChannelIdStatic, Locality, Message};
 use serde::{Deserialize, Serialize};
+use serial::serialized_size;
 
 impl Component for Saved {
     const ID: ComponentIdStatic = ComponentIdStatic {
@@ -86,4 +90,35 @@ impl Message for FrameTime {
         id: pkg_namespace!("FrameTime"),
         locality: Locality::Local,
     };
+}
+
+/// Get component size
+fn component_size<C: Component>(c: &C) -> usize {
+    component_validate(c);
+    serialized_size(c).unwrap()
+}
+
+/// Validate that a component is fixed-size
+#[track_caller]
+fn component_validate<C: Component>(c: &C) {
+    // TODO!
+}
+
+/// Component size cache
+pub(crate) struct SizeCache(HashMap<&'static str, usize>);
+
+thread_local! {
+    static SIZE_CACHE: Lazy<RefCell<SizeCache>> = Lazy::new(|| RefCell::new(SizeCache::new()));
+}
+
+impl SizeCache {
+    pub fn new() -> Self {
+        SizeCache(HashMap::new())
+    }
+
+    /// Get the size in bytse of the given component
+    pub fn size<C: Component>(&mut self, c: &C) -> usize {
+        let SizeCache(map) = self;
+        *map.entry(C::ID).or_insert(component_size(c))
+    }
 }

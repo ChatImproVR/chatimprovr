@@ -61,12 +61,6 @@ pub struct ComponentId {
     pub size: u16,
 }
 
-/// Static version of ComponentId
-pub struct ComponentIdStatic {
-    pub id: &'static str,
-    pub size: u16,
-}
-
 /// Access level for the given component
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Access {
@@ -80,7 +74,7 @@ pub enum Access {
 // Copy bound here is to discourage variable-sized types!
 pub trait Component: Serialize + DeserializeOwned + Copy {
     /// Unique ID of this component
-    const ID: ComponentIdStatic;
+    const ID: &'static str;
 }
 
 /// Single command to be sent to engine

@@ -1,6 +1,4 @@
-use cimvr_common::{
-    nalgebra::{Point2, Vector2},
-};
+use cimvr_common::nalgebra::{Point2, Vector2};
 use cimvr_engine_interface::{pcg::Pcg, prelude::*};
 
 use crate::query_accel::QueryAccelerator;
