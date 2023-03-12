@@ -9,6 +9,7 @@ use serde::Serialize;
 
 /// Returns `Ok(())` if the given data is represented by a fixed-size data structure.
 /// The condition for fixed-sizedness is based on `bincode`'s representation.
+#[track_caller]
 pub fn is_fixed_size<V: Serialize>(v: V) -> Result<(), ValidationError> {
     v.serialize(FixedSizeValidator)
 }
@@ -250,7 +251,7 @@ impl SerializeTuple for FixedSizeValidator {
     where
         T: Serialize,
     {
-        Ok(value.serialize(Self::new()).unwrap())
+        value.serialize(Self::new())
     }
 
     // Fixed size.
@@ -268,7 +269,7 @@ impl SerializeTupleStruct for FixedSizeValidator {
     where
         T: Serialize,
     {
-        Ok(dbg!(value.serialize(Self::new()).unwrap()))
+        value.serialize(Self::new())
     }
 
     // Fixed size.
@@ -285,7 +286,7 @@ impl SerializeTupleVariant for FixedSizeValidator {
     where
         T: Serialize,
     {
-        Ok(dbg!(value.serialize(Self::new()).unwrap()))
+        value.serialize(Self::new())
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
@@ -332,7 +333,7 @@ impl SerializeStruct for FixedSizeValidator {
     where
         T: Serialize,
     {
-        Ok(value.serialize(Self).unwrap())
+        value.serialize(Self)
     }
 
     // Fixed size.
@@ -364,9 +365,4 @@ impl SerializeStructVariant for FixedSizeValidator {
     fn end(self) -> Result<Self::Ok, Self::Error> {
         Ok(())
     }
-}
-
-#[allow(non_snake_case)]
-fn FUCK_YOUR_TYPE() -> ! {
-    panic!("UNACCEPTABLEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE <LEMONGRAB.MP4>")
 }
