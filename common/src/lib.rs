@@ -82,6 +82,14 @@ impl Transform {
         self.orient = orient;
         self
     }
+
+    pub fn inverse(self) -> Self {
+        let orient = self.orient.inverse();
+        Self {
+            orient,
+            pos: self.orient * -self.pos,
+        }
+    }
 }
 
 /// A generic handle type, which is integer sized but represents a namespace
