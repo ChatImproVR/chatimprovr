@@ -4,6 +4,7 @@ extern crate glow as gl;
 extern crate openxr as xr;
 
 use anyhow::{bail, Context, Result};
+use cimvr_common::glam::Mat4;
 use cimvr_engine::hotload::Hotloader;
 use cimvr_engine::interface::prelude::{Access, ConnectionRequest, QueryComponent, Synchronized};
 use cimvr_engine::interface::serial::{deserialize, serialize};
@@ -13,7 +14,6 @@ use cimvr_engine::network::{
 use cimvr_engine::Config;
 use cimvr_engine::Engine;
 use gamepad::GamepadPlugin;
-use nalgebra::Matrix4;
 use render::RenderPlugin;
 use std::io::Write;
 use std::net::{SocketAddr, TcpStream};
@@ -170,7 +170,7 @@ impl Client {
         self.ui.run(ctx, &mut self.engine);
     }
 
-    pub fn render_frame(&mut self, vr_view: Matrix4<f32>, view_idx: usize) -> Result<()> {
+    pub fn render_frame(&mut self, vr_view: Mat4, view_idx: usize) -> Result<()> {
         self.render.frame(&mut self.engine, vr_view, view_idx)
     }
 
