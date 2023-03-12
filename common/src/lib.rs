@@ -31,10 +31,7 @@ pub struct Transform {
 }
 
 impl Component for Transform {
-    const ID: ComponentIdStatic = ComponentIdStatic {
-        id: pkg_namespace!("Transform"),
-        size: 44,
-    };
+    const ID: &'static str = pkg_namespace!("Transform");
 }
 
 impl Default for Transform {
@@ -170,5 +167,11 @@ impl Mul for Transform {
         let lhs: Isometry3<f32> = self.into();
         let rhs: Isometry3<f32> = rhs.into();
         (lhs * rhs).into()
+    }
+}
+
+impl Default for GenericHandle {
+    fn default() -> Self {
+        Self(0xBAD_BAD_BAD_BAD_BAD_BAD_BAD_BAD_BAD_BAD)
     }
 }

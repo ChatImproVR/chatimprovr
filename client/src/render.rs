@@ -3,7 +3,7 @@ use anyhow::format_err;
 use anyhow::Result;
 use cimvr_common::{render::*, Transform};
 use cimvr_engine::interface::prelude::*;
-use cimvr_engine::{interface::pkg_namespace, Engine};
+use cimvr_engine::{interface::{pkg_namespace, component_id}, Engine};
 use gl::HasContext;
 use glow::NativeUniformLocation;
 
@@ -86,7 +86,7 @@ impl RenderPlugin {
         // Find camera, if any
         let camera_entity = match engine
             .ecs()
-            .find(&[CameraComponent::ID.into(), Transform::ID.into()])
+            .find(&[component_id::<CameraComponent>(), component_id::<Transform>()])
         {
             Some(c) => c,
             None => {
