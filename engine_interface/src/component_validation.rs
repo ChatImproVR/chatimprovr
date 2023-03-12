@@ -190,7 +190,7 @@ impl serde::Serializer for CustomSerializer {
 
     // Fixed size.
     fn serialize_str(self, _v: &str) -> Result<Self::Ok, Self::Error> {
-        Ok(())
+        Ok(todo!())
     }
 
     // Fixed size.
@@ -237,11 +237,11 @@ impl SerializeTuple for CustomSerializer {
     type Error = CompilerHappinessError;
 
     // Fixed size.
-    fn serialize_element<T: ?Sized>(&mut self, _value: &T) -> Result<(), Self::Error>
+    fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
     where
         T: Serialize,
     {
-        Ok(())
+        Ok(value.serialize(Self::new()).unwrap())
     }
 
     // Fixed size.

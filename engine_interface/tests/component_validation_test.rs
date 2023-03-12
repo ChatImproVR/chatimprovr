@@ -90,9 +90,16 @@ fn ser_str() {
 }
 
 #[test]
-#[should_panic]
-fn ser_bytes() {
+fn ser_bytes_known_size() {
+    // Shouldn't panic, because it's a known sized byte array.
     let a = b"Fuck you!";
+    a.serialize(CustomSerializer::new()).unwrap();
+}
+
+#[test]
+#[should_panic]
+fn ser_bytes_variable_size(){
+    let a = b"Fuck you!".as_slice();
     a.serialize(CustomSerializer::new()).unwrap();
 }
 
@@ -236,13 +243,13 @@ fn ser_struct_fixed() {
 
 #[test]
 #[should_panic]
-fn ser_fixed_variable() {
+fn ser_struct_variable() {
     #[derive(Serialize, Deserialize, Debug, Clone)]
-    struct VariableSize {
+    struct VariableStruct {
         a: String,
     }
 
-    let a = VariableSize { a: "I regret nothing. Removing size parameter was based.".to_string() };
+    let a = VariableStruct { a: "I regret nothing. Removing size parameter was based.".to_string() };
     a.serialize(CustomSerializer::new()).unwrap();
 }
 
