@@ -10,26 +10,37 @@ pub type Result<T> = std::result::Result<T, ValidationError>;
 // error occurred, the byte offset into the input, or the current key being
 // processed.
 #[derive(Debug)]
-pub struct ValidationError;
+pub enum ValidationError {
+    Sequence,
+    Enum,
+    Option,
+}
 
 impl ser::Error for ValidationError {
     // Don't ask... This stuff just exists to make the compiler happy.
     fn custom<T: Display>(_msg: T) -> Self {
-        Self
+        panic!("Custom error unsupported")
     }
 }
 
 impl de::Error for ValidationError {
     // Don't ask... This stuff just exists to make the compiler happy.
     fn custom<T: Display>(_msg: T) -> Self {
-        Self
+        panic!("Custom error unsupported")
     }
 }
 
 impl Display for ValidationError {
     // Don't ask... This stuff just exists to make the compiler happy.
-    fn fmt(&self, _f: &mut fmt::Formatter) -> fmt::Result {
-        Ok(())
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ValidationError::Sequence => write!(f, "Sequence (vector or string) of arbitrary size"),
+            ValidationError::Enum => write!(f, "Enum of arbitrary size"),
+            ValidationError::Option => write!(
+                f,
+                "Enum of arbitrary size. Consider using FixedOption instead!"
+            ),
+        }
     }
 }
 
