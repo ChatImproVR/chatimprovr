@@ -5,6 +5,11 @@ use crate::prelude::*;
 use bincode::Options;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
+/// Fixed-size Option type, for use within components
+/// Note that this type implements From/Into for Option<T>
+#[derive(Serialize, Deserialize, Clone)]
+pub struct FixedOption<T: Default>(bool, T);
+
 /// Serialize the message in the standard binary format
 pub fn serialize<T: Serialize>(val: &T) -> bincode::Result<Vec<u8>> {
     bincode_opts().serialize(val)
@@ -73,4 +78,46 @@ fn bincode_opts() -> impl Options {
     bincode::DefaultOptions::new()
         .with_fixint_encoding()
         .allow_trailing_bytes()
+}
+
+impl<T: Default> Default for FixedOption<T> {
+    fn default() -> Self {
+        Self::none()
+    }
+}
+
+impl<T: Default> FixedOption<T> {
+    /// Create a new Some variant
+    pub fn some(t: T) -> Self {
+        Self(true, t)
+    }
+
+    /// Create a new None variant
+    pub fn none() -> Self {
+        Self(false, T::default())
+    }
+
+    pub fn is_some(&self) -> bool {
+        self.0
+    }
+
+    pub fn is_none(&self) -> bool {
+        !self.0
+    }
+}
+
+impl<T: Default> Into<Option<T>> for FixedOption<T> {
+    fn into(self) -> Option<T> {
+        let Self(b, t) = self;
+        b.then(|| t)
+    }
+}
+
+impl<T: Default> From<Option<T>> for FixedOption<T> {
+    fn from(value: Option<T>) -> Self {
+        match value {
+            Option::None => Self::none(),
+            Some(t) => Self::some(t),
+        }
+    }
 }
