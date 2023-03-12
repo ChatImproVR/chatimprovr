@@ -36,12 +36,12 @@ impl serde::Serializer for CustomSerializer {
 
     // Variable size
     fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
-        Ok(todo!())
+        Ok(FUCK_YOUR_TYPE())
     }
 
     // Variable size
     fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
-        Ok(todo!())
+        Ok(FUCK_YOUR_TYPE())
     }
     // Fixed size
     fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple, Self::Error> {
@@ -87,7 +87,7 @@ impl serde::Serializer for CustomSerializer {
         _variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeTupleVariant, Self::Error> {
-        Ok(todo!())
+        Ok(FUCK_YOUR_TYPE())
     }
 
     // Definitely can't be a fixed size.
@@ -98,7 +98,7 @@ impl serde::Serializer for CustomSerializer {
         _variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeStructVariant, Self::Error> {
-        Ok(todo!())
+        Ok(FUCK_YOUR_TYPE())
     }
 
     // Could potentially be a fixed size, but fuck checking for that. It's not worth it. Future Rudy & Duncan can deal with it.
@@ -112,12 +112,12 @@ impl serde::Serializer for CustomSerializer {
     where
         T: Serialize,
     {
-        Ok(todo!())
+        Ok(FUCK_YOUR_TYPE())
     }
 
     // Fixed size. But we don't want to let them use Options.
     fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
-        Ok(todo!())
+        Ok(FUCK_YOUR_TYPE())
     }
 
     // Not a fixed size.
@@ -125,7 +125,7 @@ impl serde::Serializer for CustomSerializer {
     where
         T: Serialize,
     {
-        Ok(todo!())
+        Ok(FUCK_YOUR_TYPE())
     }
 
     // Fixed size.
@@ -136,7 +136,7 @@ impl serde::Serializer for CustomSerializer {
     // This ones complicated. Technically we *can* make it so that it's a fixed size. However, we should decide on that at a later date.
     // TODO: Decide whether we want to allow them to use a byte array that can only be a max size.
     fn serialize_bytes(self, _v: &[u8]) -> Result<Self::Ok, Self::Error> {
-        Ok(todo!())
+        Ok(FUCK_YOUR_TYPE())
     }
 
     // Fixed size.
@@ -190,7 +190,7 @@ impl serde::Serializer for CustomSerializer {
 
     // Fixed size.
     fn serialize_str(self, _v: &str) -> Result<Self::Ok, Self::Error> {
-        Ok(todo!())
+        Ok(FUCK_YOUR_TYPE())
     }
 
     // Fixed size.
@@ -357,11 +357,7 @@ impl SerializeStructVariant for CustomSerializer {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
+#[allow(non_snake_case)]
+fn FUCK_YOUR_TYPE() -> ! {
+    panic!("UNACCEPTABLEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE <LEMONGRAB.MP4>")
 }
