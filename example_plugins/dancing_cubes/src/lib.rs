@@ -169,11 +169,7 @@ fn face_towards(dir: Vec3, up: Vec3) -> Quat {
     let xaxis = up.cross(zaxis).normalize();
     let yaxis = zaxis.cross(xaxis).normalize();
 
-    let mat = Mat3::from_cols(
-        Vec3::new(xaxis.x, yaxis.x, zaxis.x),
-        Vec3::new(xaxis.y, yaxis.y, zaxis.y),
-        Vec3::new(xaxis.z, yaxis.z, zaxis.z),
-    );
+    let mat = Mat3::from_cols(xaxis, yaxis, zaxis);
 
     Quat::from_mat3(&mat)
 }
