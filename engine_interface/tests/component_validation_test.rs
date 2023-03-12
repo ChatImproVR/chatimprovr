@@ -1,6 +1,4 @@
-use cimvr_engine_interface::{
-    self, component_validation::CustomSerializer,
-};
+use cimvr_engine_interface::{self, component_validation::CustomSerializer};
 use serde::{Deserialize, Serialize};
 
 #[test]
@@ -98,7 +96,7 @@ fn ser_bytes_known_size() {
 
 #[test]
 #[should_panic]
-fn ser_bytes_variable_size(){
+fn ser_bytes_variable_size() {
     let a = b"Fuck you!".as_slice();
     a.serialize(CustomSerializer::new()).unwrap();
 }
@@ -132,8 +130,6 @@ fn ser_unit_struct() {
     a.serialize(CustomSerializer::new()).unwrap();
 }
 
-
-
 #[test]
 fn ser_unit_variant() {
     #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
@@ -160,7 +156,7 @@ fn ser_newtype_variant() {
     #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
     enum NewtypeVariant {
         Newtype(u8),
-        Unit
+        Unit,
     }
 
     let a = NewtypeVariant::Newtype(0);
@@ -169,7 +165,7 @@ fn ser_newtype_variant() {
 
 #[test]
 #[should_panic]
-fn ser_seq () {
+fn ser_seq() {
     let a = vec![0; 10];
     a.serialize(CustomSerializer::new()).unwrap();
 }
@@ -184,7 +180,12 @@ fn ser_tuple_fixed() {
 #[should_panic]
 fn ser_tuple_variable() {
     // If this works, we've ROYALLY fucked up. :)
-    let a = (vec![0; 10], "Too much time has been spent", b"doing this shit", "I'm losing my mind".to_string());
+    let a = (
+        vec![0; 10],
+        "Too much time has been spent",
+        b"doing this shit",
+        "I'm losing my mind".to_string(),
+    );
     a.serialize(CustomSerializer::new()).unwrap();
 }
 
@@ -213,7 +214,7 @@ fn ser_tuple_variant() {
     #[derive(Serialize, Deserialize, Debug, Clone)]
     enum TupleVariant {
         Tuple(u8, u8),
-        Unit
+        Unit,
     }
     // Should panic because we can't serialize a tuple variant.
     // Cuz fuck you, that's why.
@@ -249,7 +250,9 @@ fn ser_struct_variable() {
         a: String,
     }
 
-    let a = VariableStruct { a: "I regret nothing. Removing size parameter was based.".to_string() };
+    let a = VariableStruct {
+        a: "I regret nothing. Removing size parameter was based.".to_string(),
+    };
     a.serialize(CustomSerializer::new()).unwrap();
 }
 
@@ -259,7 +262,7 @@ fn ser_struct_variant() {
     #[derive(Serialize, Deserialize, Debug, Clone)]
     enum StructVariant {
         Struct { a: u8 },
-        Unit
+        Unit,
     }
 
     let a = StructVariant::Struct { a: 0 };
