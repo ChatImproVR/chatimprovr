@@ -10,7 +10,8 @@ pub mod plugin;
 use std::{
     borrow::BorrowMut, cell::RefCell, collections::HashMap, marker::PhantomData, sync::Mutex,
 };
-
+pub mod component_validate_error;
+pub mod component_validate;
 pub use log;
 /// Printing functions for plugins
 pub mod stdout;
@@ -103,6 +104,8 @@ fn max_component_size<C: Component>() -> usize {
 #[track_caller]
 fn component_validate<C: Component>(c: &C) {
     // TODO!
+    todo!();
+    // c.serialize(MySerializer::new())
 }
 
 /// Component size cache
