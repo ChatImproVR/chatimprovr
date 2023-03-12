@@ -5,10 +5,7 @@ use serde::{de, ser};
 
 pub type Result<T> = std::result::Result<T, ValidationError>;
 
-// This is a bare-bones implementation. A real library would provide additional
-// information in its error type, for example the line and column at which the
-// error occurred, the byte offset into the input, or the current key being
-// processed.
+// TODO: Make this more descriptive
 #[derive(Debug)]
 pub enum ValidationError {
     Sequence,
@@ -38,7 +35,7 @@ impl Display for ValidationError {
             ValidationError::Enum => write!(f, "Enum of arbitrary size"),
             ValidationError::Option => write!(
                 f,
-                "Enum of arbitrary size. Consider using FixedOption instead!"
+                "Option<T> is variable size. Consider using FixedOption<T> instead!"
             ),
         }
     }
