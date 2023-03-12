@@ -114,7 +114,8 @@ impl RenderPlugin {
             let rdr_comp = engine.ecs().get::<Render>(entity).unwrap();
 
             // TODO: Sort entities by shader in order to set this less!
-            let wanted_shader = rdr_comp.shader.unwrap_or(DEFAULT_SHADER);
+            let wanted_shader: Option<_> = rdr_comp.shader.into();
+            let wanted_shader = wanted_shader.unwrap_or(DEFAULT_SHADER);
             let extra = engine.ecs().get::<RenderExtra>(entity);
 
             let res = self
@@ -452,7 +453,8 @@ impl GpuMesh {
             Primitive::Triangles => gl::TRIANGLES,
         };
 
-        let limit: i32 = match rdr_comp.limit {
+        let limit: Option<u32> = rdr_comp.limit.into();
+        let limit: i32 = match limit {
             None => self.index_count,
             Some(lim) => lim.try_into().unwrap(),
         };
