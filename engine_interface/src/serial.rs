@@ -1,5 +1,8 @@
 //! Types used for communication with the engine
-use std::io::{Read, Write};
+use std::{
+    fmt::Debug,
+    io::{Read, Write},
+};
 
 use crate::prelude::*;
 use bincode::Options;
@@ -7,8 +10,8 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 /// Fixed-size Option type, for use within components
 /// Note that this type implements From/Into for Option<T>
-#[derive(Serialize, Deserialize, Clone)]
-pub struct FixedOption<T: Default>(bool, T);
+#[derive(Serialize, Deserialize, Hash, PartialEq, Eq, Clone, Copy)]
+pub struct FixedOption<T>(bool, T);
 
 /// Serialize the message in the standard binary format
 pub fn serialize<T: Serialize>(val: &T) -> bincode::Result<Vec<u8>> {
@@ -86,14 +89,17 @@ impl<T: Default> Default for FixedOption<T> {
     }
 }
 
-impl<T: Default> FixedOption<T> {
+impl<T> FixedOption<T> {
     /// Create a new Some variant
     pub fn some(t: T) -> Self {
         Self(true, t)
     }
 
     /// Create a new None variant
-    pub fn none() -> Self {
+    pub fn none() -> Self
+    where
+        T: Default,
+    {
         Self(false, T::default())
     }
 
@@ -104,9 +110,13 @@ impl<T: Default> FixedOption<T> {
     pub fn is_none(&self) -> bool {
         !self.0
     }
+
+    pub fn as_ref(&self) -> FixedOption<&T> {
+        FixedOption(self.0, &self.1)
+    }
 }
 
-impl<T: Default> Into<Option<T>> for FixedOption<T> {
+impl<T> Into<Option<T>> for FixedOption<T> {
     fn into(self) -> Option<T> {
         let Self(b, t) = self;
         b.then(|| t)
@@ -119,5 +129,12 @@ impl<T: Default> From<Option<T>> for FixedOption<T> {
             Option::None => Self::none(),
             Some(t) => Self::some(t),
         }
+    }
+}
+
+impl<T: Default + Debug> Debug for FixedOption<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let opt: Option<&T> = self.as_ref().into();
+        opt.fmt(f)
     }
 }
