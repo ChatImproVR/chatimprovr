@@ -1,7 +1,7 @@
 //! Types for interfacing with the Host's rendering engine
 use bytemuck::{Pod, Zeroable};
-use cimvr_engine_interface::{pkg_namespace, prelude::*};
-use nalgebra::Matrix4;
+use cimvr_engine_interface::{pkg_namespace, prelude::*, serial::FixedOption};
+use glam::Mat4;
 use serde::{Deserialize, Serialize};
 
 use crate::{make_handle, GenericHandle};
@@ -23,12 +23,12 @@ pub struct Vertex {
 }
 
 /// Unique identifier for a remote RenderData resource
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Default, Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct MeshHandle(GenericHandle);
 make_handle!(MeshHandle);
 
 /// Unique identifier for a remote Shader program
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Default, Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ShaderHandle(GenericHandle);
 make_handle!(ShaderHandle);
 
@@ -43,7 +43,7 @@ pub struct CameraComponent {
     /// Projection matrices
     /// * VR: Left and right eyes
     /// * Desktop: only the left eye is used
-    pub projection: [Matrix4<f32>; 2],
+    pub projection: [Mat4; 2],
 }
 
 /// All information required to define a renderable mesh
@@ -77,7 +77,7 @@ pub struct Mesh {
 }
 
 /// Render component
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Default, Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Render {
     /// Id of the associated RenderData
     pub id: MeshHandle,
@@ -90,13 +90,13 @@ pub struct Render {
     // /// * If limit == 0: Entire defined shape is drawn
     /// Use this many indices, in order
     /// Draw everything if None
-    pub limit: Option<u32>,
+    pub limit: FixedOption<u32>,
     /// Optional shader handle; defaults to DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER
-    pub shader: Option<ShaderHandle>,
+    pub shader: FixedOption<ShaderHandle>,
 }
 
 /// Extra render data per component
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Default, Copy, Clone, Debug, PartialEq)]
 pub struct RenderExtra(pub [f32; 4 * 4]);
 
 /// How to draw the given mesh
@@ -107,18 +107,18 @@ pub enum Primitive {
     Triangles,
 }
 
+impl Default for Primitive {
+    fn default() -> Self {
+        Self::Triangles
+    }
+}
+
 impl Component for Render {
-    const ID: ComponentIdStatic = ComponentIdStatic {
-        id: pkg_namespace!("Render"),
-        size: 42,
-    };
+    const ID: &'static str = pkg_namespace!("Render");
 }
 
 impl Component for RenderExtra {
-    const ID: ComponentIdStatic = ComponentIdStatic {
-        id: pkg_namespace!("RenderExtra"),
-        size: 4 * 4 * 4,
-    };
+    const ID: &'static str = pkg_namespace!("RenderExtra");
 }
 
 impl Message for UploadMesh {
@@ -136,10 +136,7 @@ impl Message for ShaderSource {
 }
 
 impl Component for CameraComponent {
-    const ID: ComponentIdStatic = ComponentIdStatic {
-        id: pkg_namespace!("CameraComponent"),
-        size: 156,
-    };
+    const ID: &'static str = pkg_namespace!("CameraComponent");
 }
 
 impl Vertex {
@@ -156,8 +153,8 @@ impl Render {
         Self {
             id,
             primitive: Primitive::Triangles,
-            shader: None,
-            limit: None,
+            shader: None.into(),
+            limit: None.into(),
         }
     }
 
@@ -167,12 +164,12 @@ impl Render {
     }
 
     pub fn shader(mut self, shader: ShaderHandle) -> Self {
-        self.shader = Some(shader);
+        self.shader = Some(shader).into();
         self
     }
 
     pub fn limit(mut self, limit: Option<u32>) -> Self {
-        self.limit = limit;
+        self.limit = limit.into();
         self
     }
 }
@@ -206,33 +203,12 @@ impl Mesh {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use cimvr_engine_interface::serial::serialized_size;
-
-    use super::*;
-
-    #[test]
-    fn test_render_component() {
-        let example = Render {
-            id: MeshHandle::new(pkg_namespace!("Test render")),
-            primitive: Primitive::Lines,
-            limit: Some(90),
-            shader: Some(ShaderHandle::new(pkg_namespace!("Test shader"))),
-        };
-        assert_eq!(
-            serialized_size(&example).unwrap(),
-            usize::from(Render::ID.size)
-        );
-    }
-}
-
 impl Default for CameraComponent {
     /// The default is an identity projection with a black clear color.
     fn default() -> Self {
         Self {
             clear_color: [0.; 3],
-            projection: [Matrix4::identity(); 2],
+            projection: [Mat4::IDENTITY; 2],
         }
     }
 }

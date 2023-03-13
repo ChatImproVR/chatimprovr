@@ -6,8 +6,8 @@
 use std::ops::Mul;
 
 use cimvr_engine_interface::{pkg_namespace, prelude::*};
-pub use nalgebra;
-use nalgebra::{Isometry3, Matrix4, Point3, Translation3, UnitQuaternion};
+pub use glam;
+use glam::{Mat4, Quat, Vec3};
 use serde::{Deserialize, Serialize};
 
 pub mod desktop;
@@ -25,16 +25,13 @@ pub mod vr;
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
 pub struct Transform {
     /// Position
-    pub pos: Point3<f32>,
+    pub pos: Vec3,
     /// Orientation (Rotation)
-    pub orient: UnitQuaternion<f32>,
+    pub orient: Quat,
 }
 
 impl Component for Transform {
-    const ID: ComponentIdStatic = ComponentIdStatic {
-        id: pkg_namespace!("Transform"),
-        size: 44,
-    };
+    const ID: &'static str = pkg_namespace!("Transform");
 }
 
 impl Default for Transform {
@@ -51,18 +48,18 @@ impl Transform {
 
     /// Turn it into a Matrix;
     /// Represent the transformation as a linear transformation of homogeneous coordinates.
-    pub fn to_homogeneous(&self) -> Matrix4<f32> {
-        Matrix4::new_translation(&self.pos.coords) * self.orient.to_homogeneous()
+    pub fn to_homogeneous(&self) -> Mat4 {
+        Mat4::from_translation(self.pos) * Mat4::from_quat(self.orient)
     }
 
     /// Construct a view matrix from this transform; it's actually the inverse of to_homogeneous()!
-    pub fn view(&self) -> Matrix4<f32> {
+    pub fn view(&self) -> Mat4 {
         // Invert this quaternion, orienting the world into NDC space
         // Represent the rotation in homogeneous coordinates
-        let rotation = self.orient.inverse().to_homogeneous();
+        let rotation = Mat4::from_quat(self.orient.inverse());
 
         // Invert this translation, translating the world into NDC space
-        let translation = Matrix4::new_translation(&-self.pos.coords);
+        let translation = Mat4::from_translation(-self.pos);
 
         // Compose the view
         rotation * translation
@@ -71,19 +68,27 @@ impl Transform {
     /// The identity transformation
     pub fn identity() -> Self {
         Self {
-            pos: Point3::origin(),
-            orient: UnitQuaternion::identity(),
+            pos: Vec3::ZERO,
+            orient: Quat::IDENTITY,
         }
     }
 
-    pub fn with_position(mut self, pos: Point3<f32>) -> Self {
+    pub fn with_position(mut self, pos: Vec3) -> Self {
         self.pos = pos;
         self
     }
 
-    pub fn with_rotation(mut self, orient: UnitQuaternion<f32>) -> Self {
+    pub fn with_rotation(mut self, orient: Quat) -> Self {
         self.orient = orient;
         self
+    }
+
+    pub fn inverse(self) -> Self {
+        let orient = self.orient.inverse();
+        Self {
+            orient,
+            pos: orient * -self.pos,
+        }
     }
 }
 
@@ -146,29 +151,24 @@ macro_rules! make_handle {
     };
 }
 
-impl Into<Isometry3<f32>> for Transform {
-    fn into(self) -> Isometry3<f32> {
-        Isometry3 {
-            rotation: self.orient,
-            translation: Translation3::from(self.pos),
-        }
-    }
-}
-
-impl From<Isometry3<f32>> for Transform {
-    fn from(value: Isometry3<f32>) -> Self {
-        Self {
-            pos: value.translation.vector.into(),
-            orient: value.rotation,
-        }
+impl Into<Mat4> for Transform {
+    fn into(self) -> Mat4 {
+        Mat4::from_quat(self.orient) * Mat4::from_translation(self.pos)
     }
 }
 
 impl Mul for Transform {
     type Output = Self;
     fn mul(self, rhs: Self) -> Self::Output {
-        let lhs: Isometry3<f32> = self.into();
-        let rhs: Isometry3<f32> = rhs.into();
-        (lhs * rhs).into()
+        Self {
+            pos: self.pos + self.orient * rhs.pos,
+            orient: self.orient * rhs.orient,
+        }
+    }
+}
+
+impl Default for GenericHandle {
+    fn default() -> Self {
+        Self(0xBAD_BAD_BAD_BAD_BAD_BAD_BAD_BAD_BAD_BAD)
     }
 }

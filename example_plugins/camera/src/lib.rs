@@ -5,10 +5,10 @@ use cimvr_common::{
         ElementState, InputEvent, InputEvents, KeyboardEvent, ModifiersState, MouseButton,
         MouseEvent,
     },
-    nalgebra::{Point3, UnitQuaternion, Vector3, Vector4},
+    glam::{Mat3, Quat, Vec3, Vec4},
     render::{CameraComponent, Mesh, MeshHandle, Render, UploadMesh, Vertex},
     utils::camera::Perspective,
-    vr::{VrUpdate},
+    vr::VrUpdate,
     Transform,
 };
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
@@ -122,7 +122,7 @@ impl Camera {
 /// Arcball camera parameters
 #[derive(Copy, Clone)]
 pub struct ArcBall {
-    pub pivot: Point3<f32>,
+    pub pivot: Vec3,
     pub distance: f32,
     pub yaw: f32,
     pub pitch: f32,
@@ -136,12 +136,12 @@ impl ArcBall {
         }
     }
 
-    pub fn orient(&self) -> UnitQuaternion<f32> {
-        UnitQuaternion::face_towards(&(self.eye()), &Vector3::y())
+    pub fn orient(&self) -> Quat {
+        face_towards(self.eye(), Vec3::Y)
     }
 
-    pub fn eye(&self) -> Vector3<f32> {
-        Vector3::new(
+    pub fn eye(&self) -> Vec3 {
+        Vec3::new(
             self.yaw.cos() * self.pitch.cos().abs(),
             self.pitch.sin(),
             self.yaw.sin() * self.pitch.cos().abs(),
@@ -207,7 +207,7 @@ impl ArcBallController {
     }
 
     fn pan(&mut self, arcball: &mut ArcBall, delta_x: f32, delta_y: f32) {
-        let delta = Vector4::new(
+        let delta = Vec4::new(
             (-delta_x as f32) * arcball.distance,
             (delta_y as f32) * arcball.distance,
             0.0,
@@ -216,7 +216,7 @@ impl ArcBallController {
 
         // TODO: This is dumb, just use the cross product 4head
         let inv = arcball.camera_transf().to_homogeneous();
-        arcball.pivot += (inv * delta).xyz();
+        arcball.pivot += (inv * delta).truncate();
     }
 
     fn zoom(&mut self, arcball: &mut ArcBall, delta: f32) {
@@ -243,7 +243,7 @@ impl Default for ArcBallController {
 impl Default for ArcBall {
     fn default() -> Self {
         Self {
-            pivot: Point3::new(0., 0., 0.),
+            pivot: Vec3::new(0., 0., 0.),
             pitch: 0.3,
             yaw: 1.92,
             distance: 10.,
@@ -274,4 +274,15 @@ fn hand() -> UploadMesh {
         mesh: Mesh { vertices, indices },
         id: HAND_RDR_ID,
     }
+}
+
+// TODO: Add a PR to glam?
+fn face_towards(dir: Vec3, up: Vec3) -> Quat {
+    let zaxis = dir.normalize();
+    let xaxis = up.cross(zaxis).normalize();
+    let yaxis = zaxis.cross(xaxis).normalize();
+
+    let mat = Mat3::from_cols(xaxis, yaxis, zaxis);
+
+    Quat::from_mat3(&mat)
 }

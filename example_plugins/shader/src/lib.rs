@@ -1,5 +1,5 @@
 use cimvr_common::{
-    nalgebra::Point3,
+    glam::Vec3,
     render::{
         Mesh, MeshHandle, Primitive, Render, RenderExtra, ShaderHandle, ShaderSource, UploadMesh,
         Vertex,
@@ -123,7 +123,7 @@ impl ServerState {
         io.add_component(self.cube_ent, &RenderExtra(extra));
         io.add_component(
             self.cube_ent,
-            &Transform::identity().with_position(Point3::new(time.time.cos(), 0., 0.)),
+            &Transform::identity().with_position(Vec3::new(time.time.cos(), 0., 0.)),
         );
     }
 }

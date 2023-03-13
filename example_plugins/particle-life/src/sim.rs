@@ -1,6 +1,4 @@
-use cimvr_common::{
-    nalgebra::{Point2, Vector2},
-};
+use cimvr_common::glam::Vec2;
 use cimvr_engine_interface::{pcg::Pcg, prelude::*};
 
 use crate::query_accel::QueryAccelerator;
@@ -15,8 +13,8 @@ type Color = u8;
 
 #[derive(Clone, Copy)]
 pub struct Particle {
-    pub pos: Point2<f32>,
-    pub vel: Vector2<f32>,
+    pub pos: Vec2,
+    pub vel: Vec2,
     pub color: Color,
 }
 
@@ -76,7 +74,7 @@ impl SimState {
     }
 
     pub fn step(&mut self, dt: f32) {
-        let points: Vec<Point2<f32>> = self.particles.iter().map(|p| p.pos).collect();
+        let points: Vec<Vec2> = self.particles.iter().map(|p| p.pos).collect();
         let accel = QueryAccelerator::new(&points, self.max_interaction_radius);
 
         let len = self.particles.len();
@@ -89,7 +87,7 @@ impl SimState {
                 let diff = b.pos - a.pos;
 
                 // Distance is capped
-                let dist = diff.magnitude();
+                let dist = diff.length();
 
                 // Accelerate towards b
                 let normal = diff.normalize();
@@ -130,9 +128,8 @@ impl SimConfig {
 fn random_particle(rng: &mut Pcg, config: &SimConfig) -> Particle {
     let range = 5.;
     Particle {
-        pos: Point2::new(rng.gen_f32(), rng.gen_f32()) * range
-            - Vector2::new(range / 2., range / 2.),
-        vel: Vector2::zeros(),
+        pos: Vec2::new(rng.gen_f32(), rng.gen_f32()) * range - Vec2::new(range / 2., range / 2.),
+        vel: Vec2::ZERO,
         color: config.random_color(rng),
     }
 }

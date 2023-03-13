@@ -1,9 +1,17 @@
 //! Types used for communication with the engine
-use std::io::{Read, Write};
+use std::{
+    fmt::Debug,
+    io::{Read, Write},
+};
 
 use crate::prelude::*;
 use bincode::Options;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+
+/// Fixed-size Option type, for use within components
+/// Note that this type implements From/Into for Option<T>
+#[derive(Serialize, Deserialize, Hash, PartialEq, Eq, Clone, Copy)]
+pub struct FixedOption<T>(bool, T);
 
 /// Serialize the message in the standard binary format
 pub fn serialize<T: Serialize>(val: &T) -> bincode::Result<Vec<u8>> {
@@ -73,4 +81,79 @@ fn bincode_opts() -> impl Options {
     bincode::DefaultOptions::new()
         .with_fixint_encoding()
         .allow_trailing_bytes()
+}
+
+impl<T: Default> Default for FixedOption<T> {
+    fn default() -> Self {
+        Self::none()
+    }
+}
+
+impl<T> FixedOption<T> {
+    /// Create a new Some variant
+    pub fn some(t: T) -> Self {
+        Self(true, t)
+    }
+
+    /// Create a new None variant
+    pub fn none() -> Self
+    where
+        T: Default,
+    {
+        Self(false, T::default())
+    }
+
+    pub fn is_some(&self) -> bool {
+        self.0
+    }
+
+    pub fn is_none(&self) -> bool {
+        !self.0
+    }
+
+    pub fn as_ref(&self) -> FixedOption<&T> {
+        FixedOption(self.0, &self.1)
+    }
+}
+
+impl<T> Into<Option<T>> for FixedOption<T> {
+    fn into(self) -> Option<T> {
+        let Self(b, t) = self;
+        b.then(|| t)
+    }
+}
+
+impl<T: Default> From<Option<T>> for FixedOption<T> {
+    fn from(value: Option<T>) -> Self {
+        match value {
+            Option::None => Self::none(),
+            Some(t) => Self::some(t),
+        }
+    }
+}
+
+impl<T: Default + Debug> Debug for FixedOption<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let opt: Option<&T> = self.as_ref().into();
+        opt.fmt(f)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::FixedOption;
+    use crate::is_fixed_size;
+
+    #[test]
+    fn ser_fixed_option() {
+        let a = FixedOption::some(8u32);
+        is_fixed_size(a).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn ser_fixed_option_bad() {
+        let a = FixedOption::some(vec![8u32]);
+        is_fixed_size(a).unwrap();
+    }
 }

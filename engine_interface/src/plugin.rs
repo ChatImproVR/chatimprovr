@@ -1,4 +1,5 @@
 use crate::{
+    component_id,
     pcg::Pcg,
     prelude::*,
     serial::{
@@ -253,11 +254,8 @@ impl EngineIo {
     pub fn add_component<C: Component>(&mut self, entity: EntityId, data: &C) {
         let data = serialize(data).expect("Failed to serialize component data");
 
-        // Sanity check
-        check_component_data_size(C::ID.size, data.len());
-
         self.commands
-            .push(EcsCommand::AddComponent(entity, C::ID.into(), data));
+            .push(EcsCommand::AddComponent(entity, component_id::<C>(), data));
     }
 
     /// Delete an entity and all of it's components
