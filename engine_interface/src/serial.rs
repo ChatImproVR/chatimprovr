@@ -138,3 +138,22 @@ impl<T: Default + Debug> Debug for FixedOption<T> {
         opt.fmt(f)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::FixedOption;
+    use crate::is_fixed_size;
+
+    #[test]
+    fn ser_fixed_option() {
+        let a = FixedOption::some(8u32);
+        is_fixed_size(a).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn ser_fixed_option_bad() {
+        let a = FixedOption::some(vec![8u32]);
+        is_fixed_size(a).unwrap();
+    }
+}
