@@ -1,12 +1,13 @@
 use cimvr_engine::{
     interface::{
-        kobble::{Schema, SchemaDeserializer, DynamicValue},
+        kobble::{DynamicValue, Schema, SchemaDeserializer},
         prelude::{Access, ComponentId, EntityId, QueryComponent},
-        ComponentSchema, serial::{deserialize, serialize, serialize_into},
+        serial::{deserialize, serialize, serialize_into},
+        ComponentSchema,
     },
     Engine,
 };
-use egui::{Context, ScrollArea, Ui};
+use egui::{Context, DragValue, ScrollArea, Ui};
 use std::collections::{HashMap, HashSet};
 
 pub struct ComponentUi {
@@ -74,19 +75,18 @@ impl ComponentUi {
                         let data = engine.ecs().get_raw(entity, component).unwrap();
 
                         SchemaDeserializer::set_schema(schema);
-                        if let Ok(SchemaDeserializer(mut dynamic)) = deserialize(std::io::Cursor::new(data)) {
-
+                        if let Ok(SchemaDeserializer(mut dynamic)) =
+                            deserialize(std::io::Cursor::new(data))
+                        {
                             ui.label(format!("{}", component.id));
 
                             if editor(&mut dynamic, ui) {
                                 let data = engine.ecs().get_mut(entity, component).unwrap();
                                 serialize_into(std::io::Cursor::new(data), &dynamic).unwrap();
                             }
-
                         } else {
                             ui.label(format!("Failed to deserialize {}", component.id));
                         }
-
                     }
                     ui.separator();
                 }
@@ -102,6 +102,30 @@ impl ComponentUi {
     }
 }
 
-fn editor(value: &mut DynamicValue, ui: &Ui) -> bool {
-    false
+fn editor(value: &mut DynamicValue, ui: &mut Ui) -> bool {
+    match value {
+        DynamicValue::F32(v) => ui.add(DragValue::new(v)).changed(),
+        DynamicValue::TupleStruct(name, fields) => {
+            ui.label(name.clone());
+            let mut changed = false;
+            for field_val in fields {
+                ui.horizontal(|ui| {
+                    changed |= editor(field_val, ui);
+                });
+            }
+            changed
+        }
+        DynamicValue::Struct { name, fields } => {
+            ui.label(name.clone());
+            let mut changed = false;
+            for (name, field_val) in fields {
+                ui.horizontal(|ui| {
+                    ui.label(name.clone());
+                    changed |= editor(field_val, ui);
+                });
+            }
+            changed
+        }
+        _ => false,
+    }
 }
