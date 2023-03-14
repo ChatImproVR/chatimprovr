@@ -325,12 +325,16 @@ impl EngineIo {
 
         // Send schema information to host on first use
         if !self.schema_set.contains(&id) {
-            let schema = kobble::Schema::infer::<C>();
-            self.send(&ComponentSchema {
-                id: id.clone(),
-                schema,
-            });
-            self.schema_set.insert(id.clone());
+            match kobble::record_schema::<C>() {
+                Ok(schema) => {
+                    self.send(&ComponentSchema {
+                        id: id.clone(),
+                        schema,
+                    });
+                    self.schema_set.insert(id.clone());
+                }
+                Err(e) => crate::println!("Error generating schema for {}; {:?}", id.id, e),
+            }
         }
 
         self.commands
