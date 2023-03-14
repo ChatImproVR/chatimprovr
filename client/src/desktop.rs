@@ -1,10 +1,10 @@
 use crate::desktop_input::DesktopInputHandler;
 use crate::{Client, Opt};
 use anyhow::Result;
+use cimvr_common::glam::Mat4;
 use cimvr_engine::interface::system::Stage;
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
-use nalgebra::Matrix4;
 use std::sync::Arc;
 
 pub fn mainloop(args: Opt) -> Result<()> {
@@ -68,7 +68,7 @@ pub fn mainloop(args: Opt) -> Result<()> {
 
                 // Render frame
                 client
-                    .render_frame(Matrix4::identity(), 0)
+                    .render_frame(Mat4::IDENTITY, 0)
                     .expect("Frame render");
 
                 // Render UI

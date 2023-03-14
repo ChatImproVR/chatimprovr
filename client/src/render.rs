@@ -1,13 +1,13 @@
 use anyhow::bail;
 use anyhow::format_err;
 use anyhow::Result;
+use cimvr_common::glam::Mat4;
 use cimvr_common::{render::*, Transform};
 use cimvr_engine::interface::prelude::*;
 use cimvr_engine::{interface::{pkg_namespace, component_id}, Engine};
 use gl::HasContext;
 use glow::NativeUniformLocation;
 
-use nalgebra::Matrix4;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -66,7 +66,7 @@ impl RenderPlugin {
     pub fn frame(
         &mut self,
         engine: &mut Engine,
-        vr_view: Matrix4<f32>,
+        vr_view: Mat4,
         camera_idx: usize,
     ) -> Result<()> {
         // Upload render data
@@ -221,8 +221,8 @@ impl RenderEngine {
         &mut self,
         gl: &gl::Context,
         handle: ShaderHandle,
-        view: Matrix4<f32>,
-        proj: Matrix4<f32>,
+        view: Mat4,
+        proj: Mat4,
         transf: Transform,
         extra: Option<RenderExtra>,
     ) -> Result<()> {
@@ -267,7 +267,7 @@ impl GpuShader {
         })
     }
 
-    fn load(&self, gl: &gl::Context, view: Matrix4<f32>, proj: Matrix4<f32>) {
+    fn load(&self, gl: &gl::Context, view: Mat4, proj: Mat4) {
         unsafe {
             // Draw map
             // Must bind program before setting uniforms!!!
@@ -277,13 +277,13 @@ impl GpuShader {
             gl.uniform_matrix_4_f32_slice(
                 gl.get_uniform_location(self.program, "view").as_ref(),
                 false,
-                view.as_slice(),
+                &view.to_cols_array()
             );
 
             gl.uniform_matrix_4_f32_slice(
                 gl.get_uniform_location(self.program, "proj").as_ref(),
                 false,
-                proj.as_slice(),
+                &proj.to_cols_array()
             );
         }
     }

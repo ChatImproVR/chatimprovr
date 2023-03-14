@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use cimvr_common::{
     gamepad::{Axis, GamepadState},
-    nalgebra::{Point3, UnitQuaternion},
+    glam::{EulerRot, Quat, Vec3},
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
@@ -94,8 +94,8 @@ impl ServerState {
                 // If the client already has a cube, update it's position
                 let ClientId(number) = client_id;
                 let transf = Transform {
-                    orient: UnitQuaternion::from_euler_angles(0., msg.axis, 0.),
-                    pos: Point3::new(number as f32 * 1.5, 0., 0.),
+                    orient: Quat::from_euler(EulerRot::XYZ, 0., msg.axis, 0.),
+                    pos: Vec3::new(number as f32 * 1.5, 0., 0.),
                 };
                 io.add_component(*entity, &transf);
             } else {
@@ -146,4 +146,17 @@ impl Message for AxisMessage {
 
 impl Component for SpinningCube {
     const ID: &'static str = pkg_namespace!("ClientOwner");
+}
+
+pub fn from_euler_angles(roll: f32, pitch: f32, yaw: f32) -> Quat {
+    let (sr, cr) = (roll * 0.5).sin_cos();
+    let (sp, cp) = (pitch * 0.5).sin_cos();
+    let (sy, cy) = (yaw * 0.5).sin_cos();
+
+    Quat::from_xyzw(
+        cr.clone() * cp.clone() * cy.clone() + sr.clone() * sp.clone() * sy.clone(),
+        sr.clone() * cp.clone() * cy.clone() - cr.clone() * sp.clone() * sy.clone(),
+        cr.clone() * sp.clone() * cy.clone() + sr.clone() * cp.clone() * sy.clone(),
+        cr * cp * sy - sr * sp * cy,
+    )
 }

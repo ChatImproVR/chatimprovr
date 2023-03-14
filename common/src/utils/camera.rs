@@ -1,4 +1,4 @@
-use nalgebra::Matrix4;
+use glam::Mat4;
 
 use crate::{
     desktop::{InputEvent, InputEvents, WindowEvent},
@@ -13,7 +13,7 @@ pub struct Perspective {
     pub near_plane: f32,
     pub far_plane: f32,
     pub fov: f32,
-    proj: [Matrix4<f32>; 2],
+    proj: [Mat4; 2],
 }
 
 impl Default for Perspective {
@@ -23,7 +23,7 @@ impl Default for Perspective {
             near_plane: 0.01,
             far_plane: 1000.,
             fov: 45_f32.to_radians(),
-            proj: [Matrix4::identity(); 2],
+            proj: [Mat4::IDENTITY; 2],
         }
     }
 }
@@ -36,7 +36,7 @@ impl Perspective {
 
     /// Returns the left and right perpective matrices, respectively.
     /// In desktop mode these matrices will be equal
-    pub fn matrices(&self) -> [Matrix4<f32>; 2] {
+    pub fn matrices(&self) -> [Mat4; 2] {
         self.proj
     }
 
@@ -51,9 +51,9 @@ impl Perspective {
         }
 
         // Get projection matrix
-        let proj = Matrix4::new_perspective(
-            self.screen_size.0 as f32 / self.screen_size.1 as f32,
+        let proj = Mat4::perspective_rh_gl(
             self.fov,
+            self.screen_size.0 as f32 / self.screen_size.1 as f32,
             self.near_plane,
             self.far_plane,
         );
@@ -68,7 +68,7 @@ impl Perspective {
 }
 
 /// Creates a projection matrix for the given fov
-pub fn vr_projection_from_fov(fov: VrFov, near: f32, far: f32) -> Matrix4<f32> {
+pub fn vr_projection_from_fov(fov: VrFov, near: f32, far: f32) -> Mat4 {
     // See https://gitlab.freedesktop.org/monado/demos/openxr-simple-example/-/blob/master/main.c
     // XrMatrix4x4f_CreateProjectionFov()
 
@@ -91,10 +91,10 @@ pub fn vr_projection_from_fov(fov: VrFov, near: f32, far: f32) -> Matrix4<f32> {
 
     let a43 = -(far * near) / (far - near);
 
-    Matrix4::new(
-        a11, 0.0, a31, 0.0, //
-        0.0, a22, a32, 0.0, //
-        0.0, 0.0, a33, a43, //
-        0.0, 0.0, -1.0, 0.0, //
-    )
+    Mat4::from_cols_array_2d(&[
+        [a11, 0.0, a31, 0.0],  //
+        [0.0, a22, a32, 0.0],  //
+        [0.0, 0.0, a33, a43],  //
+        [0.0, 0.0, -1.0, 0.0], //
+    ])
 }

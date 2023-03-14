@@ -1,6 +1,6 @@
 use cimvr_common::{
     desktop::{ElementState, InputEvent, InputEvents, KeyCode},
-    nalgebra::Vector3,
+    glam::Vec3,
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
@@ -21,7 +21,7 @@ struct ClientState {
 /// Movement command sent to server
 #[derive(Serialize, Deserialize, Clone, Copy)]
 pub struct MoveCommand {
-    pub distance: Vector3<f32>,
+    pub distance: Vec3,
 }
 
 /// Component identifing the cube
@@ -96,22 +96,22 @@ impl ClientState {
         }
 
         // Decide which way the cube should move based on keypresses
-        let mut move_vector = Vector3::zeros();
+        let mut move_vector = Vec3::ZERO;
         if self.w_is_pressed {
-            move_vector += Vector3::new(1., 0., 0.)
+            move_vector += Vec3::new(1., 0., 0.)
         }
         if self.a_is_pressed {
-            move_vector += Vector3::new(0., 0., -1.)
+            move_vector += Vec3::new(0., 0., -1.)
         }
         if self.s_is_pressed {
-            move_vector += Vector3::new(-1., 0., 0.)
+            move_vector += Vec3::new(-1., 0., 0.)
         }
         if self.d_is_pressed {
-            move_vector += Vector3::new(0., 0., 1.)
+            move_vector += Vec3::new(0., 0., 1.)
         }
 
         // Send movement command to server
-        if move_vector != Vector3::zeros() {
+        if move_vector != Vec3::ZERO {
             let distance = move_vector.normalize() * frame_time.delta * 10.;
 
             let command = MoveCommand { distance };

@@ -1,5 +1,5 @@
 use cimvr_common::{
-    nalgebra::Point3,
+    glam::Vec3,
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
@@ -42,7 +42,7 @@ impl UserState for ServerState {
             v * 3.
         };
 
-        let pos = Point3::new(rand(), rand(), rand());
+        let pos = Vec3::new(rand(), rand(), rand());
 
         let cube_ent = io.create_entity();
         io.add_component(cube_ent, &Transform::default().with_position(pos));

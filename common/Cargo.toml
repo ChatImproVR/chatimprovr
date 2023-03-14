@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-nalgebra = { version = "0.31.4", features = ["serde-serialize"] }
+glam = { version = "0.23.0", features = ["serde"] }
 cimvr_engine_interface = { path = "../engine_interface" }
 serde = { version = "1", features = ["derive"] }
 bytemuck = "1.12.3"

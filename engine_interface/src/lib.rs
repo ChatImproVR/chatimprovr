@@ -7,9 +7,10 @@
 /// Code specific to WASM plugins
 pub mod plugin;
 
-use std::{
-    borrow::BorrowMut, cell::RefCell, collections::HashMap, marker::PhantomData, sync::Mutex,
-};
+use std::{cell::RefCell, collections::HashMap};
+mod component_validate_error;
+mod component_validation;
+pub use component_validation::is_fixed_size;
 
 pub use log;
 /// Printing functions for plugins
@@ -95,14 +96,20 @@ impl Message for FrameTime {
 #[track_caller]
 fn max_component_size<C: Component>() -> usize {
     let component = C::default();
-    component_validate(&component);
+    validate_component(&component);
     serialized_size(&component).unwrap()
 }
 
 /// Validate that a component is fixed-size
 #[track_caller]
-fn component_validate<C: Component>(c: &C) {
-    // TODO!
+fn validate_component<C: Component>(c: &C) {
+    if let Err(err) = is_fixed_size(&c) {
+        panic!(
+            "The type {} is not fixed-size, and cannot be used as a component; {}",
+            std::any::type_name::<C>(),
+            err
+        )
+    }
 }
 
 /// Component size cache
