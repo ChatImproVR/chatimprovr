@@ -1,12 +1,12 @@
 use cimvr_engine::{
     interface::{
-        kobble::Schema,
+        kobble::{Schema, SchemaDeserializer, DynamicValue},
         prelude::{Access, ComponentId, EntityId, QueryComponent},
-        ComponentSchema,
+        ComponentSchema, serial::{deserialize, serialize, serialize_into},
     },
     Engine,
 };
-use egui::{Context, ScrollArea};
+use egui::{Context, ScrollArea, Ui};
 use std::collections::{HashMap, HashSet};
 
 pub struct ComponentUi {
@@ -47,6 +47,8 @@ impl ComponentUi {
             ui.separator();
 
             // Update displayed entities
+            // TODO: Actually update each frame? Just sort the ids.
+            // Might get a bit jittery with lots of plugins adding/removing entities...
             if needs_update {
                 let query: Vec<QueryComponent> = self
                     .selected
@@ -60,17 +62,31 @@ impl ComponentUi {
                 self.display = engine.ecs().query(&query).into_iter().collect();
             }
 
+            // Component editor
             let mut sorted_components: Vec<ComponentId> = self.selected.iter().cloned().collect();
             sorted_components.sort_by(|a, b| a.id.cmp(&b.id));
 
-            // Component editor
             ScrollArea::vertical().show(ui, |ui| {
                 for &entity in &self.display {
                     ui.label(format!("{:?}", entity));
                     for component in &sorted_components {
-                        //let data = engine.ecs().get_raw(entity, component);
-                        //bin
-                        ui.label(format!("{}", component.id));
+                        let schema = self.schema[component].clone();
+                        let data = engine.ecs().get_raw(entity, component).unwrap();
+
+                        SchemaDeserializer::set_schema(schema);
+                        if let Ok(SchemaDeserializer(mut dynamic)) = deserialize(std::io::Cursor::new(data)) {
+
+                            ui.label(format!("{}", component.id));
+
+                            if editor(&mut dynamic, ui) {
+                                let data = engine.ecs().get_mut(entity, component).unwrap();
+                                serialize_into(std::io::Cursor::new(data), &dynamic).unwrap();
+                            }
+
+                        } else {
+                            ui.label(format!("Failed to deserialize {}", component.id));
+                        }
+
                     }
                     ui.separator();
                 }
@@ -84,4 +100,8 @@ impl ComponentUi {
             self.schema.insert(id, schema);
         }
     }
+}
+
+fn editor(value: &mut DynamicValue, ui: &Ui) -> bool {
+    false
 }
