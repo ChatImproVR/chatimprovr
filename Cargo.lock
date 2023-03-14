@@ -800,6 +800,7 @@ dependencies = [
 [[package]]
 name = "kobble"
 version = "0.1.0"
+source = "git+https://github.com/ChatImproVR/Kobble.git#ff172717561a2ecf03cebe11d50866d160680400"
 dependencies = [
  "once_cell",
  "serde",

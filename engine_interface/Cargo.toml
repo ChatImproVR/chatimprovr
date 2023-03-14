@@ -12,5 +12,5 @@ bincode = "1.3.3"
 serde = { version = "1", features = ["derive"] }
 once_cell = "1.17.0"
 log = "0.4.17"
-#jkobble = { git = "https://github.com/ChatImproVR/Kobble.git" }
-kobble = { path = "../../kobble" }
+kobble = { git = "https://github.com/ChatImproVR/Kobble.git" }
+#kobble = { path = "../../kobble" }

@@ -1,5 +1,4 @@
-//! UI Example
-//! This example is intended to be run with other plugins such as `cube` or `fluid_sim`
+use cimvr_common::render::MeshHandle;
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 
@@ -10,8 +9,16 @@ use server::ServerState;
 
 make_app_state!(ClientState, ServerState);
 
-#[derive(Message, Clone, Debug, Serialize, Deserialize)]
-#[locality("Remote")]
+const CUBE_MESH: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ChangeColor {
     rgb: [f32; 3],
+}
+
+impl Message for ChangeColor {
+    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+        id: pkg_namespace!("ChangeColor"),
+        locality: Locality::Remote,
+    };
 }
