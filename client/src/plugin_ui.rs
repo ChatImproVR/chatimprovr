@@ -27,7 +27,7 @@ impl PluginUi {
             return;
         }
 
-        egui::SidePanel::left("my_side_panel").show(ctx, |ui| {
+        egui::SidePanel::left("PluginUi").show(ctx, |ui| {
             ScrollArea::vertical().show(ui, |ui| {
                 for (id, elem) in self.elements.iter_mut() {
                     ui.label(&elem.name);

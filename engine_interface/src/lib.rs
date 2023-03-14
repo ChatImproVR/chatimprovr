@@ -7,6 +7,7 @@
 /// Code specific to WASM plugins
 pub mod plugin;
 
+pub use kobble;
 use std::{cell::RefCell, collections::HashMap};
 mod component_validate_error;
 pub mod component_validation;
