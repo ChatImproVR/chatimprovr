@@ -1,7 +1,7 @@
 use cimvr_engine::{
     interface::{
         kobble::Schema,
-        prelude::{Access, ComponentId, QueryComponent},
+        prelude::{Access, ComponentId, EntityId, QueryComponent},
         ComponentSchema,
     },
     Engine,
@@ -12,6 +12,7 @@ use std::collections::{HashMap, HashSet};
 pub struct ComponentUi {
     schema: HashMap<ComponentId, Schema>,
     selected: HashSet<ComponentId>,
+    display: Vec<EntityId>,
 }
 
 impl ComponentUi {
@@ -20,11 +21,14 @@ impl ComponentUi {
         Self {
             schema: Default::default(),
             selected: Default::default(),
+            display: Default::default(),
         }
     }
 
     pub fn run(&mut self, ctx: &Context, engine: &mut Engine) {
         egui::SidePanel::left("ComponentUi").show(ctx, |ui| {
+            // Component selector
+            let mut needs_update = false;
             ui.label("Components:");
             for id in self.schema.keys() {
                 let has_id = self.selected.contains(id);
@@ -37,25 +41,31 @@ impl ComponentUi {
                     } else {
                         self.selected.insert(id.clone());
                     }
+                    needs_update = true;
                 }
             }
             ui.separator();
 
-            //ScrollArea::vertical().show(ui, |ui| {
-            /*
-            for selection in &self.schema {
-                let entities = engine.ecs().query(&[QueryComponent {
-                    component: id.clone(),
-                    access: Access::Write,
-                }]);
-                ui.label(&id.id);
-                for ent in &entities {
-                    ui.label(format!("    {:?}", ent));
-                }
-                //ui.label(&format!("{:?}", schema));
+            // Update displayed entities
+            if needs_update {
+                let query: Vec<QueryComponent> = self
+                    .selected
+                    .iter()
+                    .map(|id| QueryComponent {
+                        component: id.clone(),
+                        access: Access::Write,
+                    })
+                    .collect();
+
+                self.display = engine.ecs().query(&query).into_iter().collect();
             }
-            */
-            //});
+
+            // Component editor
+            ScrollArea::vertical().show(ui, |ui| {
+                for &entity in &self.display {
+                    ui.label(format!("{:?}", entity));
+                }
+            })
         });
     }
 
