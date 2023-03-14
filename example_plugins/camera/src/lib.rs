@@ -8,7 +8,7 @@ use cimvr_common::{
     nalgebra::{Point3, UnitQuaternion, Vector3, Vector4},
     render::{CameraComponent, Mesh, MeshHandle, Render, UploadMesh, Vertex},
     utils::camera::Perspective,
-    vr::{VrUpdate},
+    vr::VrUpdate,
     Transform,
 };
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};

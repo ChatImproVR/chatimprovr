@@ -24,9 +24,8 @@ pub struct MoveCommand {
     pub distance: Vector3<f32>,
 }
 
-// #[derive(Serialize, Deserialize, Clone, Copy)]
-#[derive(ComponentDerive, Serialize, Deserialize, Clone, Copy)]
-#[size(12)]
+/// Component identifing the cube
+#[derive(Serialize, Deserialize, Default, Clone, Copy)]
 pub struct CubeFlag;
 
 make_app_state!(ClientState, ServerState);
@@ -186,6 +185,12 @@ fn cube() -> Mesh {
     Mesh { vertices, indices }
 }
 
+<<<<<<< HEAD
+=======
+impl Component for CubeFlag {
+    const ID: &'static str = pkg_namespace!("Cube Flag");
+}
+>>>>>>> a852676351362950a43cf777a53b7a021eeec645
 
 impl Message for MoveCommand {
     const CHANNEL: ChannelIdStatic = ChannelIdStatic {

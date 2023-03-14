@@ -7,6 +7,10 @@
 /// Code specific to WASM plugins
 pub mod plugin;
 
+use std::{
+    borrow::BorrowMut, cell::RefCell, collections::HashMap, marker::PhantomData, sync::Mutex,
+};
+
 pub use log;
 /// Printing functions for plugins
 pub mod stdout;
@@ -55,18 +59,17 @@ macro_rules! pkg_namespace {
 ///
 /// Client-side these are not saved to disk, but they are still useful for plugins maintaining
 /// local ECS data in between plugin reloads
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Saved;
 
-use ecs::{Component, ComponentIdStatic};
-use prelude::{ChannelIdStatic, Locality, Message};
+use ecs::Component;
+use once_cell::sync::Lazy;
+use prelude::{ChannelIdStatic, ComponentId, Locality, Message};
 use serde::{Deserialize, Serialize};
+use serial::serialized_size;
 
 impl Component for Saved {
-    const ID: ComponentIdStatic = ComponentIdStatic {
-        id: pkg_namespace!("Saved"),
-        size: 0,
-    };
+    const ID: &'static str = pkg_namespace!("Saved");
 }
 
 // TODO: Use an integer of nanoseconds instead?
@@ -86,4 +89,57 @@ impl Message for FrameTime {
         id: pkg_namespace!("FrameTime"),
         locality: Locality::Local,
     };
+}
+
+/// Get the maximum size of this component
+#[track_caller]
+fn max_component_size<C: Component>() -> usize {
+    let component = C::default();
+    component_validate(&component);
+    serialized_size(&component).unwrap()
+}
+
+/// Validate that a component is fixed-size
+#[track_caller]
+fn component_validate<C: Component>(c: &C) {
+    // TODO!
+}
+
+/// Component size cache
+pub(crate) struct SizeCache(HashMap<&'static str, usize>);
+
+thread_local! {
+    /// Thread local component size cache
+    static SIZE_CACHE: RefCell<Lazy<SizeCache>> = RefCell::new(Lazy::new(|| SizeCache::new()));
+}
+
+impl SizeCache {
+    pub fn new() -> Self {
+        SizeCache(HashMap::new())
+    }
+
+    /// Get the size in bytse of the given component
+    #[track_caller]
+    pub fn size<C: Component>(&mut self) -> usize {
+        let SizeCache(map) = self;
+        *map.entry(C::ID)
+            .or_insert_with(|| max_component_size::<C>())
+    }
+}
+
+/// Get the size of a component
+#[track_caller]
+pub fn component_size_cached<C: Component>() -> usize {
+    SIZE_CACHE.with(|cache| cache.borrow_mut().size::<C>())
+}
+
+/// Get the ComponentId of a Component
+pub fn component_id<C: Component>() -> ComponentId {
+    let size = component_size_cached::<C>()
+        .try_into()
+        .expect("Component is too large");
+    ComponentId {
+        id: C::ID.into(),
+        size,
+    }
 }

@@ -5,7 +5,6 @@ use cimvr_common::{
 };
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
 
-
 make_app_state!(ClientState, ServerState);
 
 struct ClientState {

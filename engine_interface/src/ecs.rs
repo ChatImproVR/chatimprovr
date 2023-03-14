@@ -6,7 +6,11 @@ use std::ops::Range;
 
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-use crate::serial::{deserialize, serialize, EcsData};
+use crate::{
+    component_id, component_size_cached,
+    serial::{deserialize, serialize, EcsData},
+    SIZE_CACHE,
+};
 
 /// A single requirement in a query
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -30,40 +34,6 @@ pub struct ComponentId {
     /// Universally-unique id
     pub id: String,
     /// Serialized size in bytes
-    ///
-    /// # Preemptive FAQ:
-    ///
-    /// ## Q: What? How do I get this number?
-    /// A: Just put any ol number in and use it in `add_component()` once.
-    /// The resulting crash will inform you of the size
-    ///
-    /// A: Or just use `engine_interface::serial::serialized_size()` at runtime
-    ///
-    ///
-    /// ## Q: Why do you need this?
-    /// A: So the engine can check that it's right
-    ///
-    /// A: To easily move components around in memory
-    ///
-    /// A: To help uniquely identify the database entity with it's data type
-    ///
-    /// ## Q: Is this the same as the size of the associated type?
-    ///
-    /// A: Not always! `std::mem::size_of<T>()` (`where T: Component`)
-    /// can be different than `serialized_size::<T>()`.
-    /// Layout in memory subject to change
-    ///
-    /// ## Q: Why is this u16?
-    ///
-    /// A: Are you kidding? Components bigger than 64k? Are you outta your mind?!
-    ///
-    /// A: Honestly this should be u8 but I was merciful.
-    pub size: u16,
-}
-
-/// Static version of ComponentId
-pub struct ComponentIdStatic {
-    pub id: &'static str,
     pub size: u16,
 }
 
@@ -84,9 +54,9 @@ pub enum Access {
 
 /// Trait describing an ECS component
 // Copy bound here is to discourage variable-sized types!
-pub trait Component: Serialize + DeserializeOwned + Copy {
+pub trait Component: Serialize + DeserializeOwned + Copy + Default {
     /// Unique ID of this component
-    const ID: ComponentIdStatic;
+    const ID: &'static str;
 }
 
 /// Single command to be sent to engine
@@ -101,7 +71,7 @@ pub enum EcsCommand {
 impl QueryComponent {
     pub fn new<T: Component>(access: Access) -> Self {
         Self {
-            component: T::ID.into(),
+            component: component_id::<T>(),
             access,
         }
     }
@@ -145,16 +115,16 @@ impl QueryResult {
 
     /// Get the relevant component storage indices and
     #[track_caller]
-    fn indices<T: Component>(&self, entity: EntityId) -> (usize, Range<usize>) {
+    fn indices<C: Component>(&self, entity: EntityId) -> (usize, Range<usize>) {
         let entity_idx = self.get_entity_index(entity);
 
         let component_idx = self
             .query
             .iter()
-            .position(|c| c.component == T::ID.into())
+            .position(|c| c.component.id == C::ID)
             .expect("Attempted to access component not queried");
 
-        let size = T::ID.size as usize;
+        let size = component_size_cached::<C>() as usize;
         let begin = entity_idx * size;
         let end = begin + size;
 
@@ -172,13 +142,12 @@ impl QueryResult {
 
     /// Write the given data to the component
     #[track_caller]
-    pub fn write<C: Component>(&mut self, entity: EntityId, data: &C) {
+    pub fn write<C: Component>(&mut self, entity: EntityId, component: &C) {
         let entity_idx = self.get_entity_index(entity);
         let entity = self.ecs.entities[entity_idx];
         // Serialize data
         // TODO: Never allocate in hot loops!
-        let data = serialize(data).expect("Failed to serialize component for writing");
-        check_component_data_size(C::ID.size, data.len());
+        let data = serialize(component).expect("Failed to serialize component for writing");
 
         // Write back to ECS storage for possible later modification. This is never read by the
         // host, but MAY be read by us!
@@ -188,7 +157,7 @@ impl QueryResult {
 
         // Write host command
         self.commands
-            .push(EcsCommand::AddComponent(entity, C::ID.into(), data))
+            .push(EcsCommand::AddComponent(entity, component_id::<C>(), data))
     }
 
     // TODO: This is dreadfully slow but there's no way around that
@@ -211,13 +180,4 @@ pub fn check_component_data_size(component_size: u16, size: usize) {
         size,
         component_size
     );
-}
-
-impl From<ComponentIdStatic> for ComponentId {
-    fn from(value: ComponentIdStatic) -> Self {
-        Self {
-            id: value.id.into(),
-            size: value.size,
-        }
-    }
 }

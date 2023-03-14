@@ -1,6 +1,7 @@
 use ahash::{HashMap, HashMapExt, HashSet, HashSetExt};
 use anyhow::Result;
 use cimvr_engine_interface::{
+    component_id,
     prelude::*,
     serial::{deserialize, serialize, EcsData},
 };
@@ -99,7 +100,7 @@ impl Ecs {
     pub fn add_component<C: Component>(&mut self, entity: EntityId, data: &C) {
         self.add_component_raw(
             entity,
-            &C::ID.into(),
+            &component_id::<C>(),
             &serialize(data).expect("Failed to serialize component"),
         );
     }
@@ -151,7 +152,7 @@ impl Ecs {
     /// Convenient get function
     pub fn get<C: Component>(&self, entity: EntityId) -> Option<C> {
         Some(
-            deserialize(self.get_raw(entity, &C::ID.into())?)
+            deserialize(self.get_raw(entity, &component_id::<C>())?)
                 .expect("Failed to deserialize component"),
         )
     }
