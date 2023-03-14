@@ -126,6 +126,20 @@ fn editor(value: &mut DynamicValue, ui: &mut Ui) -> bool {
             }
             changed
         }
+        DynamicValue::Enum(schema, sel_idx) => {
+            let mut changed = false;
+            ui.label(schema.name.clone());
+            ui.horizontal(|ui| {
+                for (idx, variant) in schema.variants.iter().enumerate() {
+                    let clicked = ui.radio(idx == *sel_idx as usize, variant).clicked();
+                    changed |= clicked;
+                    if clicked {
+                        *sel_idx = idx as u32;
+                    }
+                }
+            });
+            changed
+        }
         _ => false,
     }
 }
