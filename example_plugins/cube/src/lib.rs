@@ -24,25 +24,25 @@ impl UserState for ClientState {
             id: CUBE_HANDLE,
         });
 
+        // Create an entity
+        let cube_ent = io.create_entity();
+        // Attach a Transform component (which defaults to the origin)
+        io.add_component(cube_ent, &Transform::default());
+        // Attach the Render component, which details how the object should be drawn
+        // Note that we use CUBE_HANDLE here, to tell the rendering engine to draw the cube
+        io.add_component(
+            cube_ent,
+            &Render::new(CUBE_HANDLE).primitive(Primitive::Triangles),
+        );
+        // Attach the Synchronized component, which will copy the object to clients
+        //io.add_component(cube_ent, &Synchronized);
+
         Self
     }
 }
 
 impl UserState for ServerState {
     fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
-        // Create an entity
-        let _cube_ent = io
-            .create_entity()
-            // Attach a Transform component (which defaults to the origin)
-            .add_component(Transform::default())
-            // Attach the Render component, which details how the object should be drawn
-            // Note that we use CUBE_HANDLE here, to tell the rendering engine to draw the cube
-            .add_component(Render::new(CUBE_HANDLE).primitive(Primitive::Triangles))
-            // Attach the Synchronized component, which will copy the object to clients
-            .add_component(Synchronized)
-            // And get the entity ID
-            .build();
-
         Self
     }
 }

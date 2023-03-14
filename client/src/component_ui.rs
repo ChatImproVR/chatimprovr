@@ -72,7 +72,7 @@ impl ComponentUi {
                     ui.label(format!("{:?}", entity));
                     for component in &sorted_components {
                         let schema = self.schema[component].clone();
-                        let data = engine.ecs().get_raw(entity, component).unwrap();
+                        let Some(data) = engine.ecs().get_raw(entity, component) else { continue };
 
                         SchemaDeserializer::set_schema(schema);
                         if let Ok(SchemaDeserializer(mut dynamic)) =
@@ -81,7 +81,7 @@ impl ComponentUi {
                             ui.label(format!("{}", component.id));
 
                             if editor(&mut dynamic, ui) {
-                                let data = engine.ecs().get_mut(entity, component).unwrap();
+                                let Some(data) = engine.ecs().get_mut(entity, component) else { continue };
                                 serialize_into(std::io::Cursor::new(data), &dynamic).unwrap();
                             }
                         } else {
@@ -104,7 +104,7 @@ impl ComponentUi {
 
 fn editor(value: &mut DynamicValue, ui: &mut Ui) -> bool {
     match value {
-        DynamicValue::F32(v) => ui.add(DragValue::new(v)).changed(),
+        DynamicValue::F32(v) => ui.add(DragValue::new(v).speed(0.1)).changed(),
         DynamicValue::TupleStruct(name, fields) => {
             ui.label(name.clone());
             let mut changed = false;
