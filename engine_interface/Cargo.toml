@@ -10,5 +10,7 @@ serverside = []
 cimvr_derive_macros = { path = "../engine_derive_macros" }
 bincode = "1.3.3"
 serde = { version = "1", features = ["derive"] }
-once_cell = "1.16.0"
+once_cell = "1.17.0"
 log = "0.4.17"
+#jkobble = { git = "https://github.com/ChatImproVR/Kobble.git" }
+kobble = { path = "../../kobble" }

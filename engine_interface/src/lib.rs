@@ -109,7 +109,8 @@ fn validate_component<C: Component>(c: &C) {
 pub fn component_size_cached<C: Component>() -> usize {
     thread_local! {
         /// Thread local component size cache
-        static SIZE_CACHE: RefCell<Lazy<HashMap<&'static str, usize>>> = RefCell::new(Lazy::new(|| HashMap::new()));
+        static SIZE_CACHE: RefCell<Lazy<HashMap<&'static str, usize>>>
+            = RefCell::new(Lazy::new(|| HashMap::new()));
     }
     SIZE_CACHE.with(|cache| {
         *cache
@@ -128,4 +129,18 @@ pub fn component_id<C: Component>() -> ComponentId {
         id: C::ID.into(),
         size,
     }
+}
+
+/// Component schema information
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ComponentSchema {
+    pub id: ComponentId,
+    pub schema: kobble::Schema,
+}
+
+impl Message for ComponentSchema {
+    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+        id: pkg_namespace!("ComponentSchema"),
+        locality: Locality::Local,
+    };
 }
