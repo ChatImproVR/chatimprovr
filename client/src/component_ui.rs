@@ -33,7 +33,7 @@ impl ComponentUi {
             ui.label("Components:");
             for id in self.schema.keys() {
                 let has_id = self.selected.contains(id);
-                let marker = if has_id { '-' } else { '+' };
+                let marker = if has_id { "[-] " } else { "" };
                 let button = ui.button(format!("{}{}", marker, id.id));
 
                 if button.clicked() {
