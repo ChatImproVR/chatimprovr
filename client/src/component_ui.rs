@@ -60,10 +60,19 @@ impl ComponentUi {
                 self.display = engine.ecs().query(&query).into_iter().collect();
             }
 
+            let mut sorted_components: Vec<ComponentId> = self.selected.iter().cloned().collect();
+            sorted_components.sort_by(|a, b| a.id.cmp(&b.id));
+
             // Component editor
             ScrollArea::vertical().show(ui, |ui| {
                 for &entity in &self.display {
                     ui.label(format!("{:?}", entity));
+                    for component in &sorted_components {
+                        //let data = engine.ecs().get_raw(entity, component);
+                        //bin
+                        ui.label(format!("{}", component.id));
+                    }
+                    ui.separator();
                 }
             })
         });
