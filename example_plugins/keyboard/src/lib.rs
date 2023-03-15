@@ -4,9 +4,9 @@ use cimvr_common::{
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
+use cimvr_derive_macros::ComponentDerive;
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, FrameTime};
 use serde::{Deserialize, Serialize};
-use cimvr_derive_macros::ComponentDerive;
 
 struct ServerState;
 
@@ -16,7 +16,6 @@ struct ClientState {
     s_is_pressed: bool,
     d_is_pressed: bool,
 }
-
 
 /// Movement command sent to server
 #[derive(Serialize, Deserialize, Clone, Copy)]
@@ -34,7 +33,6 @@ make_app_state!(ClientState, ServerState);
 const CUBE_HANDLE: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
 
 impl UserState for ClientState {
-
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         // Make the cube mesh available to the rendering engine
         io.send(&UploadMesh {

@@ -36,11 +36,11 @@ pub struct ComponentId {
     pub size: u16,
 }
 
-impl ComponentIdStatic {
-    pub const fn new(id: &'static str, size: u16) -> Self {
-        Self { id, size: 0 }
-    }
-}
+// impl ComponentIdStatic {
+//     pub const fn new(id: &'static str, size: u16) -> Self {
+//         Self { id, size: 0 }
+//     }
+// }
 
 /// Access level for the given component
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
