@@ -1,7 +1,7 @@
 use glam::Mat4;
 
 use crate::{
-    desktop::{InputEvent, InputEvents, WindowEvent},
+    desktop::{InputEvent, WindowEvent},
     vr::{VrFov, VrUpdate},
 };
 
@@ -41,13 +41,11 @@ impl Perspective {
     }
 
     /// Returns and appropriate perspective matrix matching the size of the window
-    pub fn handle_input_events(&mut self, input: &InputEvents) {
+    pub fn handle_input_events(&mut self, input: &InputEvent) {
         // Handle input events for desktop mode
-        let InputEvents(events) = input;
-        for event in events {
-            if let InputEvent::Window(WindowEvent::Resized { width, height }) = event {
-                self.screen_size = (*width, *height);
-            }
+        // let InputEvents(events) = input;
+        if let InputEvent::Window(WindowEvent::Resized { width, height }) = input {
+            self.screen_size = (*width, *height);
         }
 
         // Get projection matrix

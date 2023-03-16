@@ -2,7 +2,7 @@ use std::f32::consts::FRAC_PI_2;
 
 use cimvr_common::{
     desktop::{
-        ElementState, InputEvent, InputEvents, KeyboardEvent, ModifiersState, MouseButton,
+        ElementState, InputEvent, KeyboardEvent, ModifiersState, MouseButton,
         MouseEvent,
     },
     glam::{Mat3, Quat, Vec3, Vec4},
@@ -46,7 +46,7 @@ impl UserState for Camera {
         schedule.add_system(
             Self::update,
             SystemDescriptor::new(Stage::PreUpdate)
-                .subscribe::<InputEvents>()
+                .subscribe::<InputEvent>()
                 .subscribe::<VrUpdate>()
                 .query::<Transform>(Access::Write)
                 .query::<CameraComponent>(Access::Write),
@@ -71,21 +71,17 @@ impl UserState for Camera {
 impl Camera {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         // Handle input events for desktop mode
-        if let Some(input) = io.inbox_first::<InputEvents>() {
+        for ref input in io.inbox::<InputEvent>() {
             // Handle window resizing
-            self.proj.handle_input_events(&input);
-
-            //dbg!(&input);
+            self.proj.handle_input_events(input);
 
             // Handle pivot/pan
-            for event in input.0 {
-                self.arcball_control.handle_event(&event, &mut self.arcball);
-            }
+            self.arcball_control.handle_event(&input, &mut self.arcball);
+        }
 
-            // Set camera transform to arcball position
-            for key in query.iter() {
-                query.write::<Transform>(key, &self.arcball.camera_transf());
-            }
+        // Set camera transform to arcball position
+        for key in query.iter() {
+            query.write::<Transform>(key, &self.arcball.camera_transf());
         }
 
         // Handle events for VR

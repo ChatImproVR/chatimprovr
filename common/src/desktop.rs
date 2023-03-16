@@ -5,10 +5,6 @@ use serde::{Deserialize, Serialize};
 // TODO: Gamepad support!
 // TODO: Touchscreen support!
 
-/// Input events reported each frame
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct InputEvents(pub Vec<InputEvent>);
-
 /// Basic input events
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum InputEvent {
@@ -34,9 +30,9 @@ pub enum WindowEvent {
     Resized { width: u32, height: u32 },
 }
 
-impl Message for InputEvents {
+impl Message for InputEvent {
     const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("InputEvents"),
+        id: pkg_namespace!("InputEvent"),
         locality: Locality::Local,
     };
 }
