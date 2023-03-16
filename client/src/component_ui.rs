@@ -106,7 +106,7 @@ fn editor(value: &mut DynamicValue, ui: &mut Ui) -> bool {
     match value {
         DynamicValue::Unit => false,
         DynamicValue::Bool(b) => ui.checkbox(b, "").clicked(),
-        DynamicValue::String(s) => {
+        DynamicValue::String(s) | DynamicValue::UnitStruct(s) => {
             ui.label(s.clone());
             false
         }
@@ -127,6 +127,14 @@ fn editor(value: &mut DynamicValue, ui: &mut Ui) -> bool {
             changed
         }
         DynamicValue::TupleStruct(name, fields) => {
+            if name == "Mat4" {
+                return edit_matrix(value, ui);
+            }
+
+            if matches!(name.as_str(), "Vec3" | "Vec4" | "Quat") {
+                return edit_vector(value, ui);
+            }
+
             ui.label(name.clone());
             let mut changed = false;
             for field_val in fields {
@@ -149,7 +157,6 @@ fn editor(value: &mut DynamicValue, ui: &mut Ui) -> bool {
         }
         DynamicValue::Enum(schema, sel_idx) => {
             let mut changed = false;
-            ui.label(schema.name.clone());
             ui.horizontal(|ui| {
                 for (idx, variant) in schema.variants.iter().enumerate() {
                     let clicked = ui.radio(idx == *sel_idx as usize, variant).clicked();
@@ -169,11 +176,56 @@ fn editor(value: &mut DynamicValue, ui: &mut Ui) -> bool {
         DynamicValue::U32(v) => ui.add(DragValue::new(v).speed(0.1)).changed(),
         DynamicValue::I64(v) => ui.add(DragValue::new(v).speed(0.1)).changed(),
         DynamicValue::U64(v) => ui.add(DragValue::new(v).speed(0.1)).changed(),
+        DynamicValue::I128(v) => {
+            ui.label(format!("{}", v));
+            false
+        }
+        DynamicValue::U128(v) => {
+            ui.label(format!("{}", v));
+            false
+        }
+        DynamicValue::Char(c) => {
+            ui.label(format!("{}", c));
+            false
+        }
         DynamicValue::F32(v) => ui.add(DragValue::new(v).speed(0.1)).changed(),
         DynamicValue::F64(v) => ui.add(DragValue::new(v).speed(0.1)).changed(),
-        other => { 
-            ui.label(format!("Unimplemented {:?}", other));
-            false
-        },
+    }
+}
+
+fn edit_matrix(value: &mut DynamicValue, ui: &mut Ui) -> bool {
+    if let DynamicValue::TupleStruct(_, fields) = value {
+        let mut changed = false;
+        ui.vertical(|ui| {
+            for row in fields.chunks_exact_mut(4) {
+                ui.horizontal(|ui| {
+                    for col in row {
+                        if let DynamicValue::F32(v) = col {
+                            changed |= ui.add(DragValue::new(v).speed(0.1)).changed();
+                        }
+                    }
+                });
+            }
+        });
+        changed
+    } else {
+        false
+    }
+}
+
+fn edit_vector(value: &mut DynamicValue, ui: &mut Ui) -> bool {
+    if let DynamicValue::TupleStruct(_, fields) = value {
+        let mut changed = false;
+        ui.horizontal(|ui| {
+            let names = ["x: ", "y: ", "z: ", "w: "];
+            for (col, name) in fields.iter_mut().zip(names) {
+                if let DynamicValue::F32(v) = col {
+                    changed |= ui.add(DragValue::new(v).prefix(name).speed(0.1)).changed();
+                }
+            }
+        });
+        changed
+    } else {
+        false
     }
 }
