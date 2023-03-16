@@ -104,7 +104,28 @@ impl ComponentUi {
 
 fn editor(value: &mut DynamicValue, ui: &mut Ui) -> bool {
     match value {
-        DynamicValue::F32(v) => ui.add(DragValue::new(v).speed(0.1)).changed(),
+        DynamicValue::Unit => false,
+        DynamicValue::Bool(b) => ui.checkbox(b, "").clicked(),
+        DynamicValue::String(s) => {
+            ui.label(s.clone());
+            false
+        }
+        DynamicValue::NewtypeStruct(name, field) => {
+            ui.horizontal(|ui| {
+                ui.label(name.clone());
+                editor(field, ui)
+            })
+            .inner
+        }
+        DynamicValue::Tuple(fields) => {
+            let mut changed = false;
+            for field_val in fields {
+                ui.horizontal(|ui| {
+                    changed |= editor(field_val, ui);
+                });
+            }
+            changed
+        }
         DynamicValue::TupleStruct(name, fields) => {
             ui.label(name.clone());
             let mut changed = false;
@@ -140,6 +161,19 @@ fn editor(value: &mut DynamicValue, ui: &mut Ui) -> bool {
             });
             changed
         }
-        _ => false,
+        DynamicValue::I8(v) => ui.add(DragValue::new(v).speed(0.1)).changed(),
+        DynamicValue::U8(v) => ui.add(DragValue::new(v).speed(0.1)).changed(),
+        DynamicValue::I16(v) => ui.add(DragValue::new(v).speed(0.1)).changed(),
+        DynamicValue::U16(v) => ui.add(DragValue::new(v).speed(0.1)).changed(),
+        DynamicValue::I32(v) => ui.add(DragValue::new(v).speed(0.1)).changed(),
+        DynamicValue::U32(v) => ui.add(DragValue::new(v).speed(0.1)).changed(),
+        DynamicValue::I64(v) => ui.add(DragValue::new(v).speed(0.1)).changed(),
+        DynamicValue::U64(v) => ui.add(DragValue::new(v).speed(0.1)).changed(),
+        DynamicValue::F32(v) => ui.add(DragValue::new(v).speed(0.1)).changed(),
+        DynamicValue::F64(v) => ui.add(DragValue::new(v).speed(0.1)).changed(),
+        other => { 
+            ui.label(format!("Unimplemented {:?}", other));
+            false
+        },
     }
 }
