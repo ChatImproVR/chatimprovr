@@ -1,5 +1,5 @@
 use cimvr_common::{
-    desktop::{ElementState, InputEvent, InputEvents, KeyCode},
+    desktop::{ElementState, InputEvent, KeyCode},
     nalgebra::Vector3,
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
@@ -43,7 +43,7 @@ impl UserState for ClientState {
         sched.add_system(
             Self::update,
             SystemDescriptor::new(Stage::Update)
-                .subscribe::<InputEvents>()
+                .subscribe::<InputEvent>()
                 .subscribe::<FrameTime>(),
         );
 
@@ -63,31 +63,27 @@ impl ClientState {
         let Some(frame_time) = io.inbox_first::<FrameTime>() else { return };
 
         // Handle input events
-        if let Some(InputEvents(events)) = io.inbox_first() {
-            for event in events {
-                if let InputEvent::Keyboard(cimvr_common::desktop::KeyboardEvent::Key {
-                    key,
-                    state,
-                }) = event
-                {
-                    // Update key press information
-                    let is_pressed = state == ElementState::Pressed;
+        for event in io.inbox::<InputEvent>() {
+            if let InputEvent::Keyboard(cimvr_common::desktop::KeyboardEvent::Key { key, state }) =
+                event
+            {
+                // Update key press information
+                let is_pressed = state == ElementState::Pressed;
 
-                    if key == KeyCode::W {
-                        self.w_is_pressed = is_pressed;
-                    }
+                if key == KeyCode::W {
+                    self.w_is_pressed = is_pressed;
+                }
 
-                    if key == KeyCode::A {
-                        self.a_is_pressed = is_pressed;
-                    }
+                if key == KeyCode::A {
+                    self.a_is_pressed = is_pressed;
+                }
 
-                    if key == KeyCode::S {
-                        self.s_is_pressed = is_pressed;
-                    }
+                if key == KeyCode::S {
+                    self.s_is_pressed = is_pressed;
+                }
 
-                    if key == KeyCode::D {
-                        self.d_is_pressed = is_pressed;
-                    }
+                if key == KeyCode::D {
+                    self.d_is_pressed = is_pressed;
                 }
             }
         }

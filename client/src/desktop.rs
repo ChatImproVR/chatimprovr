@@ -47,7 +47,7 @@ pub fn mainloop(args: Opt) -> Result<()> {
                 client.download().expect("Message download");
 
                 // Send input history
-                client.engine().send(input.get_history());
+                input.get_history(client.engine());
                 let gamepad_state = client.gamepad.update();
                 client.engine().send(gamepad_state);
 
@@ -104,5 +104,5 @@ pub fn mainloop(args: Opt) -> Result<()> {
             }
             _ => (),
         }
-    });
+    })
 }
