@@ -18,6 +18,9 @@ pub mod utils;
 pub mod vr;
 
 /// # Component representing position and orientation
+/// # Arguments
+/// * `pos` - Position
+/// * `orient` - Orientation (Rotation)
 ///
 /// Represents a rotation, followed by a translation.
 /// Composable through the multiplication (`*`) operator.
@@ -28,6 +31,7 @@ pub struct Transform {
     pub pos: Vec3,
     /// Orientation (Rotation)
     pub orient: Quat,
+    // TODO: Add scale into transform.
 }
 
 impl Component for Transform {

@@ -61,6 +61,11 @@ pub struct MessageData {
 
 /// Trait denoting a Message type, which identifies a message by it's ID
 ///
+/// # Arguments
+///
+/// * `CHANNEL` - Channel ID
+///  
+///
 /// See note about `CHANNEL`
 pub trait Message: Serialize + DeserializeOwned + Sized {
     /// Channel ID

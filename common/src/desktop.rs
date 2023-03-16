@@ -9,6 +9,32 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct InputEvents(pub Vec<InputEvent>);
 
+impl InputEvents {
+    pub fn keyboard_events(&self) -> impl Iterator<Item = &KeyboardEvent> + '_ {
+        let InputEvents(events) = self;
+        events.iter().filter_map(|item| match item {
+            InputEvent::Keyboard(item) => Some(item),
+            _ => None,
+        })
+    }
+
+    pub fn mouse_events(&self) -> impl Iterator<Item = &MouseEvent> + '_ {
+        let InputEvents(events) = self;
+        events.iter().filter_map(|item| match item {
+            InputEvent::Mouse(mouse_item) => Some(mouse_item),
+            _ => None,
+        })
+    }
+
+    pub fn window_events(&self) -> impl Iterator<Item = &WindowEvent> + '_ {
+        let InputEvents(events) = self;
+        events.iter().filter_map(|item| match item {
+            InputEvent::Window(window_item) => Some(window_item),
+            _ => None,
+        })
+    }
+}
+
 /// Basic input events
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum InputEvent {
