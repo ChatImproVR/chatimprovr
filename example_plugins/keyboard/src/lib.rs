@@ -18,7 +18,7 @@ struct ClientState {
 }
 
 #[derive(MessageDerive, Serialize, Deserialize, Clone, Copy)]
-#[locality("Local")]
+#[locality("Remote")]
 pub struct MoveCommand {
     pub distance: Vec3,
 }
