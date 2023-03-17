@@ -4,7 +4,6 @@ use cimvr_common::{
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
-use cimvr_derive_macros::{Component, Message};
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, FrameTime};
 use serde::{Deserialize, Serialize};
 
