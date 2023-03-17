@@ -4,7 +4,7 @@ use cimvr_common::{
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
-use cimvr_derive_macros::ComponentDerive;
+use cimvr_derive_macros::{ComponentDerive, MessageDerive};
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, FrameTime};
 use serde::{Deserialize, Serialize};
 
@@ -17,8 +17,8 @@ struct ClientState {
     d_is_pressed: bool,
 }
 
-/// Movement command sent to server
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(MessageDerive, Serialize, Deserialize, Clone, Copy)]
+#[locality("Local")]
 pub struct MoveCommand {
     pub distance: Vec3,
 }
@@ -187,9 +187,9 @@ fn cube() -> Mesh {
 //     const ID: &'static str = pkg_namespace!("Cube Flag");
 // }
 
-impl Message for MoveCommand {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("MoveCommand"),
-        locality: Locality::Remote,
-    };
-}
+// impl Message for MoveCommand {
+//     const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+//         id: pkg_namespace!("MoveCommand"),
+//         locality: Locality::Remote,
+//     };
+// }
