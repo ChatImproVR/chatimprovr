@@ -101,9 +101,9 @@ impl UserState for ServerState {
 
         // Create one cube entity at the origin, and make it synchronize to clients
         let cube_ent = io.create_entity();
-        io.add_component(cube_ent, &Transform::default());
-        io.add_component(cube_ent, &cube_rdr);
-        io.add_component(cube_ent, &Synchronized);
+        io.add_component(cube_ent, Transform::default());
+        io.add_component(cube_ent, cube_rdr);
+        io.add_component(cube_ent, Synchronized);
         sched.add_system(
             Self::update,
             SystemDescriptor::new(Stage::Update).subscribe::<FrameTime>(),
@@ -120,10 +120,10 @@ impl ServerState {
         let mut extra = [0.; 4 * 4];
         extra[0] = time.time;
 
-        io.add_component(self.cube_ent, &RenderExtra(extra));
+        io.add_component(self.cube_ent, RenderExtra(extra));
         io.add_component(
             self.cube_ent,
-            &Transform::identity().with_position(Vec3::new(time.time.cos(), 0., 0.)),
+            Transform::identity().with_position(Vec3::new(time.time.cos(), 0., 0.)),
         );
     }
 }

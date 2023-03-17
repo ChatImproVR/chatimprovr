@@ -22,16 +22,12 @@ pub mod vr;
 /// Represents a rotation, followed by a translation.
 /// Composable through the multiplication (`*`) operator.
 /// Features `From`/`Into` for `Isometry3<f32>`.
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
+#[derive(Component, Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
 pub struct Transform {
     /// Position
     pub pos: Vec3,
     /// Orientation (Rotation)
     pub orient: Quat,
-}
-
-impl Component for Transform {
-    const ID: &'static str = pkg_namespace!("Transform");
 }
 
 impl Default for Transform {

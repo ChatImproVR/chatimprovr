@@ -4,7 +4,6 @@ use cimvr_common::{
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
-use cimvr_derive_macros::{Component, Message};
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, FrameTime};
 use serde::{Deserialize, Serialize};
 
@@ -117,13 +116,13 @@ impl UserState for ServerState {
 
         // Create one cube entity at the origin, and make it synchronize to clients
         let cube_entity = io.create_entity();
-        io.add_component(cube_entity, &Transform::default());
+        io.add_component(cube_entity, Transform::default());
         io.add_component(
             cube_entity,
-            &Render::new(CUBE_HANDLE).primitive(Primitive::Triangles),
+            Render::new(CUBE_HANDLE).primitive(Primitive::Triangles),
         );
-        io.add_component(cube_entity, &Synchronized);
-        io.add_component(cube_entity, &CubeFlag);
+        io.add_component(cube_entity, Synchronized);
+        io.add_component(cube_entity, CubeFlag);
 
         // Create the Update system, which interprets movement commands and updates the transform
         // component on the object with CubeFlag
@@ -174,14 +173,3 @@ fn cube() -> Mesh {
 
     Mesh { vertices, indices }
 }
-
-// impl Component for CubeFlag {
-//     const ID: &'static str = pkg_namespace!("Cube Flag");
-// }
-
-// impl Message for MoveCommand {
-//     const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-//         id: pkg_namespace!("MoveCommand"),
-//         locality: Locality::Remote,
-//     };
-// }

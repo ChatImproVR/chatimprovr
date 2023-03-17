@@ -29,16 +29,16 @@ impl UserState for ServerState {
         let fluid_vel_rdr = Render::new(FLUID_VEL_ID).primitive(Primitive::Lines);
 
         let fluid_vel_ent = io.create_entity();
-        io.add_component(fluid_vel_ent, &Transform::default());
-        io.add_component(fluid_vel_ent, &fluid_vel_rdr);
-        io.add_component(fluid_vel_ent, &Synchronized);
+        io.add_component(fluid_vel_ent, Transform::default());
+        io.add_component(fluid_vel_ent, fluid_vel_rdr);
+        io.add_component(fluid_vel_ent, Synchronized);
 
         let cube_rdr = Render::new(CUBE_ID).primitive(Primitive::Lines);
 
         let cube_ent = io.create_entity();
-        io.add_component(cube_ent, &Transform::default());
-        io.add_component(cube_ent, &cube_rdr);
-        io.add_component(cube_ent, &Synchronized);
+        io.add_component(cube_ent, Transform::default());
+        io.add_component(cube_ent, cube_rdr);
+        io.add_component(cube_ent, Synchronized);
 
         Self
     }

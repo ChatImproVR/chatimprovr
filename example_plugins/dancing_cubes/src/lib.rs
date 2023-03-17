@@ -15,7 +15,7 @@ struct ClientState;
 
 make_app_state!(ClientState, ServerState);
 
-#[derive(Serialize, Deserialize, Default, Clone, Copy)]
+#[derive(Component, Serialize, Deserialize, Default, Clone, Copy)]
 pub struct MoveCube {
     pub r: f32,
 }
@@ -62,9 +62,9 @@ impl ServerState {
 
         // Create central cube
         let cube_ent = io.create_entity();
-        io.add_component(cube_ent, &Transform::default());
-        io.add_component(cube_ent, &cube_rdr);
-        io.add_component(cube_ent, &Synchronized);
+        io.add_component(cube_ent, Transform::default());
+        io.add_component(cube_ent, cube_rdr);
+        io.add_component(cube_ent, Synchronized);
 
         // Add cubes
         let n = 30;
@@ -74,10 +74,10 @@ impl ServerState {
 
             let r = i * TAU;
 
-            io.add_component(cube_ent, &Transform::default());
-            io.add_component(cube_ent, &cube_rdr);
-            io.add_component(cube_ent, &Synchronized);
-            io.add_component(cube_ent, &MoveCube { r });
+            io.add_component(cube_ent, Transform::default());
+            io.add_component(cube_ent, cube_rdr);
+            io.add_component(cube_ent, Synchronized);
+            io.add_component(cube_ent, MoveCube { r });
         }
     }
 
@@ -157,10 +157,6 @@ void main() {
         fragment_src,
         id: CUBE_SHADER,
     }
-}
-
-impl Component for MoveCube {
-    const ID: &'static str = pkg_namespace!("MoveCube");
 }
 
 // TODO: Add a PR to glam?

@@ -45,10 +45,10 @@ impl UserState for ServerState {
         let pos = Vec3::new(rand(), rand(), rand());
 
         let cube_ent = io.create_entity();
-        io.add_component(cube_ent, &Transform::default().with_position(pos));
-        io.add_component(cube_ent, &cube_rdr);
-        io.add_component(cube_ent, &Synchronized);
-        // io.add_component(cube_ent, &Saved); // NOTE: Uncomment me!
+        io.add_component(cube_ent, Transform::default().with_position(pos));
+        io.add_component(cube_ent, cube_rdr);
+        io.add_component(cube_ent, Synchronized);
+        // io.add_component(cube_ent, Saved); // NOTE: Uncomment me!
 
         Self
     }

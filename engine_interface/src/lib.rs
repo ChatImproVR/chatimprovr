@@ -10,6 +10,7 @@ pub mod plugin;
 use std::{cell::RefCell, collections::HashMap};
 mod component_validate_error;
 pub mod component_validation;
+use cimvr_derive_macros::Component;
 pub use component_validation::is_fixed_size;
 
 pub use log;
@@ -42,6 +43,7 @@ pub mod prelude {
     pub use super::plugin::*;
     pub use super::stdout::*;
     pub use super::system::*;
+    pub use cimvr_derive_macros::{Component, Message};
 }
 // TODO: Is this a million dollar mistake?
 // It might be better to be explicit about it. Let people be lazy by making their own specialized
@@ -60,7 +62,7 @@ macro_rules! pkg_namespace {
 ///
 /// Client-side these are not saved to disk, but they are still useful for plugins maintaining
 /// local ECS data in between plugin reloads
-#[derive(Copy, Clone, Debug, Hash, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Component, Copy, Clone, Debug, Hash, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Saved;
 
 use ecs::Component;
@@ -69,27 +71,17 @@ use prelude::{ChannelIdStatic, ComponentId, Locality, Message};
 use serde::{Deserialize, Serialize};
 use serial::serialized_size;
 
-impl Component for Saved {
-    const ID: &'static str = pkg_namespace!("Saved");
-}
-
 // TODO: Use an integer of nanoseconds instead?
 /// Frame timing information, denotes time since last frame
 /// Note that a frame consists of PreUpdate, Update, and PostUpdate. This
 /// time is captured before PreUpdate, and stays the same throughout.
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(Message, Serialize, Deserialize, Debug, Clone, Copy)]
+#[locality("Local")]
 pub struct FrameTime {
     /// Delta time, in seconds
     pub delta: f32,
     /// Time since engine start, in seconds
     pub time: f32,
-}
-
-impl Message for FrameTime {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("FrameTime"),
-        locality: Locality::Local,
-    };
 }
 
 /// Get the maximum size of this component
