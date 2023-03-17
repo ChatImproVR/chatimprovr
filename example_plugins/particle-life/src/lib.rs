@@ -24,21 +24,18 @@ impl UserState for ClientState {
 
         let mut rand = || io.random() as u64 as f32 / u64::MAX as f32;
 
-        let n = 10;
+        let n = 3;
 
-        /*
         let colors: Vec<[f32; 3]> = (0..n).map(|_| hsv_to_rgb(rand() * 360., 1., 1.)).collect();
         let behaviours = (0..n * n)
             .map(|_| aa.with_inter_strength((rand() * 2. - 1.) * 15.))
             .collect();
-        */
 
         // NOTE: We are using the println defined by cimvr_engine_interface here, NOT the standard library!
         let palette = SimConfig {
-            /*
             colors,
             behaviours,
-            */
+            /*
             colors: vec![
                 [0.1, 1., 0.],
                 [1., 0.1, 0.],
@@ -55,7 +52,8 @@ impl UserState for ClientState {
                 aa.with_inter_strength(50.),
                 aa.with_inter_strength(-100.),
             ],
-            damping: 19.,
+            */
+            damping: 159.,
         };
 
         dbg!(&palette);
