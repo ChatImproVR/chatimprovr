@@ -11,18 +11,10 @@ make_app_state!(ClientState, ServerState);
 
 /// Component datatype
 /// Implements Serialize and Deserialize, making it compatible with the Component trait.
-#[derive(Serialize, Deserialize, Default, Clone, Copy, Debug)]
+#[derive(Component, Serialize, Deserialize, Default, Clone, Copy, Debug)]
 struct MyComponent {
     a: i32,
     b: f32,
-}
-
-impl Component for MyComponent {
-    // Here we define the universally unique name for this component.
-    // Note that this macro simply concatenates the package name with the name you provide.
-    // We could have written "channels_example/MyMessage" or even "jdasjdlfkjasdjfk" instead.
-    // It's important to make sure your package name is UNIQUE if you use this macro.
-    const ID: &'static str = pkg_namespace!("MyComponent");
 }
 
 // Server code

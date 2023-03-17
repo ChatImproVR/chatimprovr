@@ -5,7 +5,8 @@ use cimvr_engine_interface::{pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 
 /// VR update message
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Message, Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[locality("Local")]
 pub struct VrUpdate {
     /// View for left eye (may lag behind view in shaders by a small duration!)
     pub view_left: Transform,
@@ -50,10 +51,3 @@ pub enum VrEvent {
     // TODO: Events from controllers!
 }
 */
-
-impl Message for VrUpdate {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("VrUpdate"),
-        locality: Locality::Local,
-    };
-}

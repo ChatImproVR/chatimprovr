@@ -8,13 +8,9 @@ pub struct ClientId(pub u32);
 /// Component indicating the entity is forcibly copied from client to server
 ///
 /// Cannot be added to or removed from entities clientside!
-#[derive(Copy, Clone, Debug, Hash, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Component, Copy, Clone, Debug, Hash, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Synchronized;
 //pub struct Synchronized(Reliability);
-
-impl Component for Synchronized {
-    const ID: &'static str = pkg_namespace!("Synchronized");
-}
 
 /// Information about a connected client
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
@@ -26,16 +22,10 @@ pub struct Connection {
 }
 
 /// Message which lists currently connected clients. Available server-only
-#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Message, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[locality("Local")]
 pub struct Connections {
     pub clients: Vec<Connection>,
-}
-
-impl Message for Connections {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("Connections"),
-        locality: Locality::Local,
-    };
 }
 
 /// Connection request from client to server

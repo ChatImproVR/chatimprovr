@@ -13,14 +13,16 @@ struct ServerState;
 make_app_state!(ClientState, ServerState);
 
 /// Server to client chat message datatype
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Message, Serialize, Deserialize, Debug)]
+#[locality("Remote")]
 struct ChatDownload {
     username: String,
     text: String,
 }
 
 /// Client to server chat message datatype
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Message, Serialize, Deserialize, Debug)]
+#[locality("Remote")]
 struct ChatUpload(String);
 
 /// Number of chat log messages
@@ -155,18 +157,4 @@ impl ServerState {
             }
         }
     }
-}
-
-impl Message for ChatDownload {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("ChatDownload"),
-        locality: Locality::Remote,
-    };
-}
-
-impl Message for ChatUpload {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("ChatUpload"),
-        locality: Locality::Remote,
-    };
 }

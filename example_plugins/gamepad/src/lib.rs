@@ -11,7 +11,8 @@ use serde::{Deserialize, Serialize};
 
 struct ClientState;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Message, Serialize, Deserialize, Debug)]
+#[locality("Remote")]
 struct AxisMessage {
     axis: f32,
 }
@@ -49,7 +50,7 @@ impl ClientState {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Copy, Clone, Debug)]
+#[derive(Component, Serialize, Deserialize, Default, Copy, Clone, Debug)]
 struct SpinningCube(ClientId);
 
 struct ServerState;
@@ -135,17 +136,6 @@ fn cube() -> Mesh {
     ];
 
     Mesh { vertices, indices }
-}
-
-impl Message for AxisMessage {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("AxisMessage"),
-        locality: Locality::Remote,
-    };
-}
-
-impl Component for SpinningCube {
-    const ID: &'static str = pkg_namespace!("ClientOwner");
 }
 
 pub fn from_euler_angles(roll: f32, pitch: f32, yaw: f32) -> Quat {

@@ -6,7 +6,8 @@ use serde::{Deserialize, Serialize};
 // TODO: Touchscreen support!
 
 /// Input events reported each frame
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Message, Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[locality("Local")]
 pub struct InputEvents(pub Vec<InputEvent>);
 
 /// Basic input events
@@ -32,13 +33,6 @@ pub enum MouseEvent {
 pub enum WindowEvent {
     /// Window's size in pixels changed
     Resized { width: u32, height: u32 },
-}
-
-impl Message for InputEvents {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("InputEvents"),
-        locality: Locality::Local,
-    };
 }
 
 /// Keyboard events
