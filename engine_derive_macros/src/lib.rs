@@ -1,6 +1,6 @@
 extern crate proc_macro;
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, DeriveInput, Lit, LitStr, Meta, MetaNameValue};
+use syn::{parse_macro_input, DeriveInput, LitStr};
 
 #[proc_macro_derive(Component)]
 pub fn component_derive(input: TokenStream) -> TokenStream {

@@ -98,16 +98,16 @@ impl ServerState {
                     orient: Quat::from_euler(EulerRot::XYZ, 0., msg.axis, 0.),
                     pos: Vec3::new(number as f32 * 1.5, 0., 0.),
                 };
-                io.add_component(*entity, &transf);
+                io.add_component(*entity, transf);
             } else {
                 // Otherwise create a new cube
                 let cube_rdr = Render::new(CUBE_HANDLE).primitive(Primitive::Triangles);
 
                 let ent = io.create_entity();
-                io.add_component(ent, &Transform::default());
-                io.add_component(ent, &cube_rdr);
-                io.add_component(ent, &Synchronized);
-                io.add_component(ent, &SpinningCube(client_id));
+                io.add_component(ent, Transform::default());
+                io.add_component(ent, cube_rdr);
+                io.add_component(ent, Synchronized);
+                io.add_component(ent, SpinningCube(client_id));
 
                 // Add the entity to the list so it appears we don't add anything twice
                 client_to_entity.insert(client_id, ent);

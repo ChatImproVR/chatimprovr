@@ -13,7 +13,7 @@ pub struct ServerState {
 impl UserState for ServerState {
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         let cube = io.create_entity();
-        io.add_component(cube, &Transform::default());
+        io.add_component(cube, Transform::default());
 
         sched.add_system(
             Self::update,
@@ -33,7 +33,7 @@ impl ServerState {
             let mut extra = [0.; 4 * 4];
             extra[..3].copy_from_slice(&rgb);
             extra[3] = 1.;
-            io.add_component(self.cube, &RenderExtra(extra));
+            io.add_component(self.cube, RenderExtra(extra));
         }
     }
 }

@@ -29,10 +29,10 @@ impl UserState for Camera {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
         // Create camera
         let camera_ent = io.create_entity();
-        io.add_component(camera_ent, &Transform::identity());
+        io.add_component(camera_ent, Transform::identity());
         io.add_component(
             camera_ent,
-            &CameraComponent {
+            CameraComponent {
                 clear_color: [0.; 3],
                 projection: Default::default(),
             },
@@ -55,8 +55,8 @@ impl UserState for Camera {
         let left_hand = io.create_entity();
         let right_hand = io.create_entity();
 
-        io.add_component(left_hand, &Render::new(HAND_RDR_ID));
-        io.add_component(right_hand, &Render::new(HAND_RDR_ID));
+        io.add_component(left_hand, Render::new(HAND_RDR_ID));
+        io.add_component(right_hand, Render::new(HAND_RDR_ID));
 
         Self {
             arcball: ArcBall::default(),
@@ -95,11 +95,11 @@ impl Camera {
             self.proj.handle_vr_update(&update);
 
             if let Some(pos) = update.grip_left {
-                io.add_component(self.left_hand, &pos);
+                io.add_component(self.left_hand, pos);
             }
 
             if let Some(pos) = update.grip_right {
-                io.add_component(self.right_hand, &pos);
+                io.add_component(self.right_hand, pos);
             }
         }
 

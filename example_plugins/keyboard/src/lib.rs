@@ -124,13 +124,13 @@ impl UserState for ServerState {
 
         // Create one cube entity at the origin, and make it synchronize to clients
         let cube_entity = io.create_entity();
-        io.add_component(cube_entity, &Transform::default());
+        io.add_component(cube_entity, Transform::default());
         io.add_component(
             cube_entity,
-            &Render::new(CUBE_HANDLE).primitive(Primitive::Triangles),
+            Render::new(CUBE_HANDLE).primitive(Primitive::Triangles),
         );
-        io.add_component(cube_entity, &Synchronized);
-        io.add_component(cube_entity, &CubeFlag);
+        io.add_component(cube_entity, Synchronized);
+        io.add_component(cube_entity, CubeFlag);
 
         // Create the Update system, which interprets movement commands and updates the transform
         // component on the object with CubeFlag
