@@ -1,11 +1,11 @@
-use cimvr_engine_interface::{self, component_validation::is_fixed_size};
+use cimvr_engine_interface::{self, is_fixed_size};
 use serde::{Deserialize, Serialize};
 
 #[test]
 #[should_panic]
 fn ser_string() {
     let a = "Hello, world!".to_string();
-    cimvr_engine_interface::is_fixed_size(a).unwrap();
+    is_fixed_size(a).unwrap();
 }
 
 #[test]
