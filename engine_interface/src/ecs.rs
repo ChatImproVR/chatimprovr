@@ -115,7 +115,7 @@ impl QueryResult {
             .query
             .iter()
             .position(|c| c.component.id == C::ID)
-            .expect("Attempted to access component not queried");
+            .expect("Attempted to access component with invalid EntityID");
 
         let size = component_size_cached::<C>() as usize;
         let begin = entity_idx * size;
