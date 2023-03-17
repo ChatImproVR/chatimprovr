@@ -64,28 +64,24 @@ impl ClientState {
         let Some(frame_time) = io.inbox_first::<FrameTime>() else { return };
 
         // Handle input events
-        for event in io.inbox::<InputEvent>() {
-            if let InputEvent::Keyboard(cimvr_common::desktop::KeyboardEvent::Key { key, state }) =
-                event
-            {
-                // Update key press information
-                let is_pressed = state == ElementState::Pressed;
+        for (key, state) in io.inbox::<InputEvent>().filter_map(|x| x.get_keyboard()) {
+            // Update key press information
+            let is_pressed = state == ElementState::Pressed;
 
-                if key == KeyCode::W {
-                    self.w_is_pressed = is_pressed;
-                }
+            if key == KeyCode::W {
+                self.w_is_pressed = is_pressed;
+            }
 
-                if key == KeyCode::A {
-                    self.a_is_pressed = is_pressed;
-                }
+            if key == KeyCode::A {
+                self.a_is_pressed = is_pressed;
+            }
 
-                if key == KeyCode::S {
-                    self.s_is_pressed = is_pressed;
-                }
+            if key == KeyCode::S {
+                self.s_is_pressed = is_pressed;
+            }
 
-                if key == KeyCode::D {
-                    self.d_is_pressed = is_pressed;
-                }
+            if key == KeyCode::D {
+                self.d_is_pressed = is_pressed;
             }
         }
 
