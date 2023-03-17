@@ -36,7 +36,7 @@ make_handle!(ShaderHandle);
 /// The Transform on the entity this is attached to will correspond to:
 /// * VR: The position and orientation of the floor
 /// * Desktop: The view matrix of the camera
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
+#[derive(Component, Serialize, Deserialize, Copy, Clone, Debug, PartialEq)]
 pub struct CameraComponent {
     /// Background color
     pub clear_color: [f32; 3],
@@ -77,7 +77,7 @@ pub struct Mesh {
 }
 
 /// Render component
-#[derive(Serialize, Deserialize, Default, Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Component, Serialize, Deserialize, Default, Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Render {
     /// Id of the associated RenderData
     pub id: MeshHandle,
@@ -96,7 +96,7 @@ pub struct Render {
 }
 
 /// Extra render data per component
-#[derive(Serialize, Deserialize, Default, Copy, Clone, Debug, PartialEq)]
+#[derive(Component, Serialize, Deserialize, Default, Copy, Clone, Debug, PartialEq)]
 pub struct RenderExtra(pub [f32; 4 * 4]);
 
 /// How to draw the given mesh
@@ -113,14 +113,6 @@ impl Default for Primitive {
     }
 }
 
-impl Component for Render {
-    const ID: &'static str = pkg_namespace!("Render");
-}
-
-impl Component for RenderExtra {
-    const ID: &'static str = pkg_namespace!("RenderExtra");
-}
-
 impl Message for UploadMesh {
     const CHANNEL: ChannelIdStatic = ChannelIdStatic {
         id: pkg_namespace!("RenderData"),
@@ -133,10 +125,6 @@ impl Message for ShaderSource {
         id: pkg_namespace!("ShaderData"),
         locality: Locality::Local,
     };
-}
-
-impl Component for CameraComponent {
-    const ID: &'static str = pkg_namespace!("CameraComponent");
 }
 
 impl Vertex {

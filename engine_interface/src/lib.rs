@@ -10,6 +10,7 @@ pub mod plugin;
 use std::{cell::RefCell, collections::HashMap};
 mod component_validate_error;
 pub mod component_validation;
+use cimvr_derive_macros::Component;
 pub use component_validation::is_fixed_size;
 
 pub use log;
@@ -61,7 +62,7 @@ macro_rules! pkg_namespace {
 ///
 /// Client-side these are not saved to disk, but they are still useful for plugins maintaining
 /// local ECS data in between plugin reloads
-#[derive(Copy, Clone, Debug, Hash, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Component, Copy, Clone, Debug, Hash, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Saved;
 
 use ecs::Component;
@@ -69,10 +70,6 @@ use once_cell::sync::Lazy;
 use prelude::{ChannelIdStatic, ComponentId, Locality, Message};
 use serde::{Deserialize, Serialize};
 use serial::serialized_size;
-
-impl Component for Saved {
-    const ID: &'static str = pkg_namespace!("Saved");
-}
 
 // TODO: Use an integer of nanoseconds instead?
 /// Frame timing information, denotes time since last frame

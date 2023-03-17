@@ -49,7 +49,7 @@ impl ClientState {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Copy, Clone, Debug)]
+#[derive(Component, Serialize, Deserialize, Default, Copy, Clone, Debug)]
 struct SpinningCube(ClientId);
 
 struct ServerState;
@@ -142,10 +142,6 @@ impl Message for AxisMessage {
         id: pkg_namespace!("AxisMessage"),
         locality: Locality::Remote,
     };
-}
-
-impl Component for SpinningCube {
-    const ID: &'static str = pkg_namespace!("ClientOwner");
 }
 
 pub fn from_euler_angles(roll: f32, pitch: f32, yaw: f32) -> Quat {

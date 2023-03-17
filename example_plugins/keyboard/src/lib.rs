@@ -181,14 +181,3 @@ fn cube() -> Mesh {
 
     Mesh { vertices, indices }
 }
-
-// impl Component for CubeFlag {
-//     const ID: &'static str = pkg_namespace!("Cube Flag");
-// }
-
-// impl Message for MoveCommand {
-//     const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-//         id: pkg_namespace!("MoveCommand"),
-//         locality: Locality::Remote,
-//     };
-// }

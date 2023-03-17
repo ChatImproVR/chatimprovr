@@ -15,7 +15,7 @@ struct ClientState;
 
 make_app_state!(ClientState, ServerState);
 
-#[derive(Serialize, Deserialize, Default, Clone, Copy)]
+#[derive(Component, Serialize, Deserialize, Default, Clone, Copy)]
 pub struct MoveCube {
     pub r: f32,
 }
@@ -157,10 +157,6 @@ void main() {
         fragment_src,
         id: CUBE_SHADER,
     }
-}
-
-impl Component for MoveCube {
-    const ID: &'static str = pkg_namespace!("MoveCube");
 }
 
 // TODO: Add a PR to glam?
