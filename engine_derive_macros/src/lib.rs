@@ -2,7 +2,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput, Lit, LitStr, Meta, MetaNameValue};
 
-#[proc_macro_derive(ComponentDerive)]
+#[proc_macro_derive(Component)]
 pub fn component_derive(input: TokenStream) -> TokenStream {
     // Parse the input tokens into a syntax tree
     let input: DeriveInput = parse_macro_input!(input);
@@ -23,7 +23,7 @@ pub fn component_derive(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
-#[proc_macro_derive(MessageDerive, attributes(locality))]
+#[proc_macro_derive(Message, attributes(locality))]
 pub fn message_derive(input: TokenStream) -> TokenStream {
     // Parse input to a syntax tree
     let input: DeriveInput = parse_macro_input!(input);
