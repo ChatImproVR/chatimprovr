@@ -24,7 +24,7 @@ impl UserState for ClientState {
 
         let mut rand = || io.random() as u64 as f32 / u64::MAX as f32;
 
-        let n = 3;
+        let n = 5;
 
         let colors: Vec<[f32; 3]> = (0..n).map(|_| hsv_to_rgb(rand() * 360., 1., 1.)).collect();
         let behaviours = (0..n * n)
@@ -53,7 +53,7 @@ impl UserState for ClientState {
                 aa.with_inter_strength(-100.),
             ],
             */
-            damping: 159.,
+            damping: 150.,
         };
 
         dbg!(&palette);
