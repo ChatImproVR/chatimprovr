@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 // TODO: Gamepad support!
 // TODO: Touchscreen support!
 
-
 /// Basic input events
 #[derive(Message, Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[locality("Local")]
@@ -101,7 +100,7 @@ pub enum KeyboardEvent {
 }
 
 /// Keyboard Modifier states
-#[derive(Serialize, Deserialize, Hash, Copy, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Hash, Copy, Debug, Clone, PartialEq, Eq, Default)]
 pub struct ModifiersState {
     pub shift: bool,
     pub ctrl: bool,
@@ -323,15 +322,4 @@ pub enum KeyCode {
     Copy,
     Paste,
     Cut,
-}
-
-impl Default for ModifiersState {
-    fn default() -> Self {
-        Self {
-            shift: false,
-            ctrl: false,
-            alt: false,
-            logo: false,
-        }
-    }
 }
