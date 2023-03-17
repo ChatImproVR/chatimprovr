@@ -26,16 +26,19 @@ impl UserState for ClientState {
 
         let n = 10;
 
+        /*
         let colors: Vec<[f32; 3]> = (0..n).map(|_| hsv_to_rgb(rand() * 360., 1., 1.)).collect();
         let behaviours = (0..n * n)
             .map(|_| aa.with_inter_strength((rand() * 2. - 1.) * 15.))
             .collect();
+        */
 
         // NOTE: We are using the println defined by cimvr_engine_interface here, NOT the standard library!
         let palette = SimConfig {
+            /*
             colors,
             behaviours,
-            /*
+            */
             colors: vec![
                 [0.1, 1., 0.],
                 [1., 0.1, 0.],
@@ -52,8 +55,7 @@ impl UserState for ClientState {
                 aa.with_inter_strength(50.),
                 aa.with_inter_strength(-100.),
             ],
-            */
-            damping: 3.,
+            damping: 19.,
         };
 
         dbg!(&palette);
@@ -78,7 +80,7 @@ impl UserState for ClientState {
 
 impl ClientState {
     fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
-        let dt = 5e-5;
+        let dt = 1e-3;
         self.sim.step(dt);
 
         let mesh = draw_particles(&self.sim, self.time);

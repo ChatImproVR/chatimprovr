@@ -80,6 +80,7 @@ impl SimState {
 
         let len = self.particles.len();
         for i in 0..len {
+            let mut total_accel = Vector2::zeros();
             for neighbor in accel.query_neighbors(&points, i) {
                 let a = self.particles[i];
                 let b = self.particles[neighbor];
@@ -94,15 +95,16 @@ impl SimState {
                 let normal = diff.normalize();
                 let behav = self.config.get_bahaviour(a.color, b.color);
                 let accel = normal * behav.interact(dist) / dist;
-
-                let vel = self.particles[i].vel + accel * dt;
-
-                // Dampen velocity
-                let vel = vel * (1. - dt * self.config.damping);
-
-                self.particles[i].vel = vel;
-                self.particles[i].pos += vel * dt;
+                total_accel += accel;
             }
+
+            let vel = self.particles[i].vel + total_accel * dt;
+
+            // Dampen velocity
+            let vel = vel * (1. - dt * self.config.damping);
+
+            self.particles[i].vel = vel;
+            self.particles[i].pos += vel * dt;
         }
     }
 
