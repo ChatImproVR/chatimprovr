@@ -40,7 +40,7 @@ impl Perspective {
         self.proj
     }
 
-    /// Returns and appropriate perspective matrix matching the size of the window
+    /// Updates the state of the camera.
     pub fn handle_input_events(&mut self, input: &InputEvents) {
         // Handle input events for desktop mode
         let InputEvents(events) = input;

@@ -9,7 +9,7 @@ pub mod plugin;
 
 use std::{cell::RefCell, collections::HashMap};
 mod component_validate_error;
-mod component_validation;
+pub mod component_validation;
 pub use component_validation::is_fixed_size;
 
 pub use log;
@@ -42,6 +42,7 @@ pub mod prelude {
     pub use super::plugin::*;
     pub use super::stdout::*;
     pub use super::system::*;
+    pub use cimvr_derive_macros::{Component, Message};
 }
 // TODO: Is this a million dollar mistake?
 // It might be better to be explicit about it. Let people be lazy by making their own specialized

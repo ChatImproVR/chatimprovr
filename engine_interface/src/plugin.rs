@@ -10,7 +10,8 @@ pub use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 
 /// Defines the given structure to represent the state of a plugin (on either the **Client** or the
-/// **Server**).
+/// **Server**). Essentially defines the entry point for the plugin.
+/// TODO: Probably rename this as PluginEntry or something.
 pub trait UserState: Sized {
     /// Constructor for this state; called once before the **Init** stage.
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self;
