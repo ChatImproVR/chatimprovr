@@ -4,6 +4,7 @@ use cimvr_common::{
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
+use cimvr_derive_macros::{Component, Message};
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, FrameTime};
 use serde::{Deserialize, Serialize};
 
@@ -16,14 +17,14 @@ struct ClientState {
     d_is_pressed: bool,
 }
 
-/// Movement command sent to server
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Message, Serialize, Deserialize, Clone, Copy)]
+#[locality("Remote")]
 pub struct MoveCommand {
     pub distance: Vec3,
 }
 
 /// Component identifing the cube
-#[derive(Serialize, Deserialize, Default, Clone, Copy)]
+#[derive(Component, Serialize, Deserialize, Default, Clone, Copy)]
 pub struct CubeFlag;
 
 make_app_state!(ClientState, ServerState);
@@ -178,13 +179,13 @@ fn cube() -> Mesh {
     Mesh { vertices, indices }
 }
 
-impl Component for CubeFlag {
-    const ID: &'static str = pkg_namespace!("Cube Flag");
-}
+// impl Component for CubeFlag {
+//     const ID: &'static str = pkg_namespace!("Cube Flag");
+// }
 
-impl Message for MoveCommand {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("MoveCommand"),
-        locality: Locality::Remote,
-    };
-}
+// impl Message for MoveCommand {
+//     const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+//         id: pkg_namespace!("MoveCommand"),
+//         locality: Locality::Remote,
+//     };
+// }

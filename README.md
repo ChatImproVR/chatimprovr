@@ -18,7 +18,7 @@ rustup target add wasm32-unknown-unknown
 
 Dependencies on Ubuntu:
 ```sh
-sudo apt install build-essential cmake libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev libxkbcommon-dev libssl-dev
+sudo apt install build-essential cmake libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev libxkbcommon-dev libssl-dev libudev-dev libfontconfig-dev
 ```
 
 # Compilation
