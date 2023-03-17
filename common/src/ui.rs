@@ -34,14 +34,16 @@ pub enum State {
 }
 
 /// UI update message sent from plugins
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(Message, Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[locality("Local")]
 pub struct UiUpdate {
     pub id: UiHandle,
     pub state: Vec<State>,
 }
 
 /// UI request message sent to plugins
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(Message, Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[locality("Local")]
 pub struct UiRequest {
     pub id: UiHandle,
     pub op: UiOperation,
@@ -144,18 +146,4 @@ impl UiStateHelper {
             }
         }
     }
-}
-
-impl Message for UiRequest {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("UiRequest"),
-        locality: Locality::Local,
-    };
-}
-
-impl Message for UiUpdate {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("UiUpdate"),
-        locality: Locality::Local,
-    };
 }

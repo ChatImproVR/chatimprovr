@@ -22,16 +22,10 @@ pub struct Connection {
 }
 
 /// Message which lists currently connected clients. Available server-only
-#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Message, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[locality("Local")]
 pub struct Connections {
     pub clients: Vec<Connection>,
-}
-
-impl Message for Connections {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("Connections"),
-        locality: Locality::Local,
-    };
 }
 
 /// Connection request from client to server

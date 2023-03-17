@@ -4,15 +4,9 @@ use cimvr_engine_interface::{pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 
 /// State of each gamepad
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(Message, Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[locality("Local")]
 pub struct GamepadState(pub Vec<Gamepad>);
-
-impl Message for GamepadState {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("GamepadState"),
-        locality: Locality::Local,
-    };
-}
 
 /// Entire state of one game pad
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default)]

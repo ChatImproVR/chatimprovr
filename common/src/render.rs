@@ -47,7 +47,8 @@ pub struct CameraComponent {
 }
 
 /// All information required to define a renderable mesh
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Message, Serialize, Deserialize, Debug, Clone)]
+#[locality("Local")]
 pub struct UploadMesh {
     /// Mesh data
     pub mesh: Mesh,
@@ -56,7 +57,8 @@ pub struct UploadMesh {
 }
 
 /// A complete description of a shader (sources)
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Message, Serialize, Deserialize, Debug, Clone)]
+#[locality("Local")]
 pub struct ShaderSource {
     // TODO: Use SPIRV here? It's much more stable!
     /// Vertex shader source (GLSL)
@@ -111,20 +113,6 @@ impl Default for Primitive {
     fn default() -> Self {
         Self::Triangles
     }
-}
-
-impl Message for UploadMesh {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("RenderData"),
-        locality: Locality::Local,
-    };
-}
-
-impl Message for ShaderSource {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("ShaderData"),
-        locality: Locality::Local,
-    };
 }
 
 impl Vertex {

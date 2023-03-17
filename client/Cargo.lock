@@ -262,6 +262,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "cimvr_derive_macros"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "proc-macro2",
+ "quote",
+ "serde",
+ "syn",
+]
+
+[[package]]
 name = "cimvr_engine"
 version = "0.1.0"
 dependencies = [
@@ -280,6 +291,7 @@ name = "cimvr_engine_interface"
 version = "0.1.0"
 dependencies = [
  "bincode",
+ "cimvr_derive_macros",
  "log",
  "once_cell",
  "serde",
@@ -1872,9 +1884,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.49"
+version = "1.0.52"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57a8eca9f9c4ffde41714334dee777596264c7825420f521abc92b5b5deb63a5"
+checksum = "1d0e1ae9e836cc3beddd63db0df682593d7e2d3d891ae8c9083d2113e1744224"
 dependencies = [
  "unicode-ident",
 ]

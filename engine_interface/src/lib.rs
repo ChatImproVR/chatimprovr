@@ -75,19 +75,13 @@ use serial::serialized_size;
 /// Frame timing information, denotes time since last frame
 /// Note that a frame consists of PreUpdate, Update, and PostUpdate. This
 /// time is captured before PreUpdate, and stays the same throughout.
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(Message, Serialize, Deserialize, Debug, Clone, Copy)]
+#[locality("Local")]
 pub struct FrameTime {
     /// Delta time, in seconds
     pub delta: f32,
     /// Time since engine start, in seconds
     pub time: f32,
-}
-
-impl Message for FrameTime {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("FrameTime"),
-        locality: Locality::Local,
-    };
 }
 
 /// Get the maximum size of this component
