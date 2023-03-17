@@ -33,15 +33,15 @@ impl UserState for ServerState {
         // Create an entity
         let cube_ent = io.create_entity();
         // Attach a Transform component (which defaults to the origin)
-        io.add_component(cube_ent, &Transform::default());
+        io.add_component(cube_ent, Transform::default());
         // Attach the Render component, which details how the object should be drawn
         // Note that we use CUBE_HANDLE here, to tell the rendering engine to draw the cube
         io.add_component(
             cube_ent,
-            &Render::new(CUBE_HANDLE).primitive(Primitive::Triangles),
+            Render::new(CUBE_HANDLE).primitive(Primitive::Triangles),
         );
         // Attach the Synchronized component, which will copy the object to clients
-        io.add_component(cube_ent, &Synchronized);
+        io.add_component(cube_ent, Synchronized);
 
         Self
     }

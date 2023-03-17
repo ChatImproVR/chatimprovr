@@ -23,9 +23,9 @@ impl UserState for ServerState {
         // Create a new entity
         let ent = io.create_entity();
         // Add MyComponent to it, so that it's updated in update()
-        io.add_component(ent, &MyComponent { a: 0, b: 0.0 });
+        io.add_component(ent, MyComponent { a: 0, b: 0.0 });
         // Add Sychronized to it, so that it is sent to the client each frame
-        io.add_component(ent, &Synchronized);
+        io.add_component(ent, Synchronized);
 
         // Schedule the update() system to run every Update
         // Queries all entities with MyComponent attached, and allows us to write to them
