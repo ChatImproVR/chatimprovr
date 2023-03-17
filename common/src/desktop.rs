@@ -5,13 +5,10 @@ use serde::{Deserialize, Serialize};
 // TODO: Gamepad support!
 // TODO: Touchscreen support!
 
-/// Input events reported each frame
-#[derive(Message, Serialize, Deserialize, Debug, Clone, PartialEq)]
-#[locality("Local")]
-pub struct InputEvents(pub Vec<InputEvent>);
 
 /// Basic input events
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Message, Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[locality("Local")]
 pub enum InputEvent {
     Keyboard(KeyboardEvent),
     Mouse(MouseEvent),
