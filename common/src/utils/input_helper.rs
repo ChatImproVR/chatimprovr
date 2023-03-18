@@ -8,14 +8,14 @@ use crate::desktop::{
 
 /// A helper struct for handling input events. This is a wrapper around the `InputEvent` enum.
 #[derive(Debug, Default, Clone, PartialEq)]
-struct InputHelper {
+pub struct InputHelper {
     /// Keeps track of keys that are currently being pressed. A pressed key will be in this set.
     pub pressed_keys: HashSet<KeyCode>,
     /// Modifiers don't keep track of state, going up and down is treated like a boolean (on/off).
     pub modifiers_state: ModifiersState,
     /// Holds information about everything the mouse can do. See
     /// [`MouseState`](cimvr_common::utils::input_helper::MouseState).
-    pub mouse_state: MouseState,
+    mouse_state: MouseState,
     /// Help keep track of window events like when the window gets resized.
     pub window_state: WindowEvent,
 }
