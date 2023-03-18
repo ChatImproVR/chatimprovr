@@ -124,6 +124,16 @@ pub enum ElementState {
     Released,
 }
 
+impl Default for WindowEvent {
+    /// A reasonable default for the window. A 1920 x 1080 screen seems okay.
+    fn default() -> Self {
+        Self::Resized {
+            height: 1920,
+            width: 1080,
+        }
+    }
+}
+
 /// KeyCode; matches winit's keycode enum.
 #[derive(Serialize, Deserialize, Hash, Copy, Debug, Clone, PartialEq, Eq)]
 pub enum KeyCode {
