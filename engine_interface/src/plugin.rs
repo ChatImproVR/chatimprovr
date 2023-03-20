@@ -270,10 +270,11 @@ impl EngineIo {
     }
 
     /// Read inbox for this message type
-    pub fn inbox<M: Message>(&mut self) -> impl Iterator<Item = M> + '_ {
+    pub fn inbox<M: Message>(&self) -> impl Iterator<Item = M> + '_ {
         self.inbox
-            .entry(M::CHANNEL.into())
-            .or_default()
+            .get(&M::CHANNEL.into())
+            .map(|v| v.as_slice())
+            .unwrap_or_default()
             .iter()
             .map(|m| {
                 deserialize(std::io::Cursor::new(&m.data)).expect("Failed to deserialize message")
