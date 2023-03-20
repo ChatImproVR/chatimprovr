@@ -18,7 +18,7 @@ pub struct Particle {
     pub color: Color,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub struct Behaviour {
     /// Magnitude of the default repulsion force
     pub default_repulse: f32,
@@ -31,7 +31,6 @@ pub struct Behaviour {
 }
 
 /// Display colors and physical behaviour coefficients
-#[derive(Clone, Debug)]
 pub struct SimConfig {
     pub colors: Vec<[f32; 3]>,
     pub behaviours: Vec<Behaviour>,
@@ -80,7 +79,6 @@ impl SimState {
 
         let len = self.particles.len();
         for i in 0..len {
-            let mut total_accel = Vector2::zeros();
             for neighbor in accel.query_neighbors(&points, i) {
                 let a = self.particles[i];
                 let b = self.particles[neighbor];
@@ -95,16 +93,15 @@ impl SimState {
                 let normal = diff.normalize();
                 let behav = self.config.get_bahaviour(a.color, b.color);
                 let accel = normal * behav.interact(dist) / dist;
-                total_accel += accel;
+
+                let vel = self.particles[i].vel + accel * dt;
+
+                // Dampen velocity
+                let vel = vel * (1. - dt * self.config.damping);
+
+                self.particles[i].vel = vel;
+                self.particles[i].pos += vel * dt;
             }
-
-            let vel = self.particles[i].vel + total_accel * dt;
-
-            // Dampen velocity
-            let vel = vel * (1. - dt * self.config.damping);
-
-            self.particles[i].vel = vel;
-            self.particles[i].pos += vel * dt;
         }
     }
 
