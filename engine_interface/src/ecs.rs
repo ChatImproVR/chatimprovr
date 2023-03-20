@@ -100,9 +100,10 @@ impl QueryResult {
         // TODO: This is slow!!!
         self.ecs
             .entities
-            .clone()
-            .into_iter()
-            .position(|e| e == entity)
+            .iter()
+            // .clone()
+            // .into_iter()
+            .position(|e| e.eq(&entity))
             .expect("Attempted to access entity not queried")
     }
 
