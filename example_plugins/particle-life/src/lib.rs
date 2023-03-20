@@ -108,7 +108,7 @@ fn draw_particles(sim: &SimState, _time: f32) -> Mesh {
         let color = sim.config().colors[particle.color as usize];
 
         let vertex = Vertex {
-            pos: [particle.pos.x, 0., particle.pos.y],
+            pos: particle.pos.to_array(),
             uvw: color,
         };
 

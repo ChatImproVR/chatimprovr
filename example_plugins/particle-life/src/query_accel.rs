@@ -1,24 +1,24 @@
-use cimvr_common::glam::Vec2;
+use cimvr_common::glam::Vec3;
 use zwohash::HashMap;
 
 /// Euclidean neighborhood query accelerator. Uses a hashmap grid.
 pub struct QueryAccelerator {
-    cells: HashMap<[i32; 2], Vec<usize>>,
-    neighbors: Vec<[i32; 2]>,
+    cells: HashMap<[i32; 3], Vec<usize>>,
+    neighbors: Vec<[i32; 3]>,
     radius: f32,
     radius_sq: f32,
 }
 
 impl QueryAccelerator {
     /// Construct a new query accelerator
-    pub fn new(points: &[Vec2], radius: f32) -> Self {
-        let mut cells: HashMap<[i32; 2], Vec<usize>> = HashMap::default();
+    pub fn new(points: &[Vec3], radius: f32) -> Self {
+        let mut cells: HashMap<[i32; 3], Vec<usize>> = HashMap::default();
 
         for (idx, &point) in points.iter().enumerate() {
             cells.entry(quantize(point, radius)).or_default().push(idx);
         }
 
-        let neighbors = neighborhood::<2>();
+        let neighbors = neighborhood::<3>();
 
         Self {
             cells,
@@ -41,7 +41,7 @@ impl QueryAccelerator {
     // Query the neighbors of `queried_idx` in `points`
     pub fn query_neighbors<'s, 'p: 's>(
         &'s self,
-        points: &'p [Vec2],
+        points: &'p [Vec3],
         queried_idx: usize,
     ) -> impl Iterator<Item = usize> + 's {
         let query_point = points[queried_idx];
@@ -69,12 +69,12 @@ impl QueryAccelerator {
     */
 }
 
-fn add(mut a: [i32; 2], b: [i32; 2]) -> [i32; 2] {
+fn add(mut a: [i32; 3], b: [i32; 3]) -> [i32; 3] {
     a.iter_mut().zip(b).for_each(|(a, b)| *a += b);
     a
 }
 
-fn quantize(p: Vec2, radius: f32) -> [i32; 2] {
+fn quantize(p: Vec3, radius: f32) -> [i32; 3] {
     (*p.as_ref()).map(|v| (v / radius).floor() as i32)
 }
 
