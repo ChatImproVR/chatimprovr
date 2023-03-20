@@ -95,20 +95,19 @@ impl Camera {
         }
 
         // Handle input events for desktop mode
-        if let Some(input) = io.inbox_first::<InputEvent>() {
-            if !self.is_vr {
+        if !self.is_vr {
+            for input in io.inbox::<InputEvent>() {
                 // Handle window resizing
-                self.proj.handle_input_events(&input);
-
-                //dbg!(&input);
+                self.proj.handle_event(&input);
 
                 // Handle pivot/pan
                 self.arcball_control.handle_event(&input, &mut self.arcball);
 
                 // Set camera transform to arcball position
-                for key in query.iter() {
-                    query.write::<Transform>(key, &self.arcball.camera_transf());
-                }
+            }
+
+            for key in query.iter() {
+                query.write::<Transform>(key, &self.arcball.camera_transf());
             }
         }
 

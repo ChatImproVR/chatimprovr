@@ -41,7 +41,7 @@ impl Perspective {
     }
 
     /// Returns and appropriate perspective matrix matching the size of the window
-    pub fn handle_input_events(&mut self, input: &InputEvent) {
+    pub fn handle_event(&mut self, input: &InputEvent) {
         // Handle input events for desktop mode
         // let InputEvents(events) = input;
         if let InputEvent::Window(WindowEvent::Resized { width, height }) = input {
