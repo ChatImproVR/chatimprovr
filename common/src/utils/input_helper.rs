@@ -155,19 +155,11 @@ impl InputHelper {
     // key_down(&self, keycode) -> bool
     // key_up(&self, keycode) -> bool
     pub fn key_down(&self, key: &KeyCode) -> bool {
-        if self.pressed_keys.contains(key) {
-            true
-        } else {
-            false
-        }
+        return self.pressed_keys.contains(key);
     }
 
     pub fn key_up(&self, key: &KeyCode) -> bool {
-        if !self.pressed_keys.contains(key) {
-            true
-        } else {
-            false
-        }
+        return !self.pressed_keys.contains(key);
     }
 
     // modifiers
@@ -189,13 +181,33 @@ impl InputHelper {
     // mouse api
     // mouse_pressed(&self) -> bool
     // mouse_released(&self) -> bool
-    // mouse_held(&self, button) -> bool
+    //
+    // TBD how we want to do this.
     // mousewheel_scroll_diff(&self) -> f32
     // mouse_pos(&self) -> Option<(f32, f32)>
     // mouse_pos_diff(&self) -> (f32,f32)
-    //
+    pub fn mouse_pressed(&self, mouse_button: &MouseButton) -> bool {
+        return self.mouse_state.buttons.contains(mouse_button);
+    }
+
+    pub fn mouse_released(&self, mouse_button: &MouseButton) -> bool {
+        return !self.mouse_state.buttons.contains(mouse_button);
+    }
+
+    pub fn mouse_pos(&self) -> Option<(f32, f32)> {
+        match self.mouse_state.in_window {
+            true => Some(self.mouse_state.position),
+            false => None,
+        }
+    }
+    // pub fn mousewheel_scroll_diff(&self) -> f32 {
+    //     let x_diff = self.mouse_state.scroll.
+    // }
     // Screen resize API
     // get_resolution(&self) -> Option<(u32, u32)>
-    // scale_factor_changed(&self) -> Option<f64>
-    // scale_factor(&self) -> Option<f64>
+    pub fn get_resolution(&self) -> (u32, u32) {
+        match self.window_state {
+            WindowEvent::Resized { width, height } => (width, height),
+        }
+    }
 }
