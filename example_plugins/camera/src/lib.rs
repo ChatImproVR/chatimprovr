@@ -11,7 +11,7 @@ use cimvr_common::{
     vr::VrUpdate,
     Transform,
 };
-use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
+use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*};
 
 struct Camera {
     arcball: ArcBall,
@@ -75,6 +75,14 @@ impl Camera {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         // Handle events for VR
         if let Some(update) = io.inbox_first::<VrUpdate>() {
+            if !update.left_controller.events.is_empty() {
+                dbg!(&update.left_controller.events);
+            }
+
+            if !update.right_controller.events.is_empty() {
+                dbg!(&update.right_controller.events);
+            }
+
             self.is_vr = true;
             // Handle FOV changes (But NOT position. Position is extremely time-sensitive, so it
             // is actually prepended to the view matrix)

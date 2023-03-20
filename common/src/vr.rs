@@ -19,7 +19,7 @@ pub struct VrUpdate {
 }
 
 /// State of the headset (including view and projection)
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct HeadsetState {
     /// Left eye
     pub left: ViewState,
@@ -28,7 +28,7 @@ pub struct HeadsetState {
 }
 
 /// State of a particular view (eye)
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
 pub struct ViewState {
     /// Position and orientation of this eye
     pub transf: Transform,
@@ -48,12 +48,19 @@ pub struct ControllerState {
 }
 
 /// Events produced by a controller
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
 pub enum ControllerEvent {
-    /// The menu button was clicked
-    MenuClicked,
-    /// The select button was clicked
-    TriggerClicked,
+    /// The menu button state has updated
+    Menu(ElementState),
+    /// The select button state has updated
+    Trigger(ElementState),
+}
+
+/// State of a button
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
+pub enum ElementState {
+    Pressed,
+    Released,
 }
 
 /// Field of view of OpenXR camera
@@ -68,4 +75,13 @@ pub struct VrFov {
     pub angle_up: f32,
     /// Angle of the bottom part of the field of view. For a symmetric field of view this value is negative.
     pub angle_down: f32,
+}
+
+impl From<bool> for ElementState {
+    fn from(value: bool) -> Self {
+        match value {
+            true => Self::Pressed,
+            false => Self::Released,
+        }
+    }
 }

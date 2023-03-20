@@ -489,7 +489,11 @@ struct PluginVrInterfacing {
     aim_left_action: xr::Action<xr::Posef>,
     aim_right_action: xr::Action<xr::Posef>,
 
-    select_left_action: xr::Action<bool>,
+    trigger_left: xr::Action<bool>,
+    menu_left: xr::Action<bool>,
+
+    trigger_right: xr::Action<bool>,
+    menu_right: xr::Action<bool>,
 }
 
 impl PluginVrInterfacing {
@@ -508,8 +512,19 @@ impl PluginVrInterfacing {
         let aim_right_action =
             action_set.create_action::<xr::Posef>("aim_right", "aim_right", &[])?;
 
-        let select_left_action =
-            action_set.create_action::<bool>("select_left", "select_left", &[])?;
+        let trigger_left =
+            action_set.create_action::<bool>("trigger_left", "trigger_left", &[])?;
+
+        let menu_left =
+            action_set.create_action::<bool>("menu_left", "menu_left", &[])?;
+
+        let trigger_right =
+            action_set.create_action::<bool>("trigger_right", "trigger_right", &[])?;
+
+        let menu_right =
+            action_set.create_action::<bool>("menu_right", "menu_right", &[])?;
+
+
 
         xr_instance
             .suggest_interaction_profile_bindings(
@@ -542,9 +557,27 @@ impl PluginVrInterfacing {
                             .unwrap(),
                     ),
                     xr::Binding::new(
-                        &select_left_action,
+                        &trigger_left,
                         xr_instance
                             .string_to_path("/user/hand/left/input/select/click")
+                            .unwrap(),
+                    ),
+                    xr::Binding::new(
+                        &menu_left,
+                        xr_instance
+                            .string_to_path("/user/hand/left/input/menu/click")
+                            .unwrap(),
+                    ),
+                    xr::Binding::new(
+                        &trigger_right,
+                        xr_instance
+                            .string_to_path("/user/hand/right/input/select/click")
+                            .unwrap(),
+                    ),
+                    xr::Binding::new(
+                        &menu_right,
+                        xr_instance
+                            .string_to_path("/user/hand/right/input/menu/click")
                             .unwrap(),
                     ),
                 ],
@@ -589,7 +622,11 @@ impl PluginVrInterfacing {
             grip_left_action,
             grip_right_action,
 
-            select_left_action,
+            trigger_left,
+            menu_left,
+
+            trigger_right,
+            menu_right,
         })
     }
 
@@ -637,12 +674,27 @@ impl PluginVrInterfacing {
 
         // Get controller inputs
         let mut left_events = vec![];
-        let select_left = self.select_left_action.state(xr_session, xr::Path::NULL)?;
-        if select_left.changed_since_last_sync || select_left.current_state {
-            left_events.push(dbg!(ControllerEvent::TriggerClicked));
+        let trigger_left = self.trigger_left.state(xr_session, xr::Path::NULL)?;
+        if trigger_left.changed_since_last_sync {
+            left_events.push(ControllerEvent::Trigger(trigger_left.current_state.into()));
         }
 
+        let menu_left = self.menu_left.state(xr_session, xr::Path::NULL)?;
+        if menu_left.changed_since_last_sync {
+            left_events.push(ControllerEvent::Menu(menu_left.current_state.into()));
+        }
+
+
         let mut right_events = vec![];
+        let trigger_right = self.trigger_right.state(xr_session, xr::Path::NULL)?;
+        if trigger_right.changed_since_last_sync {
+            right_events.push(ControllerEvent::Trigger(trigger_right.current_state.into()));
+        }
+
+        let menu_right = self.menu_right.state(xr_session, xr::Path::NULL)?;
+        if menu_right.changed_since_last_sync {
+            right_events.push(ControllerEvent::Menu(menu_right.current_state.into()));
+        }
 
         Ok(VrUpdate {
             headset: HeadsetState {
