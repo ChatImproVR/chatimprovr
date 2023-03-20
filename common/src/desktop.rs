@@ -5,17 +5,69 @@ use serde::{Deserialize, Serialize};
 // TODO: Gamepad support!
 // TODO: Touchscreen support!
 
-/// Input events reported each frame
+/// Basic input events
 #[derive(Message, Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[locality("Local")]
-pub struct InputEvents(pub Vec<InputEvent>);
-
-/// Basic input events
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum InputEvent {
     Keyboard(KeyboardEvent),
     Mouse(MouseEvent),
     Window(WindowEvent),
+}
+
+impl InputEvent {
+    fn get_key_events(&self) -> Option<&KeyboardEvent> {
+        match self {
+            Self::Keyboard(key_event) => Some(key_event),
+            _ => None,
+        }
+    }
+
+    /// Attempts to get the keycode and element state of an InputEvent if one exists.
+    ///
+    /// Useful if you simply want to get a key and whether or not its being pressed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// for (key, state) in io.inbox::<InputEvent>.filter_map(|e| x.get_keyboard()) {
+    ///     let is_pressed = state == ElementState::Pressed;
+    ///
+    ///     match key {
+    ///         KeyCode::W => { .. },
+    ///         ..snip..
+    ///         }
+    ///     }
+    /// }
+    /// ```
+    pub fn get_keyboard(&self) -> Option<(KeyCode, ElementState)> {
+        match self.get_key_events() {
+            Some(KeyboardEvent::Key { key, state }) => Some((*key, *state)),
+            _ => None,
+        }
+    }
+
+    /// Retrieves `ModifiersState` from an `InputEvent` if it exists.
+    ///
+    /// Useful if you want to get the current modifier.
+    pub fn get_modifier_state(&self) -> Option<ModifiersState> {
+        match self.get_key_events() {
+            Some(KeyboardEvent::Modifiers(m)) => Some(*m),
+            _ => None,
+        }
+    }
+
+    pub fn get_mouse(&self) -> Option<&MouseEvent> {
+        match self {
+            Self::Mouse(mouse_event) => Some(mouse_event),
+            _ => None,
+        }
+    }
+    pub fn get_window(&self) -> Option<&WindowEvent> {
+        match self {
+            Self::Window(window_event) => Some(window_event),
+            _ => None,
+        }
+    }
 }
 
 /// Basic mouse events
@@ -48,7 +100,7 @@ pub enum KeyboardEvent {
 }
 
 /// Keyboard Modifier states
-#[derive(Serialize, Deserialize, Hash, Copy, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Hash, Copy, Debug, Clone, PartialEq, Eq, Default)]
 pub struct ModifiersState {
     pub shift: bool,
     pub ctrl: bool,
@@ -70,6 +122,16 @@ pub enum MouseButton {
 pub enum ElementState {
     Pressed,
     Released,
+}
+
+impl Default for WindowEvent {
+    /// A reasonable default for the window. A 1920 x 1080 screen seems okay.
+    fn default() -> Self {
+        Self::Resized {
+            height: 1920,
+            width: 1080,
+        }
+    }
 }
 
 /// KeyCode; matches winit's keycode enum.
@@ -270,15 +332,4 @@ pub enum KeyCode {
     Copy,
     Paste,
     Cut,
-}
-
-impl Default for ModifiersState {
-    fn default() -> Self {
-        Self {
-            shift: false,
-            ctrl: false,
-            alt: false,
-            logo: false,
-        }
-    }
 }

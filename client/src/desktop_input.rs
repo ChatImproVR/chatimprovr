@@ -1,4 +1,5 @@
 use cimvr_common::desktop::*;
+use cimvr_engine::Engine;
 
 /// Input handler for Desktop platform
 pub struct DesktopInputHandler {
@@ -11,8 +12,12 @@ impl DesktopInputHandler {
     }
 
     /// Returns the InputState which chronicles the events since the last call
-    pub fn get_history(&mut self) -> InputEvents {
-        InputEvents(std::mem::take(&mut self.events))
+    pub fn get_history(&mut self, engine: &mut Engine) {
+        let drained_events = self.events.drain(..);
+        for event in drained_events {
+            engine.send(event);
+        }
+        // InputEvents(std::mem::take(&mut self.events))
     }
 
     /// Handle a Winit event
