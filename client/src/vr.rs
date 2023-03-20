@@ -2,7 +2,7 @@ use crate::desktop_input::DesktopInputHandler;
 use crate::{Client, Opt};
 use anyhow::{format_err, Result};
 use cimvr_common::glam::{Quat, Vec3};
-use cimvr_common::vr::{VrFov, VrUpdate, HeadsetState, ViewState, ControllerState};
+use cimvr_common::vr::{VrFov, VrUpdate, HeadsetState, ViewState, ControllerState, ControllerEvent};
 use cimvr_common::Transform;
 use cimvr_engine::interface::system::Stage;
 use gl::HasContext;
@@ -488,6 +488,8 @@ struct PluginVrInterfacing {
     grip_right_action: xr::Action<xr::Posef>,
     aim_left_action: xr::Action<xr::Posef>,
     aim_right_action: xr::Action<xr::Posef>,
+
+    select_left_action: xr::Action<bool>,
 }
 
 impl PluginVrInterfacing {
@@ -505,6 +507,9 @@ impl PluginVrInterfacing {
 
         let aim_right_action =
             action_set.create_action::<xr::Posef>("aim_right", "aim_right", &[])?;
+
+        let select_left_action =
+            action_set.create_action::<bool>("select_left", "select_left", &[])?;
 
         xr_instance
             .suggest_interaction_profile_bindings(
@@ -534,6 +539,12 @@ impl PluginVrInterfacing {
                         &grip_left_action,
                         xr_instance
                             .string_to_path("/user/hand/left/input/grip/pose")
+                            .unwrap(),
+                    ),
+                    xr::Binding::new(
+                        &select_left_action,
+                        xr_instance
+                            .string_to_path("/user/hand/left/input/select/click")
                             .unwrap(),
                     ),
                 ],
@@ -577,6 +588,8 @@ impl PluginVrInterfacing {
             aim_right_action,
             grip_left_action,
             grip_right_action,
+
+            select_left_action,
         })
     }
 
@@ -622,6 +635,15 @@ impl PluginVrInterfacing {
             .is_active(xr_session, xr::Path::NULL)?
             .then(|| transform_from_pose(&grip_left.pose));
 
+        // Get controller inputs
+        let mut left_events = vec![];
+        let select_left = self.select_left_action.state(xr_session, xr::Path::NULL)?;
+        if select_left.changed_since_last_sync || select_left.current_state {
+            left_events.push(dbg!(ControllerEvent::TriggerClicked));
+        }
+
+        let mut right_events = vec![];
+
         Ok(VrUpdate {
             headset: HeadsetState {
                 left: ViewState {
@@ -636,10 +658,12 @@ impl PluginVrInterfacing {
             left_controller: ControllerState {
                 aim: aim_left,
                 grip: grip_left,
+                events: left_events,
             },
             right_controller: ControllerState {
                 aim: aim_right,
                 grip: grip_right,
+                events: right_events,
             },
         })
     }

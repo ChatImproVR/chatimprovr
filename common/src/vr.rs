@@ -44,7 +44,7 @@ pub struct ControllerState {
     /// Grip transform of this controller (for e.g. a cup). May be None if no controller is connected
     pub grip: Option<Transform>,
     // /// Events captured during this update
-    // pub events: Vec<ControllerEvent>,
+    pub events: Vec<ControllerEvent>,
 }
 
 /// Events produced by a controller
@@ -53,7 +53,7 @@ pub enum ControllerEvent {
     /// The menu button was clicked
     MenuClicked,
     /// The select button was clicked
-    SelectClicked,
+    TriggerClicked,
 }
 
 /// Field of view of OpenXR camera
