@@ -62,7 +62,7 @@ impl Perspective {
     }
 
     pub fn handle_vr_update(&mut self, update: &VrUpdate) {
-        self.proj = [update.fov_left, update.fov_right]
+        self.proj = [update.headset.left.proj, update.headset.right.proj]
             .map(|fov| vr_projection_from_fov(fov, self.near_plane, self.far_plane));
     }
 }

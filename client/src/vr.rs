@@ -2,7 +2,7 @@ use crate::desktop_input::DesktopInputHandler;
 use crate::{Client, Opt};
 use anyhow::{format_err, Result};
 use cimvr_common::glam::{Quat, Vec3};
-use cimvr_common::vr::{VrFov, VrUpdate};
+use cimvr_common::vr::{VrFov, VrUpdate, HeadsetState, ViewState, ControllerState};
 use cimvr_common::Transform;
 use cimvr_engine::interface::system::Stage;
 use gl::HasContext;
@@ -622,16 +622,25 @@ impl PluginVrInterfacing {
             .is_active(xr_session, xr::Path::NULL)?
             .then(|| transform_from_pose(&grip_left.pose));
 
-        // Get VR data for Update stage
         Ok(VrUpdate {
-            view_left: transform_from_pose(&views[0].pose),
-            view_right: transform_from_pose(&views[1].pose),
-            fov_left: convert_fov(&views[0].fov),
-            fov_right: convert_fov(&views[1].fov),
-            grip_left,
-            grip_right,
-            aim_left,
-            aim_right,
+            headset: HeadsetState {
+                left: ViewState {
+                    transf: transform_from_pose(&views[0].pose),
+                    proj: convert_fov(&views[0].fov),
+                },
+                right: ViewState {
+                    transf: transform_from_pose(&views[1].pose),
+                    proj: convert_fov(&views[1].fov),
+                },
+            },
+            left_controller: ControllerState {
+                aim: aim_left,
+                grip: grip_left,
+            },
+            right_controller: ControllerState {
+                aim: aim_right,
+                grip: grip_right,
+            },
         })
     }
 }

@@ -80,11 +80,11 @@ impl Camera {
             // is actually prepended to the view matrix)
             self.proj.handle_vr_update(&update);
 
-            if let Some(pos) = update.grip_left {
+            if let Some(pos) = update.left_controller.grip {
                 io.add_component(self.left_hand, pos);
             }
 
-            if let Some(pos) = update.grip_right {
+            if let Some(pos) = update.left_controller.grip {
                 io.add_component(self.right_hand, pos);
             }
         }
