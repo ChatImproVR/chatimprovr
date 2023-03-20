@@ -10,14 +10,14 @@ use crate::desktop::{
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct InputHelper {
     /// Keeps track of keys that are currently being pressed. A pressed key will be in this set.
-    pub pressed_keys: HashSet<KeyCode>,
+    pressed_keys: HashSet<KeyCode>,
     /// Modifiers don't keep track of state, going up and down is treated like a boolean (on/off).
-    pub modifiers_state: ModifiersState,
+    modifiers_state: ModifiersState,
     /// Holds information about everything the mouse can do. See
     /// [`MouseState`](cimvr_common::utils::input_helper::MouseState).
     mouse_state: MouseState,
     /// Help keep track of window events like when the window gets resized.
-    pub window_state: WindowEvent,
+    window_state: WindowEvent,
 }
 
 /// MouseState struct exists for the InputHelper the utilize and capture mouse information.
@@ -147,4 +147,55 @@ impl InputHelper {
             }
         }
     }
+
+    // --- Public API ---
+    // Spec should include
+    // key press api
+    //
+    // key_down(&self, keycode) -> bool
+    // key_up(&self, keycode) -> bool
+    pub fn key_down(&self, key: &KeyCode) -> bool {
+        if self.pressed_keys.contains(key) {
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn key_up(&self, key: &KeyCode) -> bool {
+        if !self.pressed_keys.contains(key) {
+            true
+        } else {
+            false
+        }
+    }
+
+    // modifiers
+    // held_alt(&self) -> bool
+    // held_shift(&self) -> bool
+    // held_control(&self) -> bool
+    pub fn held_shift(&self) -> bool {
+        return self.modifiers_state.alt;
+    }
+    pub fn held_ctrl(&self) -> bool {
+        return self.modifiers_state.ctrl;
+    }
+    pub fn held_alt(&self) -> bool {
+        return self.modifiers_state.alt;
+    }
+    pub fn held_logo(&self) -> bool {
+        return self.modifiers_state.logo;
+    }
+    // mouse api
+    // mouse_pressed(&self) -> bool
+    // mouse_released(&self) -> bool
+    // mouse_held(&self, button) -> bool
+    // mousewheel_scroll_diff(&self) -> f32
+    // mouse_pos(&self) -> Option<(f32, f32)>
+    // mouse_pos_diff(&self) -> (f32,f32)
+    //
+    // Screen resize API
+    // get_resolution(&self) -> Option<(u32, u32)>
+    // scale_factor_changed(&self) -> Option<f64>
+    // scale_factor(&self) -> Option<f64>
 }
