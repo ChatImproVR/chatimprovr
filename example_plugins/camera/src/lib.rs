@@ -11,7 +11,7 @@ use cimvr_common::{
     vr::VrUpdate,
     Transform,
 };
-use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
+use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*};
 
 struct Camera {
     arcball: ArcBall,
@@ -19,6 +19,8 @@ struct Camera {
     proj: Perspective,
     left_hand: EntityId,
     right_hand: EntityId,
+    /// Keep track of whether we've ever received a VR update, since we'll always receive desktop events!
+    is_vr: bool,
 }
 
 make_app_state!(Camera, DummyUserState);
@@ -64,42 +66,54 @@ impl UserState for Camera {
             proj: Perspective::new(),
             left_hand,
             right_hand,
+            is_vr: false,
         }
     }
 }
 
 impl Camera {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
-        // Handle input events for desktop mode
-        if let Some(input) = io.inbox_first::<InputEvents>() {
-            // Handle window resizing
-            self.proj.handle_input_events(&input);
-
-            //dbg!(&input);
-
-            // Handle pivot/pan
-            for event in input.0 {
-                self.arcball_control.handle_event(&event, &mut self.arcball);
-            }
-
-            // Set camera transform to arcball position
-            for key in query.iter() {
-                query.write::<Transform>(key, &self.arcball.camera_transf());
-            }
-        }
-
         // Handle events for VR
         if let Some(update) = io.inbox_first::<VrUpdate>() {
+            if !update.left_controller.events.is_empty() {
+                dbg!(&update.left_controller.events);
+            }
+
+            if !update.right_controller.events.is_empty() {
+                dbg!(&update.right_controller.events);
+            }
+
+            self.is_vr = true;
             // Handle FOV changes (But NOT position. Position is extremely time-sensitive, so it
             // is actually prepended to the view matrix)
             self.proj.handle_vr_update(&update);
 
-            if let Some(pos) = update.grip_left {
+            if let Some(pos) = update.left_controller.grip {
                 io.add_component(self.left_hand, pos);
             }
 
-            if let Some(pos) = update.grip_right {
+            if let Some(pos) = update.left_controller.grip {
                 io.add_component(self.right_hand, pos);
+            }
+        }
+
+        // Handle input events for desktop mode
+        if let Some(input) = io.inbox_first::<InputEvents>() {
+            if !self.is_vr {
+                // Handle window resizing
+                self.proj.handle_input_events(&input);
+
+                //dbg!(&input);
+
+                // Handle pivot/pan
+                for event in input.0 {
+                    self.arcball_control.handle_event(&event, &mut self.arcball);
+                }
+
+                // Set camera transform to arcball position
+                for key in query.iter() {
+                    query.write::<Transform>(key, &self.arcball.camera_transf());
+                }
             }
         }
 
