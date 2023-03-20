@@ -1,13 +1,13 @@
 use crate::desktop_input::DesktopInputHandler;
 use crate::{Client, Opt};
 use anyhow::{format_err, Result};
+use cimvr_common::glam::{Quat, Vec3};
 use cimvr_common::vr::{VrFov, VrUpdate};
 use cimvr_common::Transform;
 use cimvr_engine::interface::system::Stage;
 use gl::HasContext;
 use glutin::event_loop::ControlFlow;
 use glutin::event_loop::EventLoop;
-use nalgebra::{Point3, Quaternion, Unit};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -19,7 +19,6 @@ const VR_DEPTH_FORMAT: u32 = gl::DEPTH_COMPONENT24;
 pub fn mainloop(args: Opt) -> Result<()> {
     // Set up VR mainloop
     let (mut main, event_loop) = MainLoop::new(args.plugins, args.connect, args.username.unwrap())?;
-    let mut main = MainLoop::new(args.plugins, args.connect, )?;
 
     // Set up desktop input
     let mut input = DesktopInputHandler::new();
@@ -66,7 +65,7 @@ struct MainLoop {
 }
 
 impl MainLoop {
-    pub fn new(plugins: Vec<PathBuf>, connect: SocketAddr, username: String) -> Result<Self> {
+    pub fn new(plugins: Vec<PathBuf>, connect: SocketAddr, username: String) -> Result<(Self, EventLoop<()>)> {
         // Load OpenXR from platform-specific location
         #[cfg(target_os = "linux")]
         let entry = unsafe { xr::Entry::load()? };
@@ -459,12 +458,11 @@ fn get_vr_depth_texture(
 fn transform_from_pose(pose: &xr::Posef) -> Transform {
     // Convert the rotation quaternion from OpenXR to nalgebra
     let orient = pose.orientation;
-    let orient = Quaternion::new(orient.w, orient.x, orient.y, orient.z);
-    let orient = Unit::new_normalize(orient);
+    let orient = Quat::from_xyzw(orient.x, orient.y, orient.z, orient.w);
 
     // Convert the position vector from OpenXR to nalgebra
     let pos = pose.position;
-    let pos = Point3::new(pos.x, pos.y, pos.z);
+    let pos = Vec3::new(pos.x, pos.y, pos.z);
 
     Transform { pos, orient }
 }
