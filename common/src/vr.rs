@@ -4,8 +4,8 @@ use cimvr_engine_interface::{pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 
 /// VR update message
-/// 
-/// NOTE: All coordinates are relative to the "Floor" VR space. 
+///
+/// NOTE: All coordinates are relative to the "Floor" VR space.
 /// That is, (0, 0, 0) is always the middle of the floor in standing mode, regardless of where the camera is
 #[derive(Message, Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[locality("Local")]

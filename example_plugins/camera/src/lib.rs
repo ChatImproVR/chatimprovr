@@ -92,7 +92,7 @@ impl Camera {
                 io.add_component(self.left_hand, pos);
             }
 
-            if let Some(pos) = update.left_controller.grip {
+            if let Some(pos) = update.right_controller.grip {
                 io.add_component(self.right_hand, pos);
             }
         }
