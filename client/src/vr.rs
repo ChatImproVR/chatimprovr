@@ -1,13 +1,13 @@
 use crate::desktop_input::DesktopInputHandler;
 use crate::{Client, Opt};
 use anyhow::{format_err, Result};
-use cimvr_common::vr::{VrFov, VrUpdate};
+use cimvr_common::glam::{Quat, Vec3};
+use cimvr_common::vr::{VrFov, VrUpdate, HeadsetState, ViewState, ControllerState, ControllerEvent};
 use cimvr_common::Transform;
 use cimvr_engine::interface::system::Stage;
 use gl::HasContext;
 use glutin::event_loop::ControlFlow;
 use glutin::event_loop::EventLoop;
-use nalgebra::{Point3, Quaternion, Unit};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -19,7 +19,6 @@ const VR_DEPTH_FORMAT: u32 = gl::DEPTH_COMPONENT24;
 pub fn mainloop(args: Opt) -> Result<()> {
     // Set up VR mainloop
     let (mut main, event_loop) = MainLoop::new(args.plugins, args.connect, args.username.unwrap())?;
-    let mut main = MainLoop::new(args.plugins, args.connect, )?;
 
     // Set up desktop input
     let mut input = DesktopInputHandler::new();
@@ -66,7 +65,7 @@ struct MainLoop {
 }
 
 impl MainLoop {
-    pub fn new(plugins: Vec<PathBuf>, connect: SocketAddr, username: String) -> Result<Self> {
+    pub fn new(plugins: Vec<PathBuf>, connect: SocketAddr, username: String) -> Result<(Self, EventLoop<()>)> {
         // Load OpenXR from platform-specific location
         #[cfg(target_os = "linux")]
         let entry = unsafe { xr::Entry::load()? };
@@ -459,12 +458,11 @@ fn get_vr_depth_texture(
 fn transform_from_pose(pose: &xr::Posef) -> Transform {
     // Convert the rotation quaternion from OpenXR to nalgebra
     let orient = pose.orientation;
-    let orient = Quaternion::new(orient.w, orient.x, orient.y, orient.z);
-    let orient = Unit::new_normalize(orient);
+    let orient = Quat::from_xyzw(orient.x, orient.y, orient.z, orient.w);
 
     // Convert the position vector from OpenXR to nalgebra
     let pos = pose.position;
-    let pos = Point3::new(pos.x, pos.y, pos.z);
+    let pos = Vec3::new(pos.x, pos.y, pos.z);
 
     Transform { pos, orient }
 }
@@ -490,6 +488,12 @@ struct PluginVrInterfacing {
     grip_right_action: xr::Action<xr::Posef>,
     aim_left_action: xr::Action<xr::Posef>,
     aim_right_action: xr::Action<xr::Posef>,
+
+    trigger_left: xr::Action<bool>,
+    menu_left: xr::Action<bool>,
+
+    trigger_right: xr::Action<bool>,
+    menu_right: xr::Action<bool>,
 }
 
 impl PluginVrInterfacing {
@@ -507,6 +511,20 @@ impl PluginVrInterfacing {
 
         let aim_right_action =
             action_set.create_action::<xr::Posef>("aim_right", "aim_right", &[])?;
+
+        let trigger_left =
+            action_set.create_action::<bool>("trigger_left", "trigger_left", &[])?;
+
+        let menu_left =
+            action_set.create_action::<bool>("menu_left", "menu_left", &[])?;
+
+        let trigger_right =
+            action_set.create_action::<bool>("trigger_right", "trigger_right", &[])?;
+
+        let menu_right =
+            action_set.create_action::<bool>("menu_right", "menu_right", &[])?;
+
+
 
         xr_instance
             .suggest_interaction_profile_bindings(
@@ -536,6 +554,30 @@ impl PluginVrInterfacing {
                         &grip_left_action,
                         xr_instance
                             .string_to_path("/user/hand/left/input/grip/pose")
+                            .unwrap(),
+                    ),
+                    xr::Binding::new(
+                        &trigger_left,
+                        xr_instance
+                            .string_to_path("/user/hand/left/input/select/click")
+                            .unwrap(),
+                    ),
+                    xr::Binding::new(
+                        &menu_left,
+                        xr_instance
+                            .string_to_path("/user/hand/left/input/menu/click")
+                            .unwrap(),
+                    ),
+                    xr::Binding::new(
+                        &trigger_right,
+                        xr_instance
+                            .string_to_path("/user/hand/right/input/select/click")
+                            .unwrap(),
+                    ),
+                    xr::Binding::new(
+                        &menu_right,
+                        xr_instance
+                            .string_to_path("/user/hand/right/input/menu/click")
                             .unwrap(),
                     ),
                 ],
@@ -579,6 +621,12 @@ impl PluginVrInterfacing {
             aim_right_action,
             grip_left_action,
             grip_right_action,
+
+            trigger_left,
+            menu_left,
+
+            trigger_right,
+            menu_right,
         })
     }
 
@@ -624,16 +672,51 @@ impl PluginVrInterfacing {
             .is_active(xr_session, xr::Path::NULL)?
             .then(|| transform_from_pose(&grip_left.pose));
 
-        // Get VR data for Update stage
+        // Get controller inputs
+        let mut left_events = vec![];
+        let trigger_left = self.trigger_left.state(xr_session, xr::Path::NULL)?;
+        if trigger_left.changed_since_last_sync {
+            left_events.push(ControllerEvent::Trigger(trigger_left.current_state.into()));
+        }
+
+        let menu_left = self.menu_left.state(xr_session, xr::Path::NULL)?;
+        if menu_left.changed_since_last_sync {
+            left_events.push(ControllerEvent::Menu(menu_left.current_state.into()));
+        }
+
+
+        let mut right_events = vec![];
+        let trigger_right = self.trigger_right.state(xr_session, xr::Path::NULL)?;
+        if trigger_right.changed_since_last_sync {
+            right_events.push(ControllerEvent::Trigger(trigger_right.current_state.into()));
+        }
+
+        let menu_right = self.menu_right.state(xr_session, xr::Path::NULL)?;
+        if menu_right.changed_since_last_sync {
+            right_events.push(ControllerEvent::Menu(menu_right.current_state.into()));
+        }
+
         Ok(VrUpdate {
-            view_left: transform_from_pose(&views[0].pose),
-            view_right: transform_from_pose(&views[1].pose),
-            fov_left: convert_fov(&views[0].fov),
-            fov_right: convert_fov(&views[1].fov),
-            grip_left,
-            grip_right,
-            aim_left,
-            aim_right,
+            headset: HeadsetState {
+                left: ViewState {
+                    transf: transform_from_pose(&views[0].pose),
+                    proj: convert_fov(&views[0].fov),
+                },
+                right: ViewState {
+                    transf: transform_from_pose(&views[1].pose),
+                    proj: convert_fov(&views[1].fov),
+                },
+            },
+            left_controller: ControllerState {
+                aim: aim_left,
+                grip: grip_left,
+                events: left_events,
+            },
+            right_controller: ControllerState {
+                aim: aim_right,
+                grip: grip_right,
+                events: right_events,
+            },
         })
     }
 }
