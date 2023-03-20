@@ -154,12 +154,12 @@ impl InputHelper {
     //
     // key_down(&self, keycode) -> bool
     // key_up(&self, keycode) -> bool
-    pub fn key_down(&self, key: &KeyCode) -> bool {
-        return self.pressed_keys.contains(key);
+    pub fn key_down(&self, key: KeyCode) -> bool {
+        return self.pressed_keys.contains(&key);
     }
 
-    pub fn key_up(&self, key: &KeyCode) -> bool {
-        return !self.pressed_keys.contains(key);
+    pub fn key_up(&self, key: KeyCode) -> bool {
+        return !self.pressed_keys.contains(&key);
     }
 
     // modifiers
