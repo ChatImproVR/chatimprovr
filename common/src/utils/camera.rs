@@ -92,9 +92,9 @@ pub fn vr_projection_from_fov(fov: VrFov, near: f32, far: f32) -> Mat4 {
     let a43 = -(far * near) / (far - near);
 
     Mat4::from_cols_array_2d(&[
-        [a11, 0.0, a31, 0.0],  //
-        [0.0, a22, a32, 0.0],  //
-        [0.0, 0.0, a33, a43],  //
-        [0.0, 0.0, -1.0, 0.0], //
+        [a11, 0.0, 0.0, 0.0],
+        [0.0, a22, 0.0, 0.0],
+        [a31, a32, a33, -1.0],
+        [0.0, 0.0, a43, 0.0],
     ])
 }
