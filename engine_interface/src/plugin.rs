@@ -141,6 +141,25 @@ impl<U> EngineSchedule<U> {
 }
 
 #[must_use]
+pub struct EntityBuilder<'io> {
+    io: &'io mut EngineIo,
+    entity: EntityId,
+}
+
+impl EntityBuilder<'_> {
+    /// Add a component to the entity
+    pub fn add_component<C: Component>(self, data: C) -> Self {
+        self.io.add_component(self.entity, data);
+        self
+    }
+
+    /// Build this entity, returning its id
+    pub fn build(self) -> EntityId {
+        self.entity
+    }
+}
+
+#[must_use]
 pub struct SystemBuilder<'sched, U> {
     sched: &'sched mut EngineSchedule<U>,
     desc: SystemDescriptor,
@@ -148,6 +167,12 @@ pub struct SystemBuilder<'sched, U> {
 }
 
 impl<U> SystemBuilder<'_, U> {
+    /// Run the system during the specified Stage
+    pub fn stage(mut self, stage: Stage) -> Self {
+        self.desc.stage = stage;
+        self
+    }
+
     /// Query the given component and provide an access level to it.
     pub fn query<T: Component>(mut self, access: Access) -> Self {
         self.desc.query.push(QueryComponent::new::<T>(access));
@@ -272,7 +297,12 @@ impl EngineIo {
     }
 
     /// Create an entity
-    pub fn create_entity(&mut self) -> EntityId {
+    pub fn create_entity(&mut self) -> EntityBuilder {
+        let entity = self.create_entity_internal();
+        EntityBuilder { io: self, entity }
+    }
+
+    fn create_entity_internal(&mut self) -> EntityId {
         let id = EntityId(self.pcg.gen_u128());
         self.commands.push(EcsCommand::Create(id));
         id
