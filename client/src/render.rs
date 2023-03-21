@@ -211,6 +211,10 @@ impl RenderEngine {
             gl.clear_depth_f32(1.0);
 
             gl.clear(gl::COLOR_BUFFER_BIT | gl::STENCIL_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+
+            gl.enable(gl::BLEND);
+            gl.blend_func(gl::ONE, gl::ZERO);
+
         }
 
         Ok(())
