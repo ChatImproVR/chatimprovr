@@ -17,10 +17,10 @@ impl UserState for ClientState {
 
         io.send(&cube());
 
-        sched.add_system(
-            Self::ui_update,
-            SystemDescriptor::new(Stage::Update).subscribe::<UiUpdate>(),
-        );
+        sched
+            .add_system(Self::ui_update)
+            .subscribe::<UiUpdate>()
+            .build();
 
         let test_element = ui.add(
             io,
