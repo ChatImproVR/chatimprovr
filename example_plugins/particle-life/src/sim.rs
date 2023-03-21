@@ -129,7 +129,7 @@ impl SimConfig {
 }
 
 fn random_particle(rng: &mut Pcg, config: &SimConfig) -> Particle {
-    let range = 3.;
+    let range = 2.;
     Particle {
         pos: Vec3::new(rng.gen_f32(), rng.gen_f32(), rng.gen_f32()) * range
             - Vec3::splat(range / 2.),
