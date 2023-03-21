@@ -60,13 +60,14 @@ impl UserState for ClientState {
 
         let sim = SimState::new(&mut Pcg::new(), palette, 8_000);
 
-        let ent = io.create_entity();
-        io.add_component(ent, Transform::identity());
-        io.add_component(ent, Render::new(SIM_RENDER_ID).primitive(Primitive::Points));
+        io.create_entity()
+            .add_component(Transform::identity())
+            .add_component(Render::new(SIM_RENDER_ID).primitive(Primitive::Points))
+            .build();
 
         let mesh = Mesh::new();
 
-        sched.add_system(Self::update, SystemDescriptor::new(Stage::Update));
+        sched.add_system(Self::update).build();
 
         Self {
             sim,

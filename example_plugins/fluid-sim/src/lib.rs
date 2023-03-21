@@ -28,17 +28,19 @@ impl UserState for ServerState {
         // Fluid lines mesh
         let fluid_vel_rdr = Render::new(FLUID_VEL_ID).primitive(Primitive::Lines);
 
-        let fluid_vel_ent = io.create_entity();
-        io.add_component(fluid_vel_ent, Transform::default());
-        io.add_component(fluid_vel_ent, fluid_vel_rdr);
-        io.add_component(fluid_vel_ent, Synchronized);
+        io.create_entity()
+            .add_component(Transform::default())
+            .add_component(fluid_vel_rdr)
+            .add_component(Synchronized)
+            .build();
 
         let cube_rdr = Render::new(CUBE_ID).primitive(Primitive::Lines);
 
-        let cube_ent = io.create_entity();
-        io.add_component(cube_ent, Transform::default());
-        io.add_component(cube_ent, cube_rdr);
-        io.add_component(cube_ent, Synchronized);
+        io.create_entity()
+            .add_component(Transform::default())
+            .add_component(cube_rdr)
+            .add_component(Synchronized)
+            .build();
 
         Self
     }
@@ -79,7 +81,7 @@ impl UserState for ClientState {
         io.send(&cube(1.));
 
         // Schedule the system
-        schedule.add_system(Self::fluid_move, SystemDescriptor::new(Stage::Update));
+        schedule.add_system(Self::fluid_move).build();
 
         /*
         schedule.add_system(

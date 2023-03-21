@@ -33,25 +33,12 @@ pub enum Stage {
     PostUpdate,
 }
 
-impl SystemDescriptor {
-    /// Create a new system descriptor for the given system
-    pub fn new(stage: Stage) -> Self {
+impl Default for SystemDescriptor {
+    fn default() -> Self {
         Self {
-            stage,
+            stage: Stage::Update,
             subscriptions: vec![],
             query: vec![],
         }
-    }
-
-    /// Query the given component and provide an access level to it.
-    pub fn query<T: Component>(mut self, access: Access) -> Self {
-        self.query.push(QueryComponent::new::<T>(access));
-        self
-    }
-
-    /// Subscribe to the given channel by telling it which message type you want.
-    pub fn subscribe<M: Message>(mut self) -> Self {
-        self.subscriptions.push(M::CHANNEL.into());
-        self
     }
 }

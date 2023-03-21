@@ -59,7 +59,7 @@ void main() {
 "#;
 
 impl UserState for ClientState {
-    fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
+    fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         // Make the cube mesh available to the rendering engine
         io.send(&UploadMesh {
             mesh: cube(),
@@ -72,12 +72,11 @@ impl UserState for ClientState {
             id: CUBE_SHADER,
         });
 
-        _sched.add_system(
-            Self::deleteme,
-            SystemDescriptor::new(Stage::Update)
-                .query::<RenderExtra>(Access::Read)
-                .query::<Synchronized>(Access::Read),
-        );
+        sched
+            .add_system(Self::deleteme)
+            .query::<RenderExtra>(Access::Read)
+            .query::<Synchronized>(Access::Read)
+            .build();
 
         Self
     }
@@ -100,14 +99,17 @@ impl UserState for ServerState {
             .primitive(Primitive::Triangles);
 
         // Create one cube entity at the origin, and make it synchronize to clients
-        let cube_ent = io.create_entity();
-        io.add_component(cube_ent, Transform::default());
-        io.add_component(cube_ent, cube_rdr);
-        io.add_component(cube_ent, Synchronized);
-        sched.add_system(
-            Self::update,
-            SystemDescriptor::new(Stage::Update).subscribe::<FrameTime>(),
-        );
+        let cube_ent = io
+            .create_entity()
+            .add_component(Transform::default())
+            .add_component(cube_rdr)
+            .add_component(Synchronized)
+            .build();
+
+        sched
+            .add_system(Self::update)
+            .subscribe::<FrameTime>()
+            .build();
 
         Self { cube_ent }
     }
