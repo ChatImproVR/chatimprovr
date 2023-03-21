@@ -23,7 +23,7 @@ pub struct QueryComponent {
 /// A description of an ECS query
 pub type Query = Vec<QueryComponent>;
 
-/// Universally-unique Entity ID
+/// Universally-unique Entity ID. This maps to an entity that's been created.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct EntityId(pub u128);
 
