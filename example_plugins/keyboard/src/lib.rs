@@ -40,13 +40,15 @@ impl UserState for ClientState {
         });
 
         // Add update system, and subscribe to needed channels
-        sched.add_system(
-            Self::update,
-            SystemDescriptor::new(Stage::Update)
-                .subscribe::<InputEvent>()
-                .subscribe::<FrameTime>(),
-        );
+        sched
+            .add_system(Self::update)
+            .subscribe::<InputEvent>()
+            .subscribe::<FrameTime>()
+            .build();
 
+        // SystemDescriptor::new(Stage::Update)
+        //     .subscribe::<InputEvent>()
+        //     .subscribe::<FrameTime>(),
         // Initialize state
         Self {
             w_is_pressed: false,
@@ -115,24 +117,21 @@ impl UserState for ServerState {
         // Define how the cube should be rendered
 
         // Create one cube entity at the origin, and make it synchronize to clients
-        let cube_entity = io.create_entity();
-        io.add_component(cube_entity, Transform::default());
-        io.add_component(
-            cube_entity,
-            Render::new(CUBE_HANDLE).primitive(Primitive::Triangles),
-        );
-        io.add_component(cube_entity, Synchronized);
-        io.add_component(cube_entity, CubeFlag);
+        io.create_entity()
+            .add_component(Transform::default())
+            .add_component(Render::new(CUBE_HANDLE))
+            .add_component(Synchronized)
+            .add_component(CubeFlag)
+            .build();
 
         // Create the Update system, which interprets movement commands and updates the transform
         // component on the object with CubeFlag
-        sched.add_system(
-            Self::update,
-            SystemDescriptor::new(Stage::Update)
-                .subscribe::<MoveCommand>()
-                .query::<CubeFlag>(Access::Write)
-                .query::<Transform>(Access::Write),
-        );
+        sched
+            .add_system(Self::update)
+            .subscribe::<MoveCommand>()
+            .query::<CubeFlag>(Access::Write)
+            .query::<Transform>(Access::Write)
+            .build();
 
         Self
     }
