@@ -21,18 +21,21 @@ struct MyComponent {
 impl UserState for ServerState {
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         // Create a new entity
-        let ent = io.create_entity();
-        // Add MyComponent to it, so that it's updated in update()
-        io.add_component(ent, MyComponent { a: 0, b: 0.0 });
-        // Add Sychronized to it, so that it is sent to the client each frame
-        io.add_component(ent, Synchronized);
+        let _entity_id = io
+            .create_entity()
+            // Add MyComponent to it, so that it's updated in update()
+            .add_component(MyComponent { a: 0, b: 0.0 })
+            // Add Sychronized to it, so that it is sent to the client each frame
+            .add_component(Synchronized)
+            // Get it's ID
+            .build();
 
         // Schedule the update() system to run every Update
         // Queries all entities with MyComponent attached, and allows us to write to them
-        sched.add_system(
-            Self::update,
-            SystemDescriptor::new(Stage::Update).query::<MyComponent>(Access::Write),
-        );
+        sched
+            .add_system(Self::update)
+            .query::<MyComponent>(Access::Write)
+            .build();
 
         Self { increment: 0 }
     }
@@ -60,10 +63,10 @@ impl UserState for ClientState {
     fn new(_io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         // Schedule the update() system to run every Update,
         // querying all entities with the MyComponent component attached
-        sched.add_system(
-            Self::update,
-            SystemDescriptor::new(Stage::Update).query::<MyComponent>(Access::Read),
-        );
+        sched
+            .add_system(Self::update)
+            .query::<MyComponent>(Access::Read)
+            .build();
 
         Self
     }
