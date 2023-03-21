@@ -140,7 +140,7 @@ impl<U> EngineSchedule<U> {
     }
 }
 
-#[must_use]
+#[must_use = "Entities must be built with .build()"]
 pub struct EntityBuilder<'io> {
     io: &'io mut EngineIo,
     entity: EntityId,
@@ -159,7 +159,7 @@ impl EntityBuilder<'_> {
     }
 }
 
-#[must_use]
+#[must_use = "Systems must be built with .build()"]
 pub struct SystemBuilder<'sched, U> {
     sched: &'sched mut EngineSchedule<U>,
     desc: SystemDescriptor,
