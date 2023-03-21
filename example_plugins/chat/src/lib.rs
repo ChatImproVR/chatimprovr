@@ -31,12 +31,11 @@ const N_DISPLAYED_MESSAGES: usize = 5;
 // Client code
 impl UserState for ClientState {
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
-        sched.add_system(
-            Self::ui_update,
-            SystemDescriptor::new(Stage::Update)
-                .subscribe::<UiUpdate>()
-                .subscribe::<ChatDownload>(),
-        );
+        sched
+            .add_system(Self::ui_update)
+            .subscribe::<UiUpdate>()
+            .subscribe::<ChatDownload>()
+            .build();
 
         let mut ui = UiStateHelper::new();
 
@@ -121,12 +120,11 @@ impl UserState for ServerState {
     fn new(_io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         // Schedule the update() system to run every Update,
         // and allow it to receive the ChatMessage message
-        sched.add_system(
-            Self::update,
-            SystemDescriptor::new(Stage::Update)
-                .subscribe::<ChatUpload>()
-                .subscribe::<Connections>(),
-        );
+        sched
+            .add_system(Self::update)
+            .subscribe::<ChatUpload>()
+            .subscribe::<Connections>()
+            .build();
 
         Self
     }

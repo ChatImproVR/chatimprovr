@@ -12,16 +12,17 @@ pub struct ServerState {
 
 impl UserState for ServerState {
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
-        let cube = io.create_entity();
-        io.add_component(cube, Transform::default());
+        let cube = io
+            .create_entity()
+            .add_component(Transform::default())
+            .build();
 
-        sched.add_system(
-            Self::update,
-            SystemDescriptor::new(Stage::Update)
-                .query::<Render>(Access::Read)
-                .subscribe::<UiUpdate>()
-                .subscribe::<ChangeColor>(),
-        );
+        sched
+            .add_system(Self::update)
+            .query::<Render>(Access::Read)
+            .subscribe::<UiUpdate>()
+            .subscribe::<ChangeColor>()
+            .build();
 
         Self { cube }
     }

@@ -27,35 +27,38 @@ const HAND_RDR_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Hand"));
 impl UserState for Camera {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
         // Create camera
-        let camera_ent = io.create_entity();
-        io.add_component(camera_ent, Transform::identity());
-        io.add_component(
-            camera_ent,
-            CameraComponent {
+        let camera_ent = io
+            .create_entity()
+            .add_component(Transform::identity())
+            .add_component(CameraComponent {
                 clear_color: [0.; 3],
                 projection: Default::default(),
-            },
-        );
+            })
+            .build();
 
         io.send(&hand());
 
         // Schedule the system
         // In the future it would be super cool to do this like Bevy and be able to just infer the
         // query from the type arguments and such...
-        schedule.add_system(
-            Self::update,
-            SystemDescriptor::new(Stage::PreUpdate)
-                .subscribe::<InputEvent>()
-                .subscribe::<VrUpdate>()
-                .query::<Transform>(Access::Write)
-                .query::<CameraComponent>(Access::Write),
-        );
+        schedule
+            .add_system(Self::update)
+            .stage(Stage::PreUpdate)
+            .subscribe::<InputEvent>()
+            .subscribe::<VrUpdate>()
+            .query::<Transform>(Access::Write)
+            .query::<CameraComponent>(Access::Write)
+            .build();
 
-        let left_hand = io.create_entity();
-        let right_hand = io.create_entity();
+        let left_hand = io
+            .create_entity()
+            .add_component(Render::new(HAND_RDR_ID))
+            .build();
 
-        io.add_component(left_hand, Render::new(HAND_RDR_ID));
-        io.add_component(right_hand, Render::new(HAND_RDR_ID));
+        let right_hand = io
+            .create_entity()
+            .add_component(Render::new(HAND_RDR_ID))
+            .build();
 
         Self {
             arcball: ArcBall::default(),

@@ -25,7 +25,7 @@ struct MyMessage {
 impl UserState for ClientState {
     fn new(_io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         // Schedule the update() system to run every Update
-        sched.add_system(Self::update, SystemDescriptor::new(Stage::Update));
+        sched.add_system(Self::update).build();
 
         Self { increment: 0 }
     }
@@ -48,10 +48,10 @@ impl UserState for ServerState {
     fn new(_io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         // Schedule the update() system to run every Update,
         // and allow it to receive the MyMessage message
-        sched.add_system(
-            Self::update,
-            SystemDescriptor::new(Stage::Update).subscribe::<MyMessage>(),
-        );
+        sched
+            .add_system(Self::update)
+            .subscribe::<MyMessage>()
+            .build();
 
         Self
     }

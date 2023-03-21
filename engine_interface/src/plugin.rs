@@ -131,9 +131,64 @@ impl<U> EngineSchedule<U> {
     // TODO: Decide whether ECS data is flushed to the engine in between!
     /// Contract: Systems within the same stage are executed in the order in which they are added
     /// by this function.
-    pub fn add_system(&mut self, cb: Callback<U>, desc: SystemDescriptor) {
-        self.systems.push(desc);
-        self.callbacks.push(cb);
+    pub fn add_system(&mut self, callback: Callback<U>) -> SystemBuilder<U> {
+        SystemBuilder {
+            sched: self,
+            desc: SystemDescriptor::default(),
+            callback,
+        }
+    }
+}
+
+#[must_use = "Entities must be built with .build()"]
+pub struct EntityBuilder<'io> {
+    io: &'io mut EngineIo,
+    entity: EntityId,
+}
+
+impl EntityBuilder<'_> {
+    /// Add a component to the entity
+    pub fn add_component<C: Component>(self, data: C) -> Self {
+        self.io.add_component(self.entity, data);
+        self
+    }
+
+    /// Build this entity, returning its id
+    pub fn build(self) -> EntityId {
+        self.entity
+    }
+}
+
+#[must_use = "Systems must be built with .build()"]
+pub struct SystemBuilder<'sched, U> {
+    sched: &'sched mut EngineSchedule<U>,
+    desc: SystemDescriptor,
+    callback: Callback<U>,
+}
+
+impl<U> SystemBuilder<'_, U> {
+    /// Run the system during the specified Stage
+    pub fn stage(mut self, stage: Stage) -> Self {
+        self.desc.stage = stage;
+        self
+    }
+
+    /// Query the given component and provide an access level to it.
+    pub fn query<T: Component>(mut self, access: Access) -> Self {
+        self.desc.query.push(QueryComponent::new::<T>(access));
+        self
+    }
+
+    /// Subscribe to the given channel by telling it which message type you want.
+    pub fn subscribe<M: Message>(mut self) -> Self {
+        self.desc.subscriptions.push(M::CHANNEL.into());
+        self
+    }
+
+    /// Builds the system
+    pub fn build(self) {
+        self.sched.systems.push(self.desc);
+        self.sched.callbacks.push(self.callback);
     }
 }
 
@@ -242,7 +297,12 @@ impl EngineIo {
     }
 
     /// Create an entity
-    pub fn create_entity(&mut self) -> EntityId {
+    pub fn create_entity(&mut self) -> EntityBuilder {
+        let entity = self.create_entity_internal();
+        EntityBuilder { io: self, entity }
+    }
+
+    fn create_entity_internal(&mut self) -> EntityId {
         let id = EntityId(self.pcg.gen_u128());
         self.commands.push(EcsCommand::Create(id));
         id
