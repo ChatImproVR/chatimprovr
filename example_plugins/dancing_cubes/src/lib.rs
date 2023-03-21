@@ -30,20 +30,20 @@ impl UserState for ClientState {
 }
 
 impl UserState for ServerState {
-    fn new(_io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
+    fn new(_io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         // Schedule the systems
-        schedule.add_system(
-            Self::cube_move,
-            SystemDescriptor::new(Stage::Update)
-                .subscribe::<FrameTime>()
-                .query::<Transform>(Access::Write)
-                .query::<MoveCube>(Access::Read),
-        );
+        sched
+            .add_system(Self::cube_move)
+            .subscribe::<FrameTime>()
+            .query::<Transform>(Access::Write)
+            .query::<MoveCube>(Access::Read)
+            .build();
 
-        schedule.add_system(
-            Self::startup,
-            SystemDescriptor::new(Stage::PostInit).query::<MoveCube>(Access::Read),
-        );
+        sched
+            .add_system(Self::startup)
+            .stage(Stage::PostInit)
+            .query::<MoveCube>(Access::Read)
+            .build();
 
         Self
     }
@@ -61,23 +61,25 @@ impl ServerState {
             .shader(CUBE_SHADER);
 
         // Create central cube
-        let cube_ent = io.create_entity();
-        io.add_component(cube_ent, Transform::default());
-        io.add_component(cube_ent, cube_rdr);
-        io.add_component(cube_ent, Synchronized);
+        io.create_entity()
+            .add_component(Transform::default())
+            .add_component(cube_rdr)
+            .add_component(Synchronized)
+            .build();
 
         // Add cubes
         let n = 30;
         for i in 0..n {
             let i = i as f32 / n as f32;
-            let cube_ent = io.create_entity();
 
             let r = i * TAU;
 
-            io.add_component(cube_ent, Transform::default());
-            io.add_component(cube_ent, cube_rdr);
-            io.add_component(cube_ent, Synchronized);
-            io.add_component(cube_ent, MoveCube { r });
+            io.create_entity()
+                .add_component(Transform::default())
+                .add_component(cube_rdr)
+                .add_component(Synchronized)
+                .add_component(MoveCube { r })
+                .build();
         }
     }
 
