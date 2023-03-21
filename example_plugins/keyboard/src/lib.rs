@@ -115,7 +115,7 @@ impl UserState for ServerState {
         // Define how the cube should be rendered
 
         // Create one cube entity at the origin, and make it synchronize to clients
-        let cube_entity = io.create_entity().add_rigidbody();
+        let cube_entity = io.create_entity();
         io.add_component(cube_entity, Transform::default());
         io.add_component(
             cube_entity,

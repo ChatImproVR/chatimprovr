@@ -6,3 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+rapier3d = "0.17.2"
+cimvr_engine_interface = {path = "../engine_interface"}
+cimvr_common = {path = "../common"}
+glam = "0.23.0"
