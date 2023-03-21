@@ -4,6 +4,7 @@ members = [
     "engine",
     "common",
     "server",
+    "physics",
     "engine_derive_macros",
     "example_plugins/camera",
     "example_plugins/channels",
