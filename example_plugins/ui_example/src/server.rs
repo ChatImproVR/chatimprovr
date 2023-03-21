@@ -2,21 +2,13 @@ use crate::ChangeColor;
 use cimvr_common::{
     render::{Render, RenderExtra},
     ui::UiUpdate,
-    Transform,
 };
 use cimvr_engine_interface::prelude::*;
 
-pub struct ServerState {
-    cube: EntityId,
-}
+pub struct ServerState;
 
 impl UserState for ServerState {
-    fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
-        let cube = io
-            .create_entity()
-            .add_component(Transform::default())
-            .build();
-
+    fn new(_io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         sched
             .add_system(Self::update)
             .query::<Render>(Access::Read)
@@ -24,17 +16,21 @@ impl UserState for ServerState {
             .subscribe::<ChangeColor>()
             .build();
 
-        Self { cube }
+        Self
     }
 }
 
 impl ServerState {
-    fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
+    fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         if let Some(ChangeColor { rgb }) = io.inbox_first() {
-            let mut extra = [0.; 4 * 4];
-            extra[..3].copy_from_slice(&rgb);
-            extra[3] = 1.;
-            io.add_component(self.cube, RenderExtra(extra));
+            for ent in query.iter() {
+                // The default shader uses RenderExtra to set the color
+                let mut extra = [0.; 4 * 4];
+                extra[..3].copy_from_slice(&rgb);
+                // This value must be 1 to get the color to show. See the default vertex shader!
+                extra[3] = 1.;
+                io.add_component(ent, RenderExtra(extra));
+            }
         }
     }
 }

@@ -1,3 +1,5 @@
+//! UI Example
+//! This example is intended to be run with other plugins such as `cube` or `fluid_sim`
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 
