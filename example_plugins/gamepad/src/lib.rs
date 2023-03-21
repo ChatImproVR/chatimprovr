@@ -29,10 +29,10 @@ impl UserState for ClientState {
             id: CUBE_HANDLE,
         });
 
-        sched.add_system(
-            Self::update,
-            SystemDescriptor::new(Stage::Update).subscribe::<GamepadState>(),
-        );
+        sched
+            .add_system(Self::update)
+            .subscribe::<GamepadState>()
+            .build();
 
         Self
     }
@@ -57,14 +57,13 @@ struct ServerState;
 
 impl UserState for ServerState {
     fn new(_io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
-        sched.add_system(
-            Self::update,
-            SystemDescriptor::new(Stage::Update)
-                .query::<SpinningCube>(Access::Read)
-                .query::<Transform>(Access::Write)
-                .subscribe::<AxisMessage>()
-                .subscribe::<Connections>(),
-        );
+        sched
+            .add_system(Self::update)
+            .query::<SpinningCube>(Access::Read)
+            .query::<Transform>(Access::Write)
+            .subscribe::<AxisMessage>()
+            .subscribe::<Connections>()
+            .build();
 
         Self
     }
@@ -103,11 +102,13 @@ impl ServerState {
                 // Otherwise create a new cube
                 let cube_rdr = Render::new(CUBE_HANDLE).primitive(Primitive::Triangles);
 
-                let ent = io.create_entity();
-                io.add_component(ent, Transform::default());
-                io.add_component(ent, cube_rdr);
-                io.add_component(ent, Synchronized);
-                io.add_component(ent, SpinningCube(client_id));
+                let ent = io
+                    .create_entity()
+                    .add_component(Transform::default())
+                    .add_component(cube_rdr)
+                    .add_component(Synchronized)
+                    .add_component(SpinningCube(client_id))
+                    .build();
 
                 // Add the entity to the list so it appears we don't add anything twice
                 client_to_entity.insert(client_id, ent);
