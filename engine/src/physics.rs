@@ -2,6 +2,7 @@ use ahash::HashMap;
 use cimvr_engine_interface::prelude::EntityId;
 // use rapier;
 use rapier3d::prelude::*;
+#[allow(dead_code)]
 // use rapier:
 /// The Rapier context, containing all the state of the physics engine.
 #[cfg_attr(feature = "serde-serialize", derive(Serialize, Deserialize))]
@@ -56,6 +57,21 @@ pub struct RapierContext {
     pub(crate) character_collisions_collector: Vec<rapier3d::control::CharacterCollision>,
 }
 
+// This physics trait will make it so that we're able to apply various functions onto an Entity
+// EntityId will be extended
+trait Physics {
+    // Add rigid body to EntityId, return an EntityId to chain them.
+    fn add_rigidbody(&self) -> EntityId {
+        todo!()
+    }
+    //
+}
+// impl EntityId {}
+impl Physics for EntityId {
+    fn add_rigidbody(&self) -> Self {
+        todo!();
+    }
+}
 fn stuff() {
     println!("rawr");
 }
