@@ -136,7 +136,7 @@ def get_plugin_folders(root_path):
             if (
                 item not in plugin_folders
             ):  # If the path is already in the list, don't add it again
-                plugin_folders.append(join(item, wasm_target, "release"))
+                plugin_folders.append(join("target", item, wasm_target, "release"))
                 print(f"Found {join(item,wasm_target,'release')}")
 
     return plugin_folders
