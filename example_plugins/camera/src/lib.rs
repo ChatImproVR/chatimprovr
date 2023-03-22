@@ -100,6 +100,7 @@ impl Camera {
         // Handle input events for desktop mode
         if !self.is_vr {
             for input in io.inbox::<InputEvent>() {
+                dbg!(&input);
                 // Handle window resizing
                 self.proj.handle_event(&input);
 

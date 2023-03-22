@@ -72,6 +72,11 @@ impl DesktopInputHandler {
                 glutin::event::MouseScrollDelta::LineDelta(x, y) => self
                     .events
                     .push(InputEvent::Mouse(MouseEvent::Scrolled(x, y))),
+                glutin::event::MouseScrollDelta::PixelDelta(physical_pos) => {
+                    let (x, y) = physical_pos.into();
+                    self.events
+                        .push(InputEvent::Mouse(MouseEvent::Scrolled(x, y)));
+                }
                 _ => (),
             },
             glutin::event::WindowEvent::Resized(sz) => {
