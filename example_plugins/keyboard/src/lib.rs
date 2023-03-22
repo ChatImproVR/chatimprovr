@@ -1,7 +1,7 @@
 use cimvr_common::{
     desktop::{ElementState, InputEvent, KeyCode},
     glam::Vec3,
-    render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
+    render::{Mesh, MeshHandle, Render, UploadMesh, Vertex},
     Transform,
 };
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, FrameTime};

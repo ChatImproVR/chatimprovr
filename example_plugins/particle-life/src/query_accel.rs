@@ -28,6 +28,7 @@ impl QueryAccelerator {
         }
     }
 
+    /*
     /// This should result in better cache locality for queries, but may take some time.
     pub fn sort_indices(mut self) -> Self {
         for indices in self.cells.values_mut() {
@@ -35,6 +36,7 @@ impl QueryAccelerator {
         }
         self
     }
+    */
 
     // Query the neighbors of `queried_idx` in `points`
     pub fn query_neighbors<'s, 'p: 's>(
@@ -60,9 +62,11 @@ impl QueryAccelerator {
             .flatten()
     }
 
+    /*
     pub fn tiles(&self) -> impl Iterator<Item = (&[i32; 2], &Vec<usize>)> {
         self.cells.iter()
     }
+    */
 }
 
 fn add(mut a: [i32; 2], b: [i32; 2]) -> [i32; 2] {

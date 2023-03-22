@@ -77,7 +77,6 @@ impl DesktopInputHandler {
                     self.events
                         .push(InputEvent::Mouse(MouseEvent::Scrolled(x, y)));
                 }
-                _ => (),
             },
             glutin::event::WindowEvent::Resized(sz) => {
                 self.events.push(InputEvent::Window(WindowEvent::Resized {

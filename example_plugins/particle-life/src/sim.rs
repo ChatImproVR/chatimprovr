@@ -1,5 +1,5 @@
 use cimvr_common::glam::Vec2;
-use cimvr_engine_interface::{dbg, pcg::Pcg, prelude::*};
+use cimvr_engine_interface::pcg::Pcg;
 
 use crate::query_accel::QueryAccelerator;
 
