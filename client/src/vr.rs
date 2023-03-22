@@ -36,7 +36,7 @@ pub fn mainloop(args: Opt) -> Result<()> {
             }
             Event::MainEventsCleared => {
                 main.frame().expect("Frame caused error");
-                main.client.engine().send(input.get_history());
+                input.get_history(main.client.engine());
             }
             _ => (),
         }
