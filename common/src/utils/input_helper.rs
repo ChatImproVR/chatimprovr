@@ -10,7 +10,7 @@ use crate::desktop::{
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct InputHelper {
     /// Keeps track of keys that are currently being pressed. A pressed key will be in this set.
-    pressed_keys: HashSet<KeyCode>,
+    held_keys: HashSet<KeyCode>,
     /// Modifiers don't keep track of state, going up and down is treated like a boolean (on/off).
     modifiers_state: ModifiersState,
     /// Holds information about everything the mouse can do. See
@@ -18,6 +18,10 @@ pub struct InputHelper {
     mouse_state: MouseState,
     /// Help keep track of window events like when the window gets resized.
     window_state: WindowEvent,
+    /// This field gets cleared every update step.
+    pressed_keys: HashSet<KeyCode>,
+    /// This field also gets cleared every update step.
+    released_keys: HashSet<KeyCode>,
 }
 
 /// MouseState struct exists for the InputHelper the utilize and capture mouse information.
@@ -29,24 +33,35 @@ struct MouseState {
     pub scroll: (f32, f32),
     /// We don't need to have modifiers here since this can be checked through the InputHelper
     /// struct
-    pub buttons: HashSet<MouseButton>, // When handling the events, we can check for the element
+    pub held_buttons: HashSet<MouseButton>, // When handling the events, we can check for the element
+    /// This field gets cleared every update step.
+    pub pressed_buttons: HashSet<MouseButton>,
+    /// This field also gets cleared every update step.
+    pub released_buttons: HashSet<MouseButton>,
     /// state since that's an input event.
     pub in_window: bool,
+
+    pub prev_pos: (f32, f32),
 }
 
 impl InputHelper {
     /// This will set the InputHelper to hopefully reasonable defaults.
     pub fn new() -> Self {
         Self {
-            pressed_keys: HashSet::new(),
+            held_keys: HashSet::new(),
             modifiers_state: ModifiersState::default(),
             mouse_state: MouseState {
                 position: (0.0, 0.0),
                 scroll: (0.0, 0.0),
-                buttons: HashSet::new(),
+                held_buttons: HashSet::new(),
+                pressed_buttons: HashSet::new(),
+                released_buttons: HashSet::new(),
                 in_window: false,
+                prev_pos: (0., 0.),
             },
             window_state: WindowEvent::default(),
+            pressed_keys: HashSet::new(),
+            released_keys: HashSet::new(),
         }
     }
 
@@ -78,6 +93,10 @@ impl InputHelper {
     /// }
     /// ```
     pub fn handle_input_events(&mut self, io: &mut EngineIo) {
+        self.pressed_keys.clear();
+        self.released_keys.clear();
+        self.mouse_state.pressed_buttons.clear();
+        self.mouse_state.released_buttons.clear();
         for event in io.inbox::<InputEvent>() {
             self.update(&event);
         }
@@ -96,9 +115,11 @@ impl InputHelper {
             KeyboardEvent::Key { key, state } => match state {
                 ElementState::Pressed => {
                     self.pressed_keys.insert(*key);
+                    self.held_keys.insert(*key);
                 }
                 ElementState::Released => {
-                    self.pressed_keys.remove(key);
+                    self.released_keys.insert(*key);
+                    self.held_keys.remove(key);
                 }
             },
             KeyboardEvent::Modifiers(modifiers_state) => {
@@ -110,9 +131,10 @@ impl InputHelper {
 
     fn handle_mouse_event(&mut self, mouse_event: &MouseEvent) {
         match mouse_event {
-            MouseEvent::Moved(x, y) => self.mouse_state.position = (*x, *y),
-            // TODO: Check if MouseEvent::Scrolled is (horizontal, vertizal), or (vertical,
-            // horizontal)
+            MouseEvent::Moved(x, y) => {
+                self.mouse_state.prev_pos = self.mouse_state.position;
+                self.mouse_state.position = (*x, *y)
+            }
             MouseEvent::Scrolled(hor, vert) => self.mouse_state.scroll = (*hor, *vert),
             MouseEvent::Entered => self.mouse_state.in_window = true,
             MouseEvent::Exited => self.mouse_state.in_window = false,
@@ -120,10 +142,12 @@ impl InputHelper {
                 self.modifiers_state = *modifiers_state;
                 match element_state {
                     ElementState::Pressed => {
-                        self.mouse_state.buttons.insert(*button);
+                        self.mouse_state.pressed_buttons.insert(*button);
+                        self.mouse_state.held_buttons.insert(*button);
                     }
                     ElementState::Released => {
-                        self.mouse_state.buttons.remove(button);
+                        self.mouse_state.released_buttons.insert(*button);
+                        self.mouse_state.held_buttons.remove(button);
                     }
                 }
             }
@@ -154,8 +178,18 @@ impl InputHelper {
     //
     // key_down(&self, keycode) -> bool
     // key_up(&self, keycode) -> bool
-    pub fn key_held_down(&self, key: KeyCode) -> bool {
+    pub fn key_held(&self, key: KeyCode) -> bool {
+        return self.held_keys.contains(&key);
+    }
+    /// Checks if they key is pressed during that frame step. If the user is still holding the
+    /// button pressed on the next frame step `key_pressed` will return false.
+    pub fn key_pressed(&self, key: KeyCode) -> bool {
         return self.pressed_keys.contains(&key);
+    }
+    /// Checks if they key was released during that frame step. Subsequent calls to `key_released`
+    /// will return false unless the key has been released again during that frame step.
+    pub fn key_released(&self, key: KeyCode) -> bool {
+        return self.released_keys.contains(&key);
     }
 
     // modifiers
@@ -182,23 +216,42 @@ impl InputHelper {
     // mousewheel_scroll_diff(&self) -> f32
     // mouse_pos(&self) -> Option<(f32, f32)>
     // mouse_pos_diff(&self) -> (f32,f32)
-    pub fn mouse_held(&self, mouse_button: &MouseButton) -> bool {
-        return self.mouse_state.buttons.contains(mouse_button);
+    pub fn mouse_held(&self, mouse_button: MouseButton) -> bool {
+        return self.mouse_state.held_buttons.contains(&mouse_button);
     }
 
-    // pub fn mouse_released(&self, mouse_button: &MouseButton) -> bool {
-    //     return !self.mouse_state.buttons.contains(mouse_button);
-    // }
+    pub fn mouse_diff(&self) -> (f32, f32) {
+        let (x1, y1) = self.mouse_state.position;
+        let (x2, y2) = self.mouse_state.prev_pos;
+        let diff = (x1 - x2, y1 - y2);
+        diff
+    }
+    /// Checks if the mouse has been pressed. Note that this only triggers when the key is pressed.
+    /// An example for this would be if the user pressed the mouse button on frame one,
+    /// `mouse_pressed` would return true. However, if the user is still holding the button after
+    /// frame one `mouse_pressed` will return false.
+    pub fn mouse_pressed(&self, mouse_button: MouseButton) -> bool {
+        return self.mouse_state.pressed_buttons.contains(&mouse_button);
+    }
+
+    /// Checks if the mouse has been released. Note that this only triggers when the key is
+    /// released. An example for this would be if the user released the mouse button on frame one,
+    /// `mouse_released` would return true. If you were to check for the mouse being released after
+    /// frame one, `mouse_released` would return false.
+    pub fn mouse_released(&self, mouse_button: MouseButton) -> bool {
+        return self.mouse_state.released_buttons.contains(&mouse_button);
+    }
 
     pub fn mouse_pos(&self) -> Option<(f32, f32)> {
-        match self.mouse_state.in_window {
-            true => Some(self.mouse_state.position),
-            false => None,
-        }
+        self.mouse_state
+            .in_window
+            .then(|| self.mouse_state.position)
     }
-    // pub fn mousewheel_scroll_diff(&self) -> f32 {
-    //     let x_diff = self.mouse_state.scroll.
-    // }
+
+    pub fn mousewheel_scroll_diff(&self) -> Option<(f32, f32)> {
+        self.mouse_state.in_window.then(|| self.mouse_state.scroll)
+    }
+
     // Screen resize API
     // get_resolution(&self) -> Option<(u32, u32)>
     pub fn get_resolution(&self) -> (u32, u32) {
