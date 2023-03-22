@@ -216,8 +216,8 @@ impl InputHelper {
     // mousewheel_scroll_diff(&self) -> f32
     // mouse_pos(&self) -> Option<(f32, f32)>
     // mouse_pos_diff(&self) -> (f32,f32)
-    pub fn mouse_held(&self, mouse_button: &MouseButton) -> bool {
-        return self.mouse_state.held_buttons.contains(mouse_button);
+    pub fn mouse_held(&self, mouse_button: MouseButton) -> bool {
+        return self.mouse_state.held_buttons.contains(&mouse_button);
     }
 
     pub fn mouse_diff(&self) -> (f32, f32) {
@@ -230,27 +230,28 @@ impl InputHelper {
     /// An example for this would be if the user pressed the mouse button on frame one,
     /// `mouse_pressed` would return true. However, if the user is still holding the button after
     /// frame one `mouse_pressed` will return false.
-    pub fn mouse_pressed(&self, mouse_button: &MouseButton) -> bool {
-        return self.mouse_state.pressed_buttons.contains(mouse_button);
+    pub fn mouse_pressed(&self, mouse_button: MouseButton) -> bool {
+        return self.mouse_state.pressed_buttons.contains(&mouse_button);
     }
 
     /// Checks if the mouse has been released. Note that this only triggers when the key is
     /// released. An example for this would be if the user released the mouse button on frame one,
     /// `mouse_released` would return true. If you were to check for the mouse being released after
     /// frame one, `mouse_released` would return false.
-    pub fn mouse_released(&self, mouse_button: &MouseButton) -> bool {
-        return self.mouse_state.released_buttons.contains(mouse_button);
+    pub fn mouse_released(&self, mouse_button: MouseButton) -> bool {
+        return self.mouse_state.released_buttons.contains(&mouse_button);
     }
 
     pub fn mouse_pos(&self) -> Option<(f32, f32)> {
-        match self.mouse_state.in_window {
-            true => Some(self.mouse_state.position),
-            false => None,
-        }
+        self.mouse_state
+            .in_window
+            .then(|| self.mouse_state.position)
     }
-    // pub fn mousewheel_scroll_diff(&self) -> f32 {
-    //     let x_diff = self.mouse_state.scroll.
-    // }
+
+    pub fn mousewheel_scroll_diff(&self) -> Option<(f32, f32)> {
+        self.mouse_state.in_window.then(|| self.mouse_state.scroll)
+    }
+
     // Screen resize API
     // get_resolution(&self) -> Option<(u32, u32)>
     pub fn get_resolution(&self) -> (u32, u32) {
