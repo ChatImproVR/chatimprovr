@@ -1,7 +1,7 @@
 use std::f32::consts::FRAC_PI_2;
 
 use cimvr_common::{
-    desktop::{ElementState, InputEvent, KeyboardEvent, ModifiersState, MouseButton, MouseEvent},
+    desktop::{InputEvent, MouseButton},
     glam::{Mat3, Quat, Vec3, Vec4},
     render::{CameraComponent, Mesh, MeshHandle, Render, UploadMesh, Vertex},
     utils::{camera::Perspective, input_helper::InputHelper},
@@ -183,7 +183,7 @@ impl ArcBallController {
             self.pan(arcball, dx, dy)
         }
 
-        if let Some((dx, dy)) = helper.mousewheel_scroll_diff() {
+        if let Some((_, dy)) = helper.mousewheel_scroll_diff() {
             self.zoom(arcball, dy);
         }
     }
