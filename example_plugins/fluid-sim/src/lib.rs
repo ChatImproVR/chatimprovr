@@ -1,5 +1,4 @@
 use cimvr_common::{
-    glam::{self, Quat, Vec3},
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
@@ -8,15 +7,15 @@ use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
 make_app_state!(ClientState, ServerState);
 
 struct ClientState {
-    fluid_render_buf: UploadMesh,
-    fluid_vel_render_buf: UploadMesh,
+    //fluid_render_buf: UploadMesh,
+    //fluid_vel_render_buf: UploadMesh,
     fluid_sim: FluidSim,
     particles: ParticleState,
     frame: usize,
-    last: [f32; 3],
+    //last: [f32; 3],
 }
 
-const VEL_Z: f32 = 0.5;
+//const VEL_Z: f32 = 0.5;
 const FLUID_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Fluid"));
 const FLUID_VEL_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Fluid velocity"));
 const CUBE_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
@@ -95,12 +94,12 @@ impl UserState for ClientState {
         let particles = ParticleState::new(20_000, io, fluid_sim.uvw().0);
 
         Self {
-            fluid_vel_render_buf,
-            fluid_render_buf,
+            //fluid_vel_render_buf,
+            //fluid_render_buf,
             fluid_sim,
             frame: 0,
             particles,
-            last: [0.; 3],
+            //last: [0.; 3],
         }
     }
 }
@@ -173,6 +172,7 @@ impl ClientState {
         self.frame += 1;
     }
 
+    /*
     fn camera_move(&mut self, _io: &mut EngineIo, query: &mut QueryResult) {
         // Set camera position
         let pos = self.particles.particles[0];
@@ -192,6 +192,7 @@ impl ClientState {
             query.write::<Transform>(key, &transf);
         }
     }
+    */
 }
 
 pub struct ParticleState {

@@ -27,8 +27,7 @@ const HAND_RDR_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Hand"));
 impl UserState for Camera {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
         // Create camera
-        let camera_ent = io
-            .create_entity()
+        io.create_entity()
             .add_component(Transform::identity())
             .add_component(CameraComponent {
                 clear_color: [0.; 3],
@@ -100,16 +99,14 @@ impl Camera {
         // Handle input events for desktop mode
         if !self.is_vr {
             for input in io.inbox::<InputEvent>() {
-                dbg!(&input);
                 // Handle window resizing
                 self.proj.handle_event(&input);
 
                 // Handle pivot/pan
                 self.arcball_control.handle_event(&input, &mut self.arcball);
-
-                // Set camera transform to arcball position
             }
 
+            // Set camera transform to arcball position
             for key in query.iter() {
                 query.write::<Transform>(key, &self.arcball.camera_transf());
             }

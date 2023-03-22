@@ -44,7 +44,7 @@ impl UserState for ServerState {
 
         let pos = Vec3::new(rand(), rand(), rand());
 
-        let cube_ent = io
+        let _cube_ent = io
             .create_entity()
             .add_component(Transform::default().with_position(pos))
             .add_component(cube_rdr)
