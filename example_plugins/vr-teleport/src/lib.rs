@@ -9,29 +9,19 @@ use cimvr_common::{
 };
 use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*};
 
-struct Camera {
-    proj: Perspective,
+struct Teleporter {
     left_hand: EntityId,
     right_hand: EntityId,
     path: EntityId,
 }
 
-make_app_state!(Camera, DummyUserState);
+make_app_state!(Teleporter, DummyUserState);
 
 const HAND_RDR_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Hand"));
 const PATH_RDR_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Path"));
 
-impl UserState for Camera {
+impl UserState for Teleporter {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
-        // Create camera
-        io.create_entity()
-            //.add_component(Transform::identity())
-            .add_component(CameraComponent {
-                clear_color: [0.; 3],
-                projection: Default::default(),
-            })
-            .build();
-
         io.send(&hand());
 
         let path = io
@@ -48,7 +38,8 @@ impl UserState for Camera {
             .stage(Stage::PreUpdate)
             .subscribe::<VrUpdate>()
             .query::<Transform>(Access::Write)
-            .query::<CameraComponent>(Access::Write)
+            // Filter to camera component, so that we write to the camera's position
+            .query::<CameraComponent>(Access::Read)
             .build();
 
         let left_hand = io
@@ -70,12 +61,11 @@ impl UserState for Camera {
             },
         );
         io.send(&UploadMesh {
-            mesh: render_path(&path_test, 10, [1.; 3]),
+            mesh: render_path(&path_test, 100, [1.; 3]),
             id: PATH_RDR_ID,
         });
 
         Self {
-            proj: Perspective::new(),
             left_hand,
             right_hand,
             path,
@@ -83,7 +73,7 @@ impl UserState for Camera {
     }
 }
 
-impl Camera {
+impl Teleporter {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         // Handle events for VR
         if let Some(update) = io.inbox_first::<VrUpdate>() {
@@ -95,9 +85,15 @@ impl Camera {
                 dbg!(&update.right_controller.events);
             }
 
-            // Handle FOV changes (But NOT position. Position is extremely time-sensitive, so it
-            // is actually prepended to the view matrix)
-            self.proj.handle_vr_update(&update);
+            /*
+            if let Some(camera_ent) = query.iter().next() {
+                io.add_component(
+                    camera_ent,
+                    Transform::new()
+                        .with_position()
+                )
+            }
+            */
 
             if let Some(pos) = update.left_controller.grip {
                 io.add_component(self.left_hand, pos);
@@ -106,20 +102,6 @@ impl Camera {
             if let Some(pos) = update.left_controller.grip {
                 io.add_component(self.right_hand, pos);
             }
-        }
-
-        let projection = self.proj.matrices();
-
-        let clear_color = [0.; 3];
-
-        for key in query.iter() {
-            query.write::<CameraComponent>(
-                key,
-                &CameraComponent {
-                    clear_color,
-                    projection,
-                },
-            );
         }
     }
 }
@@ -164,7 +146,6 @@ struct Path {
 impl Path {
     pub fn new(throw_power: f32, g: f32, hand: Transform) -> Self {
         let vect = hand.orient * Vec3::NEG_Z * throw_power;
-        dbg!(vect);
         let origin = hand.pos;
 
         let quad = Quadratic {
@@ -191,9 +172,9 @@ impl Path {
     /// Sample a position along the path
     pub fn sample(&self, t: f32) -> Vec3 {
         Vec3::new(
-            self.vect.x * self.end_t + self.origin.x,
+            self.vect.x * t + self.origin.x,
             self.quad.sample(t),
-            self.vect.z * self.end_t + self.origin.z,
+            self.vect.z * t + self.origin.z,
         )
     }
 }
