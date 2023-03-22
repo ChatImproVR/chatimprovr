@@ -5,7 +5,7 @@ use cimvr_common::{
     utils::input_helper::InputHelper,
     Transform,
 };
-use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*, FrameTime};
+use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, FrameTime};
 use serde::{Deserialize, Serialize};
 
 struct ServerState;
@@ -61,18 +61,17 @@ impl ClientState {
         // Handle input events
         // Decide which way the cube should move based on keypresses
         let mut move_vector = Vec3::ZERO;
-        dbg!(&self.input);
 
-        if dbg!(self.input.key_held(KeyCode::W)) {
+        if self.input.key_held(KeyCode::W) {
             move_vector += Vec3::new(1., 0., 0.);
         }
-        if dbg!(self.input.key_held(KeyCode::A)) {
+        if self.input.key_held(KeyCode::A) {
             move_vector += Vec3::new(0., 0., -1.)
         }
-        if dbg!(self.input.key_held(KeyCode::S)) {
+        if self.input.key_held(KeyCode::S) {
             move_vector += Vec3::new(-1., 0., 0.)
         }
-        if dbg!(self.input.key_held(KeyCode::D)) {
+        if self.input.key_held(KeyCode::D) {
             move_vector += Vec3::new(0., 0., 1.)
         }
 
