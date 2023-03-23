@@ -1,13 +1,16 @@
+use crate::geometry::Toi;
 use crate::math::Rot;
 use crate::math::Vect;
 use cimvr_engine_interface::prelude::Query;
+use geometry::CollisionGroups;
 use rapier3d::control::CharacterAutostep;
 use rapier3d::control::CharacterCollision;
 use std::collections::HashMap;
 use std::sync::RwLock;
+pub mod geometry;
 
-use cimvr_engine_interface::prelude::EntityId;
 // use cimvr_common::prelude::*;
+use cimvr_engine_interface::prelude::EntityId;
 use rapier3d::prelude::QueryFilter as RapierQueryFilter;
 use rapier3d::prelude::*;
 
@@ -715,7 +718,7 @@ impl RapierContext {
             mins: (aabb.min().xy() / self.physics_scale).into(),
             maxs: (aabb.max().xy() / self.physics_scale).into(),
         };
-        // #[cfg(feature = "dim3")]
+        #[cfg(feature = "dim3")]
         let scaled_aabb = Aabb {
             mins: (aabb.min() / self.physics_scale).into(),
             maxs: (aabb.max() / self.physics_scale).into(),
