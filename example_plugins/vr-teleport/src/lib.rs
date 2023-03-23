@@ -80,12 +80,19 @@ impl UserState for Teleporter {
 
 impl Teleporter {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        let mut camera_transf = Transform::identity();
+        for entity in query.iter() {
+            camera_transf = query.read::<Transform>(entity);
+        }
+
         // Handle events for VR
         let Some(update) = io.inbox_first::<VrUpdate>() else { return };
 
         if self.update_path {
             if let Some(grip) = update.right_controller.grip {
-                self.path = Path::new(1., -9.8, grip);
+                let abs_pos = camera_transf * grip;
+
+                self.path = Path::new(15., -9.8, abs_pos);
                 let mesh = path_mesh(&self.path, 100, [1.; 3]);
                 io.send(&UploadMesh {
                     id: PATH_RDR_ID,
@@ -124,11 +131,11 @@ impl Teleporter {
         }
 
         if let Some(pos) = update.left_controller.grip {
-            io.add_component(self.left_hand, pos);
+            io.add_component(self.left_hand, camera_transf * pos);
         }
 
-        if let Some(pos) = update.left_controller.grip {
-            io.add_component(self.right_hand, pos);
+        if let Some(pos) = update.right_controller.grip {
+            io.add_component(self.right_hand, camera_transf * pos);
         }
     }
 }
@@ -174,7 +181,7 @@ struct Path {
 
 impl Path {
     pub fn new(throw_power: f32, g: f32, hand: Transform) -> Self {
-        let vect = hand.orient * Vec3::NEG_Z * throw_power;
+        let vect = hand.orient * Vec3::Z * throw_power;
         let origin = hand.pos;
 
         let quad = Quadratic {
