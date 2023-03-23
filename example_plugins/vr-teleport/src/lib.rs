@@ -4,7 +4,7 @@ use cimvr_common::{
     glam::{Quat, Vec3},
     render::{CameraComponent, Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     utils::camera::Perspective,
-    vr::VrUpdate,
+    vr::{ControllerEvent, ElementState, VrUpdate},
     Transform,
 };
 use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*};
@@ -12,7 +12,10 @@ use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*};
 struct Teleporter {
     left_hand: EntityId,
     right_hand: EntityId,
-    path: EntityId,
+    path: Path,
+    path_entity: EntityId,
+    /// True if the path should be updated each frame
+    update_path: bool,
 }
 
 make_app_state!(Teleporter, DummyUserState);
@@ -61,14 +64,16 @@ impl UserState for Teleporter {
             },
         );
         io.send(&UploadMesh {
-            mesh: render_path(&path_test, 100, [1.; 3]),
+            mesh: path_mesh(&path_test, 100, [1.; 3]),
             id: PATH_RDR_ID,
         });
 
         Self {
+            path: Path::default(),
             left_hand,
             right_hand,
-            path,
+            path_entity: path,
+            update_path: false,
         }
     }
 }
@@ -76,32 +81,54 @@ impl UserState for Teleporter {
 impl Teleporter {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         // Handle events for VR
-        if let Some(update) = io.inbox_first::<VrUpdate>() {
-            if !update.left_controller.events.is_empty() {
-                dbg!(&update.left_controller.events);
-            }
+        let Some(update) = io.inbox_first::<VrUpdate>() else { return };
 
-            if !update.right_controller.events.is_empty() {
-                dbg!(&update.right_controller.events);
+        if self.update_path {
+            if let Some(grip) = update.right_controller.grip {
+                self.path = Path::new(1., -9.8, grip);
+                let mesh = path_mesh(&self.path, 100, [1.; 3]);
+                io.send(&UploadMesh {
+                    id: PATH_RDR_ID,
+                    mesh,
+                });
             }
+        }
 
-            /*
-            if let Some(camera_ent) = query.iter().next() {
-                io.add_component(
-                    camera_ent,
-                    Transform::new()
-                        .with_position()
-                )
-            }
-            */
+        if update
+            .right_controller
+            .events
+            .contains(&ControllerEvent::Trigger(ElementState::Pressed))
+        {
+            // Show path
+            io.add_component(
+                self.path_entity,
+                Render::new(PATH_RDR_ID).primitive(Primitive::Lines),
+            );
+            self.update_path = true;
+        }
 
-            if let Some(pos) = update.left_controller.grip {
-                io.add_component(self.left_hand, pos);
-            }
+        if update
+            .right_controller
+            .events
+            .contains(&ControllerEvent::Trigger(ElementState::Released))
+        {
+            // Hide path
+            io.add_component(self.path_entity, Render::new(PATH_RDR_ID).limit(Some(0)));
 
-            if let Some(pos) = update.left_controller.grip {
-                io.add_component(self.right_hand, pos);
+            self.update_path = false;
+
+            for camera_entity in query.iter() {
+                let destination = self.path.sample(self.path.end_time());
+                io.add_component(camera_entity, Transform::new().with_position(destination));
             }
+        }
+
+        if let Some(pos) = update.left_controller.grip {
+            io.add_component(self.left_hand, pos);
+        }
+
+        if let Some(pos) = update.left_controller.grip {
+            io.add_component(self.right_hand, pos);
         }
     }
 }
@@ -126,12 +153,14 @@ fn hand() -> UploadMesh {
     }
 }
 
+#[derive(Default, Copy, Clone, Debug)]
 struct Quadratic {
     a: f32,
     b: f32,
     c: f32,
 }
 
+#[derive(Default, Copy, Clone, Debug)]
 struct Path {
     /// Quadratic function for the height
     quad: Quadratic,
@@ -196,7 +225,7 @@ impl Quadratic {
     }
 }
 
-fn render_path(path: &Path, samples: usize, color: [f32; 3]) -> Mesh {
+fn path_mesh(path: &Path, samples: usize, color: [f32; 3]) -> Mesh {
     let mut mesh = Mesh::new();
 
     for i in 0..=samples {
