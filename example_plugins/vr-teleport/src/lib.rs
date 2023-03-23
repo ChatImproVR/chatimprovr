@@ -125,7 +125,11 @@ impl Teleporter {
             self.update_path = false;
 
             for camera_entity in query.iter() {
-                let destination = self.path.sample(self.path.end_time());
+                // Place the camera (reference frame) so that the new position has the left eye over
+                // the desired end location
+                let end_pos = self.path.sample(self.path.end_time());
+                let left_eye = update.headset.left.transf;
+                let destination = end_pos - Vec3::new(left_eye.pos.x, 0., left_eye.pos.z);
                 io.add_component(camera_entity, Transform::new().with_position(destination));
             }
         }
