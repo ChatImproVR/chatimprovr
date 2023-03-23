@@ -98,7 +98,9 @@ impl ClientState {
                     let pos = aim.pos + camera_transf.pos;
 
                     let diff = pos - *last;
-                    self.sim.move_neighbors(pos, diff * 88.);
+                    let mag = (diff.length() * 48.).powi(2);
+
+                    self.sim.move_neighbors(pos, diff.normalize() * mag);
                     *last = pos;
                 }
             }
