@@ -39,12 +39,11 @@ impl QueryAccelerator {
     */
 
     // Query the neighbors of `queried_idx` in `points`
-    pub fn query_neighbors<'s, 'p: 's>(
+    pub fn query_neighbors_by_point<'s, 'p: 's>(
         &'s self,
         points: &'p [Vec3],
-        queried_idx: usize,
+        query_point: Vec3,
     ) -> impl Iterator<Item = usize> + 's {
-        let query_point = points[queried_idx];
         let origin = quantize(query_point, self.radius);
 
         self.neighbors
@@ -54,7 +53,7 @@ impl QueryAccelerator {
                 self.cells.get(&key).map(|cell_indices| {
                     cell_indices.iter().copied().filter(move |&idx| {
                         let dist = (points[idx] - query_point).length_squared();
-                        idx != queried_idx && dist <= self.radius_sq
+                        dist <= self.radius_sq
                     })
                 })
             })
@@ -62,8 +61,19 @@ impl QueryAccelerator {
             .flatten()
     }
 
+
+    // Query the neighbors of `queried_idx` in `points`
+    pub fn query_neighbors<'s, 'p: 's>(
+        &'s self,
+        points: &'p [Vec3],
+        queried_idx: usize,
+    ) -> impl Iterator<Item = usize> + 's {
+        let query_point = points[queried_idx];
+        self.query_neighbors_by_point(points, query_point).filter(move |i| *i != queried_idx)
+    }
+
     /*
-    pub fn tiles(&self) -> impl Iterator<Item = (&[i32; 2], &Vec<usize>)> {
+    pub fn tiles(&self) -> impl Iterator<Item = (&[i32; 3], &Vec<usize>)> {
         self.cells.iter()
     }
     */

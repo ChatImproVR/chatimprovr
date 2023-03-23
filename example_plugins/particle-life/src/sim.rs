@@ -7,6 +7,8 @@ pub struct SimState {
     particles: Vec<Particle>,
     config: SimConfig,
     max_interaction_radius: f32,
+    last_accel: QueryAccelerator,
+    last_points: Vec<Vec3>,
 }
 
 type Color = u8;
@@ -71,6 +73,14 @@ impl SimState {
             particles,
             config,
             max_interaction_radius,
+            last_points: vec![],
+            last_accel: QueryAccelerator::new(&[], 1.),
+        }
+    }
+
+    pub fn move_neighbors(&mut self, pt: Vec3, accel: Vec3) {
+        for i in self.last_accel.query_neighbors_by_point(&self.last_points, pt) {
+            self.particles[i].vel += accel;
         }
     }
 
@@ -106,6 +116,9 @@ impl SimState {
             self.particles[i].vel = vel;
             self.particles[i].pos += vel * dt;
         }
+
+        self.last_accel = accel;
+        self.last_points = points;
     }
 
     pub fn particles(&self) -> &[Particle] {

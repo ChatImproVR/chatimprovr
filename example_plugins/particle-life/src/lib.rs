@@ -1,8 +1,8 @@
 use cimvr_common::{
-    render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
-    Transform, glam::Vec3,
+    render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex, CameraComponent},
+    Transform, glam::Vec3, vr::VrUpdate,
 };
-use cimvr_engine_interface::{make_app_state, pcg::Pcg, pkg_namespace, prelude::*, println};
+use cimvr_engine_interface::{dbg, make_app_state, pcg::Pcg, pkg_namespace, prelude::*, println, FrameTime};
 mod sim;
 use sim::*;
 mod query_accel;
@@ -11,6 +11,8 @@ mod query_accel;
 struct ClientState {
     sim: SimState,
     time: f32,
+    last_left_pos: Vec3,
+    last_right_pos: Vec3,
 }
 
 const SIM_RENDER_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Simulation"));
@@ -60,17 +62,49 @@ impl UserState for ClientState {
         let sim = SimState::new(&mut Pcg::new(), palette, 8_000);
 
         io.create_entity()
-            .add_component(Transform::identity().with_position(Vec3::new(0., 1., 0.)))
+            .add_component(Transform::identity().with_position(Vec3::new(0., 0., 0.)))
             .add_component(Render::new(SIM_RENDER_ID).primitive(Primitive::Points))
             .build();
 
         sched.add_system(Self::update).build();
 
-        Self { sim, time: 0. }
+
+        sched.add_system(Self::interaction)
+            .query::<Transform>(Access::Read)
+            .query::<CameraComponent>(Access::Read)
+            .subscribe::<FrameTime>()
+            .subscribe::<VrUpdate>().build();
+        sched.add_system(Self::update).build();
+
+        Self {
+            sim,
+            time: 0.,
+            last_left_pos: Vec3::ZERO,
+            last_right_pos: Vec3::ZERO,
+        }
     }
 }
 
 impl ClientState {
+    fn interaction(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        let mut camera_transf = Transform::identity();
+        for entity in query.iter() {
+            camera_transf = query.read::<Transform>(entity);
+        }
+        
+        if let Some(VrUpdate { left_controller, right_controller, .. }) = io.inbox_first() {
+            for (controller, last) in [(left_controller, &mut self.last_left_pos), (right_controller, &mut self.last_right_pos)] {
+                if let Some(aim) = controller.aim {
+                    let pos = aim.pos + camera_transf.pos;
+
+                    let diff = pos - *last;
+                    self.sim.move_neighbors(pos, diff * 88.);
+                    *last = pos;
+                }
+            }
+        }
+    }
+
     fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
         let dt = 1e-3;
         self.sim.step(dt);
