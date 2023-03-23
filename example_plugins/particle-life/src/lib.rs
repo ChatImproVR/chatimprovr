@@ -7,6 +7,8 @@ mod sim;
 use sim::*;
 mod query_accel;
 
+const SIM_OFFSET: Vec3 = Vec3::new(0., 1., 0.);
+
 // All state associated with client-side behaviour
 struct ClientState {
     sim: SimState,
@@ -59,10 +61,10 @@ impl UserState for ClientState {
 
         dbg!(&palette);
 
-        let sim = SimState::new(&mut Pcg::new(), palette, 8_000);
+        let sim = SimState::new(&mut Pcg::new(), palette, 4_000);
 
         io.create_entity()
-            .add_component(Transform::identity().with_position(Vec3::new(0., 0., 0.)))
+            .add_component(Transform::identity().with_position(SIM_OFFSET))
             .add_component(Render::new(SIM_RENDER_ID).primitive(Primitive::Points))
             .build();
 
@@ -95,7 +97,7 @@ impl ClientState {
         if let Some(VrUpdate { left_controller, right_controller, .. }) = io.inbox_first() {
             for (controller, last) in [(left_controller, &mut self.last_left_pos), (right_controller, &mut self.last_right_pos)] {
                 if let Some(aim) = controller.aim {
-                    let pos = aim.pos + camera_transf.pos;
+                    let pos = aim.pos + camera_transf.pos - SIM_OFFSET;
 
                     let diff = pos - *last;
                     let mag = (diff.length() * 48.).powi(2);
