@@ -31,7 +31,7 @@ use rapier::control::CharacterAutostep;
 // use Aabb;
 
 /// The Rapier context, containing all the state of the physics engine.
-#[cfg_attr(feature = "serde-serialize", derive(Serialize, Deserialize))]
+// #[cfg_attr(feature = "serde-serialize", derive(Serialize, Deserialize))]
 // #[derive(Resource)]
 pub struct RapierContext {
     /// The island manager, which detects what object is sleeping
@@ -876,4 +876,3 @@ impl RapierContext {
         });
     }
 }
-

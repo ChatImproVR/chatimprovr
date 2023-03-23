@@ -78,4 +78,3 @@ pub mod prelude {
     #[cfg(any(feature = "debug-render-3d", feature = "debug-render-2d"))]
     pub use crate::render::*;
 }
-
