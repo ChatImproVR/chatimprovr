@@ -61,7 +61,6 @@ impl QueryAccelerator {
             .flatten()
     }
 
-
     // Query the neighbors of `queried_idx` in `points`
     pub fn query_neighbors<'s, 'p: 's>(
         &'s self,
@@ -69,7 +68,8 @@ impl QueryAccelerator {
         queried_idx: usize,
     ) -> impl Iterator<Item = usize> + 's {
         let query_point = points[queried_idx];
-        self.query_neighbors_by_point(points, query_point).filter(move |i| *i != queried_idx)
+        self.query_neighbors_by_point(points, query_point)
+            .filter(move |i| *i != queried_idx)
     }
 
     /*

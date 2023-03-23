@@ -79,7 +79,10 @@ impl SimState {
     }
 
     pub fn move_neighbors(&mut self, pt: Vec3, accel: Vec3) {
-        for i in self.last_accel.query_neighbors_by_point(&self.last_points, pt) {
+        for i in self
+            .last_accel
+            .query_neighbors_by_point(&self.last_points, pt)
+        {
             self.particles[i].vel += accel;
         }
     }

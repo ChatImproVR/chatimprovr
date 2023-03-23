@@ -1,8 +1,12 @@
 use cimvr_common::{
-    render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex, CameraComponent},
-    Transform, glam::Vec3, vr::VrUpdate,
+    glam::Vec3,
+    render::{CameraComponent, Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
+    vr::{ControllerEvent, VrUpdate},
+    Transform,
 };
-use cimvr_engine_interface::{dbg, make_app_state, pcg::Pcg, pkg_namespace, prelude::*, println, FrameTime};
+use cimvr_engine_interface::{
+    dbg, make_app_state, pcg::Pcg, pkg_namespace, prelude::*, println, FrameTime,
+};
 mod sim;
 use sim::*;
 mod query_accel;
@@ -17,51 +21,55 @@ struct ClientState {
     last_right_pos: Vec3,
 }
 
+fn new_sim_state(io: &mut EngineIo) -> SimState {
+    let mut aa = Behaviour::default();
+    aa.inter_threshold = 0.05;
+
+    let mut rand = || io.random() as u64 as f32 / u64::MAX as f32;
+
+    let n = 5;
+
+    let colors: Vec<[f32; 3]> = (0..n).map(|_| hsv_to_rgb(rand() * 360., 1., 1.)).collect();
+    let behaviours = (0..n * n)
+        .map(|_| aa.with_inter_strength((rand() * 2. - 1.) * 15.))
+        .collect();
+
+    // NOTE: We are using the println defined by cimvr_engine_interface here, NOT the standard library!
+    let palette = SimConfig {
+        colors,
+        behaviours,
+        /*
+        colors: vec![
+            [0.1, 1., 0.],
+            [1., 0.1, 0.],
+            [102. / 256., 30. / 256., 131. / 256.],
+        ],
+        behaviours: vec![
+            aa.with_inter_strength(3.),
+            aa.with_inter_strength(-1.5),
+            aa.with_inter_strength(1.),
+            aa.with_inter_strength(2.),
+            aa.with_inter_strength(1.),
+            aa.with_inter_strength(1.),
+            aa.with_inter_strength(50.),
+            aa.with_inter_strength(50.),
+            aa.with_inter_strength(-100.),
+        ],
+        */
+        damping: 150.,
+    };
+
+    dbg!(&palette);
+
+    SimState::new(&mut Pcg::new(), palette, 4_000)
+}
+
 const SIM_RENDER_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Simulation"));
 
 impl UserState for ClientState {
     // Implement a constructor
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
-        let mut aa = Behaviour::default();
-        aa.inter_threshold = 0.05;
-
-        let mut rand = || io.random() as u64 as f32 / u64::MAX as f32;
-
-        let n = 5;
-
-        let colors: Vec<[f32; 3]> = (0..n).map(|_| hsv_to_rgb(rand() * 360., 1., 1.)).collect();
-        let behaviours = (0..n * n)
-            .map(|_| aa.with_inter_strength((rand() * 2. - 1.) * 15.))
-            .collect();
-
-        // NOTE: We are using the println defined by cimvr_engine_interface here, NOT the standard library!
-        let palette = SimConfig {
-            colors,
-            behaviours,
-            /*
-            colors: vec![
-                [0.1, 1., 0.],
-                [1., 0.1, 0.],
-                [102. / 256., 30. / 256., 131. / 256.],
-            ],
-            behaviours: vec![
-                aa.with_inter_strength(3.),
-                aa.with_inter_strength(-1.5),
-                aa.with_inter_strength(1.),
-                aa.with_inter_strength(2.),
-                aa.with_inter_strength(1.),
-                aa.with_inter_strength(1.),
-                aa.with_inter_strength(50.),
-                aa.with_inter_strength(50.),
-                aa.with_inter_strength(-100.),
-            ],
-            */
-            damping: 150.,
-        };
-
-        dbg!(&palette);
-
-        let sim = SimState::new(&mut Pcg::new(), palette, 4_000);
+        let sim = new_sim_state(io);
 
         io.create_entity()
             .add_component(Transform::identity().with_position(SIM_OFFSET))
@@ -70,12 +78,13 @@ impl UserState for ClientState {
 
         sched.add_system(Self::update).build();
 
-
-        sched.add_system(Self::interaction)
+        sched
+            .add_system(Self::interaction)
             .query::<Transform>(Access::Read)
             .query::<CameraComponent>(Access::Read)
             .subscribe::<FrameTime>()
-            .subscribe::<VrUpdate>().build();
+            .subscribe::<VrUpdate>()
+            .build();
         sched.add_system(Self::update).build();
 
         Self {
@@ -93,9 +102,17 @@ impl ClientState {
         for entity in query.iter() {
             camera_transf = query.read::<Transform>(entity);
         }
-        
-        if let Some(VrUpdate { left_controller, right_controller, .. }) = io.inbox_first() {
-            for (controller, last) in [(left_controller, &mut self.last_left_pos), (right_controller, &mut self.last_right_pos)] {
+
+        if let Some(VrUpdate {
+            left_controller,
+            right_controller,
+            ..
+        }) = io.inbox_first()
+        {
+            for (controller, last) in [
+                (left_controller, &mut self.last_left_pos),
+                (right_controller, &mut self.last_right_pos),
+            ] {
                 if let Some(aim) = controller.aim {
                     let pos = aim.pos + camera_transf.pos - SIM_OFFSET;
 
@@ -104,6 +121,12 @@ impl ClientState {
 
                     self.sim.move_neighbors(pos, diff.normalize() * mag);
                     *last = pos;
+                }
+
+                if controller.events.contains(&ControllerEvent::Menu(
+                    cimvr_common::vr::ElementState::Released,
+                )) {
+                    self.sim = new_sim_state(io);
                 }
             }
         }
