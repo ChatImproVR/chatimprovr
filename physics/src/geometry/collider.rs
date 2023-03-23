@@ -6,7 +6,7 @@ use std::fmt;
 // use crate::geometry::VHACDParameters;
 
 // use bevy::prelude::*;
-use bevy_reflect::{FromReflect, Reflect};
+// use bevy_reflect::{FromReflect, Reflect};
 use cimvr_engine_interface::prelude::*;
 // use HashSet;
 // use bevy::utils::HashSet;
@@ -92,7 +92,9 @@ impl fmt::Debug for Collider {
 }
 
 /// Overwrites the default application of [`GlobalTransform::scale`] to collider shapes.
-#[derive(Copy, Clone, Debug, PartialEq, Component, Reflect, FromReflect)]
+// #[derive(Copy, Clone, Debug, PartialEq, Component, Reflect, FromReflect)]
+
+#[derive(Copy, Clone, Debug, PartialEq, Component)]
 pub enum ColliderScale {
     /// This scale will be multiplied with the scale in the [`GlobalTransform`] component
     /// before being applied to the collider.
@@ -102,13 +104,14 @@ pub enum ColliderScale {
 }
 
 /// Indicates whether or not the collider is a sensor.
-#[derive(Copy, Clone, Default, Debug, PartialEq, Eq, Component, Reflect, FromReflect)]
-#[reflect(Component, PartialEq)]
+#[derive(Copy, Clone, Default, Debug, PartialEq, Eq, Component)]
+// #[reflect(Component, PartialEq)]
 pub struct Sensor;
 
 /// Custom mass-properties of a collider.
+// #[derive(Copy, Clone, Debug, PartialEq, Component, Reflect, FromReflect)]
 #[derive(Copy, Clone, Debug, PartialEq, Component, Reflect, FromReflect)]
-#[reflect(Component, PartialEq)]
+// #[reflect(Component, PartialEq)]
 pub enum ColliderMassProperties {
     /// The mass-properties are computed automatically from the collider’s shape and this density.
     Density(f32),
@@ -499,8 +502,8 @@ impl CollidingEntities {
 }
 
 /// Indicates whether or not the collider is disabled explicitly by the user.
-#[derive(Copy, Clone, Default, Debug, PartialEq, Eq, Component, Reflect, FromReflect)]
-#[reflect(Component, PartialEq)]
+#[derive(Copy, Clone, Default, Debug, PartialEq, Eq, Component)]
+// #[reflect(Component, PartialEq)]
 pub struct ColliderDisabled;
 
 /// We restrict the scaling increment to 1.0e-4, to avoid numerical jitter
