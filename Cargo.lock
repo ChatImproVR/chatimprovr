@@ -1162,6 +1162,8 @@ dependencies = [
  "cimvr_common",
  "cimvr_engine_interface",
  "glam",
+ "log",
+ "nalgebra",
  "rapier3d",
 ]
 
