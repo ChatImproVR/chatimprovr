@@ -1,6 +1,6 @@
 use cimvr_common::{
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
-    Transform,
+    Transform, glam::Vec3,
 };
 use cimvr_engine_interface::{make_app_state, pcg::Pcg, pkg_namespace, prelude::*, println};
 mod sim;
@@ -60,7 +60,7 @@ impl UserState for ClientState {
         let sim = SimState::new(&mut Pcg::new(), palette, 8_000);
 
         io.create_entity()
-            .add_component(Transform::identity())
+            .add_component(Transform::identity().with_position(Vec3::new(0., 1., 0.)))
             .add_component(Render::new(SIM_RENDER_ID).primitive(Primitive::Points))
             .build();
 
