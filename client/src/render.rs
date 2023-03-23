@@ -299,14 +299,13 @@ impl GpuShader {
             );
         }
 
-        if let Some(RenderExtra(data)) = extra {
-            unsafe {
-                gl.uniform_matrix_4_f32_slice(
-                    self.extra_loc.as_ref(),
-                    false,
-                    bytemuck::cast_slice(data.as_ref()),
-                );
-            }
+        let RenderExtra(data) = extra.unwrap_or(RenderExtra([0.; 16]));
+        unsafe {
+            gl.uniform_matrix_4_f32_slice(
+                self.extra_loc.as_ref(),
+                false,
+                bytemuck::cast_slice(data.as_ref()),
+            );
         }
     }
 }
@@ -328,8 +327,8 @@ fn compile_glsl_program(gl: &gl::Context, sources: &[(u32, &str)]) -> Result<gl:
 
             if !gl.get_shader_compile_status(shader) {
                 return Err(format_err!(
-                    "OpenGL compile shader: {}",
-                    gl.get_shader_info_log(shader)
+                        "OpenGL compile shader: {}",
+                        gl.get_shader_info_log(shader)
                 ));
             }
 
@@ -342,8 +341,8 @@ fn compile_glsl_program(gl: &gl::Context, sources: &[(u32, &str)]) -> Result<gl:
 
         if !gl.get_program_link_status(program) {
             return Err(format_err!(
-                "OpenGL link shader: {}",
-                gl.get_program_info_log(program)
+                    "OpenGL link shader: {}",
+                    gl.get_program_info_log(program)
             ));
         }
 

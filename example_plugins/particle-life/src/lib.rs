@@ -10,7 +10,6 @@ mod query_accel;
 // All state associated with client-side behaviour
 struct ClientState {
     sim: SimState,
-    mesh: Mesh,
     time: f32,
 }
 
@@ -65,15 +64,9 @@ impl UserState for ClientState {
             .add_component(Render::new(SIM_RENDER_ID).primitive(Primitive::Points))
             .build();
 
-        let mesh = Mesh::new();
-
         sched.add_system(Self::update).build();
 
-        Self {
-            sim,
-            mesh,
-            time: 0.,
-        }
+        Self { sim, time: 0. }
     }
 }
 
@@ -107,7 +100,7 @@ impl UserState for ServerState {
 // Calls new() for the appropriate state.
 make_app_state!(ClientState, ServerState);
 
-fn draw_particles(sim: &SimState, time: f32) -> Mesh {
+fn draw_particles(sim: &SimState, _time: f32) -> Mesh {
     let mut vertices = vec![];
     let indices = (0..sim.particles().len() as u32).collect();
 

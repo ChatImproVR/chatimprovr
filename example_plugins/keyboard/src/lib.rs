@@ -1,19 +1,17 @@
 use cimvr_common::{
-    desktop::{ElementState, InputEvent, KeyCode},
+    desktop::{InputEvent, KeyCode},
     glam::Vec3,
-    render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
+    render::{Mesh, MeshHandle, Render, UploadMesh, Vertex},
+    utils::input_helper::InputHelper,
     Transform,
 };
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, FrameTime};
 use serde::{Deserialize, Serialize};
 
 struct ServerState;
-
+#[derive(Default)]
 struct ClientState {
-    w_is_pressed: bool,
-    a_is_pressed: bool,
-    s_is_pressed: bool,
-    d_is_pressed: bool,
+    input: InputHelper,
 }
 
 #[derive(Message, Serialize, Deserialize, Clone, Copy)]
@@ -50,54 +48,30 @@ impl UserState for ClientState {
         //     .subscribe::<InputEvent>()
         //     .subscribe::<FrameTime>(),
         // Initialize state
-        Self {
-            w_is_pressed: false,
-            a_is_pressed: false,
-            s_is_pressed: false,
-            d_is_pressed: false,
-        }
+        Self::default()
     }
 }
 
 impl ClientState {
     fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
+        self.input.handle_input_events(io);
         // Read frame time (or bust!)
         let Some(frame_time) = io.inbox_first::<FrameTime>() else { return };
 
         // Handle input events
-        for (key, state) in io.inbox::<InputEvent>().filter_map(|x| x.get_keyboard()) {
-            // Update key press information
-            let is_pressed = state == ElementState::Pressed;
-
-            if key == KeyCode::W {
-                self.w_is_pressed = is_pressed;
-            }
-
-            if key == KeyCode::A {
-                self.a_is_pressed = is_pressed;
-            }
-
-            if key == KeyCode::S {
-                self.s_is_pressed = is_pressed;
-            }
-
-            if key == KeyCode::D {
-                self.d_is_pressed = is_pressed;
-            }
-        }
-
         // Decide which way the cube should move based on keypresses
         let mut move_vector = Vec3::ZERO;
-        if self.w_is_pressed {
-            move_vector += Vec3::new(1., 0., 0.)
+
+        if self.input.key_held(KeyCode::W) {
+            move_vector += Vec3::new(1., 0., 0.);
         }
-        if self.a_is_pressed {
+        if self.input.key_held(KeyCode::A) {
             move_vector += Vec3::new(0., 0., -1.)
         }
-        if self.s_is_pressed {
+        if self.input.key_held(KeyCode::S) {
             move_vector += Vec3::new(-1., 0., 0.)
         }
-        if self.d_is_pressed {
+        if self.input.key_held(KeyCode::D) {
             move_vector += Vec3::new(0., 0., 1.)
         }
 

@@ -132,12 +132,16 @@ def get_plugin_folders(root_path):
     wasm_env_var = "CIMVR_PLUGINS"
     if wasm_env_var in os.environ:
         plugin_path_list = os.environ[wasm_env_var].split(";")
-        for item in plugin_path_list:
-            if (
-                item not in plugin_folders
-            ):  # If the path is already in the list, don't add it again
-                plugin_folders.append(join("target", item, wasm_target, "release"))
-                print(f"Found {join(item,wasm_target,'release')}")
+        for path in plugin_path_list:
+            # If the path is already in the list, don't add it again
+            if path not in plugin_folders:
+                plugin_folders.append(path)
+                # print(f"Found {path}")
+
+            target_release = join(path, "target", wasm_target, "release")
+            if target_release not in plugin_folders:
+                plugin_folders.append(target_release)
+                # print(f"Found {target_release}")
 
     return plugin_folders
 

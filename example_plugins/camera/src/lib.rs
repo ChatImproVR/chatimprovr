@@ -1,10 +1,10 @@
 use std::f32::consts::FRAC_PI_2;
 
 use cimvr_common::{
-    desktop::{ElementState, InputEvent, KeyboardEvent, ModifiersState, MouseButton, MouseEvent},
+    desktop::{InputEvent, MouseButton},
     glam::{Mat3, Quat, Vec3, Vec4},
     render::{CameraComponent, Mesh, MeshHandle, Render, UploadMesh, Vertex},
-    utils::camera::Perspective,
+    utils::{camera::Perspective, input_helper::InputHelper},
     vr::VrUpdate,
     Transform,
 };
@@ -16,6 +16,7 @@ struct Camera {
     proj: Perspective,
     left_hand: EntityId,
     right_hand: EntityId,
+    input: InputHelper,
     /// Keep track of whether we've ever received a VR update, since we'll always receive desktop events!
     is_vr: bool,
 }
@@ -27,8 +28,7 @@ const HAND_RDR_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Hand"));
 impl UserState for Camera {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
         // Create camera
-        let camera_ent = io
-            .create_entity()
+        io.create_entity()
             .add_component(Transform::identity())
             .add_component(CameraComponent {
                 clear_color: [0.; 3],
@@ -61,6 +61,7 @@ impl UserState for Camera {
             .build();
 
         Self {
+            input: InputHelper::new(),
             arcball: ArcBall::default(),
             arcball_control: ArcBallController::default(),
             proj: Perspective::new(),
@@ -102,13 +103,14 @@ impl Camera {
             for input in io.inbox::<InputEvent>() {
                 // Handle window resizing
                 self.proj.handle_event(&input);
-
-                // Handle pivot/pan
-                self.arcball_control.handle_event(&input, &mut self.arcball);
-
-                // Set camera transform to arcball position
             }
 
+            self.input.handle_input_events(io);
+
+            // Handle pivot/pan
+            self.arcball_control.update(&self.input, &mut self.arcball);
+
+            // Set camera transform to arcball position
             for key in query.iter() {
                 query.write::<Transform>(key, &self.arcball.camera_transf());
             }
@@ -167,46 +169,22 @@ pub struct ArcBallController {
     pub swivel_sensitivity: f32,
     pub zoom_sensitivity: f32,
     pub closest_zoom: f32,
-    pub last_mouse: Option<(f32, f32)>,
-    pub mouse_left: bool,
-    pub mouse_right: bool,
-    pub modifiers: ModifiersState,
 }
 
 impl ArcBallController {
-    pub fn handle_event(&mut self, event: &InputEvent, arcball: &mut ArcBall) {
-        match event {
-            InputEvent::Mouse(mouse) => match mouse {
-                MouseEvent::Moved(x, y) => {
-                    if let Some((lx, ly)) = self.last_mouse {
-                        let (dx, dy) = (x - lx, y - ly);
+    pub fn update(&mut self, helper: &InputHelper, arcball: &mut ArcBall) {
+        let (dx, dy) = helper.mouse_diff();
 
-                        if self.mouse_left && !self.modifiers.shift {
-                            self.pivot(arcball, dx, dy);
-                        } else if self.mouse_right || (self.mouse_left && self.modifiers.shift) {
-                            self.pan(arcball, dx, dy)
-                        }
-                    }
+        if helper.mouse_held(MouseButton::Left) && !helper.held_shift() {
+            self.pivot(arcball, dx, dy);
+        } else if helper.mouse_held(MouseButton::Right)
+            || (helper.mouse_held(MouseButton::Left) && helper.held_shift())
+        {
+            self.pan(arcball, dx, dy)
+        }
 
-                    self.last_mouse = Some((*x, *y));
-                }
-                MouseEvent::Scrolled(_, dy) => {
-                    self.zoom(arcball, *dy);
-                }
-                MouseEvent::Clicked(button, state, _) => {
-                    let b = *state == ElementState::Pressed;
-                    match button {
-                        MouseButton::Left => self.mouse_left = b,
-                        MouseButton::Right => self.mouse_right = b,
-                        _ => (),
-                    }
-                }
-                _ => (),
-            },
-            InputEvent::Keyboard(KeyboardEvent::Modifiers(modifiers)) => {
-                self.modifiers = *modifiers;
-            }
-            _ => (),
+        if let Some((_, dy)) = helper.mousewheel_scroll_diff() {
+            self.zoom(arcball, dy);
         }
     }
 
@@ -239,14 +217,10 @@ impl ArcBallController {
 impl Default for ArcBallController {
     fn default() -> Self {
         Self {
-            modifiers: ModifiersState::default(),
             pan_sensitivity: 0.0015,
             swivel_sensitivity: 0.005,
             zoom_sensitivity: 0.3,
             closest_zoom: 0.01,
-            last_mouse: None,
-            mouse_left: false,
-            mouse_right: false,
         }
     }
 }
