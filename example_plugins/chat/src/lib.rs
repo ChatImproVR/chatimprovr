@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use cimvr_common::ui::{Schema, State, UiHandle, UiStateHelper, UiUpdate};
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
@@ -8,7 +10,9 @@ struct ClientState {
     displayed_messages: Vec<String>,
 }
 
-struct ServerState;
+struct ServerState {
+    last_clients: HashSet<Connection>,
+}
 
 make_app_state!(ClientState, ServerState);
 
@@ -126,7 +130,9 @@ impl UserState for ServerState {
             .subscribe::<Connections>()
             .build();
 
-        Self
+        Self {
+            last_clients: HashSet::new(),
+        }
     }
 }
 
@@ -134,6 +140,24 @@ impl ServerState {
     fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
         // Get the list of connected clients (and their usernames)
         let Some(Connections { clients }) = io.inbox_first() else { return; };
+        let clients: HashSet<Connection> = clients.into_iter().collect();
+
+        // Connection/Disconnection messages
+        for connected in clients.difference(&self.last_clients) {
+            let msg = ChatDownload {
+                username: "SERVER".into(),
+                text: format!("User {} connected.", connected.username),
+            };
+            io.send(&msg);
+        }
+
+        for disconnected in self.last_clients.difference(&clients) {
+            let msg = ChatDownload {
+                username: "SERVER".into(),
+                text: format!("User {} disconnected.", disconnected.username),
+            };
+            io.send(&msg);
+        }
 
         // Collect uploaded messages from clients
         let msgs = io.inbox_clients::<ChatUpload>().collect::<Vec<_>>();
@@ -149,10 +173,10 @@ impl ServerState {
                 };
 
                 // Distribute it
-                for client in &clients {
-                    io.send_to_client(&msg, client.id);
-                }
+                io.send(&msg);
             }
         }
+
+        self.last_clients = clients;
     }
 }
