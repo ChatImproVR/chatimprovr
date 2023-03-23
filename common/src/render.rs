@@ -177,6 +177,11 @@ impl Mesh {
         self.indices.clear();
         self.vertices.clear();
     }
+
+    /// Sets the uvw attribute of all vertices to the given color
+    pub fn recolor(&mut self, color: [f32; 3]) {
+        self.vertices.iter_mut().for_each(|v| v.uvw = color);
+    }
 }
 
 impl Default for CameraComponent {
