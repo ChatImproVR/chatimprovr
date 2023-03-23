@@ -81,15 +81,13 @@ impl Camera {
 
         // Handle events for VR
         if let Some(update) = io.inbox_first::<VrUpdate>() {
-            if !update.left_controller.events.is_empty() {
-                dbg!(&update.left_controller.events);
+            if !self.is_vr {
+                self.is_vr = true;
+                // TODO: this is stupid
+                for ent in query.iter() {
+                    query.write(ent, &Transform::identity());
+                }
             }
-
-            if !update.right_controller.events.is_empty() {
-                dbg!(&update.right_controller.events);
-            }
-
-            self.is_vr = true;
             // Handle FOV changes (But NOT position. Position is extremely time-sensitive, so it
             // is actually prepended to the view matrix)
             self.proj.handle_vr_update(&update);
