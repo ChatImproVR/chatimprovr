@@ -2,11 +2,19 @@
 name = "physics"
 version = "0.1.0"
 edition = "2021"
-
+# [lib]
+# path = "./src/lib.rs"
+# required-features = [ "dim3" ]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
+[features]
+default = ["dim3"]
+dim3 = []
+# [required-features]
+# default = ["dim3"]
 [dependencies]
 rapier3d = "0.17.2"
 cimvr_engine_interface = {path = "../engine_interface"}
 cimvr_common = {path = "../common"}
 glam = "0.23.0"
+bitflags = "2.0.2"
+bevy_reflect = "0.10.0"
