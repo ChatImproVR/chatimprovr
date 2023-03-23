@@ -17,4 +17,4 @@ cimvr_engine_interface = {path = "../engine_interface"}
 cimvr_common = {path = "../common"}
 glam = "0.23.0"
 bitflags = "2.0.2"
-bevy_reflect = "0.10.0"
+# bevy_reflect = "0.10.0"

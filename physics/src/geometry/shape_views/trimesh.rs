@@ -1,5 +1,5 @@
 use crate::math::Vect;
-use rapier::parry::shape::{TopologyError, TriMesh, TriMeshFlags};
+use rapier3d::parry::shape::{TopologyError, TriMesh, TriMeshFlags};
 
 /// Read-only access to the properties of a triangle mesh.
 pub struct TriMeshView<'a> {

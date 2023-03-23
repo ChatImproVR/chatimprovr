@@ -457,8 +457,8 @@ impl From<ActiveEvents> for rapier3d::pipeline::ActiveEvents {
 }
 
 /// The total force magnitude beyond which a contact force event can be emitted.
-#[derive(Copy, Clone, PartialEq, Component, Reflect, FromReflect)]
-#[reflect(Component)]
+#[derive(Copy, Clone, PartialEq, Component)]
+// #[reflect(Component)]
 pub struct ContactForceEventThreshold(pub f32);
 
 impl Default for ContactForceEventThreshold {
@@ -469,8 +469,8 @@ impl Default for ContactForceEventThreshold {
 
 /// Component which will be filled (if present) with a list of entities with which the current
 /// entity is currently in contact.
-#[derive(Component, Default, Reflect, FromReflect)]
-#[reflect(Component)]
+#[derive(Component, Default)]
+// #[reflect(Component)]
 pub struct CollidingEntities(pub(crate) HashSet<EntityId>);
 
 impl CollidingEntities {

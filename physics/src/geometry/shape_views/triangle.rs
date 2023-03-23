@@ -1,5 +1,5 @@
 use crate::math::{Real, Vect};
-use rapier::parry::shape::Triangle;
+use rapier3d::parry::shape::Triangle;
 
 /// Read-only access to the properties of a triangle.
 pub struct TriangleView<'a> {

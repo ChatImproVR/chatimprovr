@@ -199,6 +199,11 @@ impl RapierContext {
             Query<(&RapierRigidBodyHandle, &mut TransformInterpolation)>,
         >,
     ) {
+        // The interpolation_query can be handled by our engine.
+        // The event writer is an interesting one.
+        // Time can probably be handled by a FrameTime subscription.
+        // Idk about TimestepMode?
+        // SimulationToRenderTime might be a rapier internal
         let event_queue = events.map(|(ce, fe)| EventQueue {
             deleted_colliders: &self.deleted_colliders,
             collision_events: RwLock::new(ce),

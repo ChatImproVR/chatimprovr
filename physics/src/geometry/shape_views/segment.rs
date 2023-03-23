@@ -1,5 +1,5 @@
 use crate::math::{Real, Vect};
-use rapier::parry::shape::Segment;
+use rapier3d::parry::shape::Segment;
 
 /// Read-only access to the properties of a segment.
 pub struct SegmentView<'a> {
