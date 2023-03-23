@@ -870,6 +870,3 @@ impl RapierContext {
         });
     }
 }
-fn main() {
-    println!("rawr");
-}
