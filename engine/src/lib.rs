@@ -1,5 +1,4 @@
 pub mod ecs;
-pub mod physics;
 pub mod hotload;
 pub mod network;
 pub mod plugin;
