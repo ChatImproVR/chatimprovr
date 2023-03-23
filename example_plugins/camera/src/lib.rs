@@ -52,12 +52,12 @@ impl UserState for Camera {
 
         let left_hand = io
             .create_entity()
-            .add_component(Render::new(HAND_RDR_ID))
+            //.add_component(Render::new(HAND_RDR_ID))
             .build();
 
         let right_hand = io
             .create_entity()
-            .add_component(Render::new(HAND_RDR_ID))
+            //.add_component(Render::new(HAND_RDR_ID))
             .build();
 
         Self {
@@ -74,27 +74,30 @@ impl UserState for Camera {
 
 impl Camera {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        let mut camera_transf = Transform::identity();
+        for entity in query.iter() {
+            camera_transf = query.read::<Transform>(entity);
+        }
+
         // Handle events for VR
         if let Some(update) = io.inbox_first::<VrUpdate>() {
-            if !update.left_controller.events.is_empty() {
-                dbg!(&update.left_controller.events);
+            if !self.is_vr {
+                self.is_vr = true;
+                // TODO: this is stupid
+                for ent in query.iter() {
+                    query.write(ent, &Transform::identity());
+                }
             }
-
-            if !update.right_controller.events.is_empty() {
-                dbg!(&update.right_controller.events);
-            }
-
-            self.is_vr = true;
             // Handle FOV changes (But NOT position. Position is extremely time-sensitive, so it
             // is actually prepended to the view matrix)
             self.proj.handle_vr_update(&update);
 
             if let Some(pos) = update.left_controller.grip {
-                io.add_component(self.left_hand, pos);
+                io.add_component(self.left_hand, camera_transf * pos);
             }
 
             if let Some(pos) = update.right_controller.grip {
-                io.add_component(self.right_hand, pos);
+                io.add_component(self.right_hand, camera_transf * pos);
             }
         }
 
@@ -112,7 +115,7 @@ impl Camera {
 
             // Set camera transform to arcball position
             for key in query.iter() {
-                query.write::<Transform>(key, &self.arcball.camera_transf());
+                query.write::<Transform>(key, &dbg!(self.arcball.camera_transf()));
             }
         }
 
