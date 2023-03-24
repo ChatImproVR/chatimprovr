@@ -448,8 +448,9 @@ impl Dominance {
 ///
 /// This controls whether a body is sleeping or not.
 /// If the threshold is negative, the body never sleeps.
-#[derive(Copy, Clone, Debug, PartialEq, Component, Reflect, FromReflect)]
-#[reflect(Component, PartialEq)]
+// #[derive(Copy, Clone, Debug, PartialEq, Component, Reflect, FromReflect)]
+#[derive(Copy, Clone, Debug, PartialEq, Component)]
+// #[reflect(Component, PartialEq)]
 pub struct Sleeping {
     /// The threshold linear velocity bellow which the body can fall asleep.
     pub linear_threshold: f32,
@@ -481,8 +482,9 @@ impl Default for Sleeping {
 }
 
 /// Damping factors to gradually slow down a rigid-body.
-#[derive(Copy, Clone, Debug, PartialEq, Component, Reflect, FromReflect)]
-#[reflect(Component, PartialEq)]
+// #[derive(Copy, Clone, Debug, PartialEq, Component, Reflect, FromReflect)]
+#[derive(Copy, Clone, Debug, PartialEq, Component)]
+// #[reflect(Component, PartialEq)]
 pub struct Damping {
     // TODO: rename these to "linear" and "angular"?
     /// Damping factor for gradually slowing down the translational motion of the rigid-body.
@@ -523,6 +525,7 @@ impl TransformInterpolation {
 }
 
 /// Indicates whether or not the rigid-body is disabled explicitly by the user.
-#[derive(Copy, Clone, Default, Debug, PartialEq, Eq, Component, Reflect, FromReflect)]
-#[reflect(Component, PartialEq)]
+// #[derive(Copy, Clone, Default, Debug, PartialEq, Eq, Component, Reflect, FromReflect)]
+#[derive(Copy, Clone, Default, Debug, PartialEq, Eq, Component)]
+// #[reflect(Component, PartialEq)]
 pub struct RigidBodyDisabled;

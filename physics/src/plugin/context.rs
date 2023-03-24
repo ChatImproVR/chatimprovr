@@ -1,4 +1,5 @@
 // use bevy::prelude::*;
+use crate::prelude::TransformInterpolation;
 use rapier3d::control::CharacterCollision;
 use rapier3d::prelude::CollisionEvent;
 use rapier3d::prelude::ContactForceEvent;
