@@ -72,7 +72,22 @@ impl ComponentUi {
 
             ScrollArea::vertical().show(ui, |ui| {
                 for &entity in &self.display {
-                    ui.label(format!("{:?}", entity));
+                    let EntityId(id_number) = entity;
+
+                    if ui.button(format!("Entity {:X}", id_number)).clicked() {
+                        // Set the selected components equal to those on the given Entity,
+                        // and which have useable schema
+                        self.selected = engine
+                            .ecs()
+                            .all_components(entity)
+                            .map(|(c, _)| c.clone())
+                            .filter(|c| self.schema.contains_key(c))
+                            .collect();
+                        // Display only the selected entity
+                        self.display = vec![entity];
+                        return;
+                    }
+
                     for component in &sorted_components {
                         let schema = self.schema[component].clone();
                         let Some(data) = engine.ecs().get_raw(entity, component) else { continue };
