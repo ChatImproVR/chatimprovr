@@ -1,10 +1,7 @@
-use cimvr_common::{
-    render::{Mesh, MeshHandle, UploadMesh, Vertex},
-    ui::{Schema, State, UiHandle, UiStateHelper, UiUpdate},
-};
-use cimvr_engine_interface::{dbg, pkg_namespace, prelude::*};
+use cimvr_common::ui::{Schema, State, UiHandle, UiStateHelper, UiUpdate};
+use cimvr_engine_interface::{dbg, prelude::*};
 
-use crate::{ChangeColor, CUBE_MESH};
+use crate::ChangeColor;
 
 pub struct ClientState {
     ui: UiStateHelper,
@@ -15,15 +12,10 @@ impl UserState for ClientState {
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         let mut ui = UiStateHelper::new();
 
-        io.send(&UploadMesh {
-            mesh: cube(),
-            id: CUBE_MESH,
-        });
-
-        sched.add_system(
-            Self::ui_update,
-            SystemDescriptor::new(Stage::Update).subscribe::<UiUpdate>(),
-        );
+        sched
+            .add_system(Self::ui_update)
+            .subscribe::<UiUpdate>()
+            .build();
 
         let test_element = ui.add(
             io,
@@ -66,23 +58,4 @@ impl ClientState {
             }
         }
     }
-}
-
-fn cube() -> Mesh {
-    let vertices = vec![
-        Vertex::new([-1.0, -1.0, -1.0], [0.0, 1.0, 1.0]),
-        Vertex::new([1.0, -1.0, -1.0], [1.0, 0.0, 1.0]),
-        Vertex::new([1.0, 1.0, -1.0], [1.0, 1.0, 0.0]),
-        Vertex::new([-1.0, 1.0, -1.0], [0.0, 1.0, 1.0]),
-        Vertex::new([-1.0, -1.0, 1.0], [1.0, 0.0, 1.0]),
-        Vertex::new([1.0, -1.0, 1.0], [1.0, 1.0, 0.0]),
-        Vertex::new([1.0, 1.0, 1.0], [0.0, 1.0, 1.0]),
-        Vertex::new([-1.0, 1.0, 1.0], [1.0, 0.0, 1.0]),
-    ];
-
-    let indices = vec![
-        3, 1, 0, 2, 1, 3, 2, 5, 1, 6, 5, 2, 6, 4, 5, 7, 4, 6, 7, 0, 4, 3, 0, 7, 7, 2, 3, 6, 2, 7,
-        0, 5, 4, 1, 5, 0,
-    ];
-    Mesh { vertices, indices }
 }

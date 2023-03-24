@@ -1,4 +1,3 @@
-use cimvr_common::render::MeshHandle;
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 
@@ -8,8 +7,6 @@ use client::ClientState;
 use server::ServerState;
 
 make_app_state!(ClientState, ServerState);
-
-const CUBE_MESH: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ChangeColor {
