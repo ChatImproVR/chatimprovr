@@ -10,7 +10,7 @@ use cimvr_engine::{
     },
     Engine,
 };
-use egui::{Context, DragValue, ScrollArea, Ui};
+use egui::{Context, DragValue, ScrollArea, Ui, WidgetText};
 use std::collections::{HashMap, HashSet};
 
 pub struct ComponentUi {
@@ -34,7 +34,9 @@ impl ComponentUi {
             // Component selector
             let mut needs_update = false;
             ui.label("Components:");
-            for id in self.schema.keys() {
+            let mut sorted_keys: Vec<ComponentId> = self.schema.keys().cloned().collect();
+            sorted_keys.sort_by(|a, b| a.id.cmp(&b.id));
+            for id in &sorted_keys {
                 let has_id = self.selected.contains(id);
                 let marker = if has_id { "[-] " } else { "" };
                 let button = ui.button(format!("{}{}", marker, id.id));
@@ -47,6 +49,11 @@ impl ComponentUi {
                     }
                     needs_update = true;
                 }
+            }
+
+            if ui.button("Clear").clicked() {
+                self.selected.clear();
+                needs_update = true;
             }
             ui.separator();
 
@@ -96,7 +103,7 @@ impl ComponentUi {
                         if let Ok(SchemaDeserializer(mut dynamic)) =
                             deserialize(std::io::Cursor::new(data))
                         {
-                            ui.label(format!("{}", component.id));
+                            ui.label(component_text_fmt(&component.id));
 
                             if editor(&mut dynamic, ui) {
                                 // Create a dynamic edit
@@ -279,4 +286,8 @@ fn edit_vector(value: &mut DynamicValue, ui: &mut Ui) -> bool {
     } else {
         false
     }
+}
+
+fn component_text_fmt(name: &str) -> WidgetText {
+    WidgetText::from(name).strong()
 }
