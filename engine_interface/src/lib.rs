@@ -34,6 +34,9 @@ pub mod network;
 /// PCG algorithm for generating random universally-unique entity IDs
 pub mod pcg;
 
+/// Dynamic editing feedback to server
+pub mod dyn_edit;
+
 /// Convenience imports for the lazy
 // #[macro_use]
 pub mod prelude {

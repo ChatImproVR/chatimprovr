@@ -1,3 +1,4 @@
+pub mod dyn_edit;
 pub mod ecs;
 pub mod hotload;
 pub mod network;

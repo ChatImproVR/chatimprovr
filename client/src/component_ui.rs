@@ -81,6 +81,7 @@ impl ComponentUi {
                             ui.label(format!("{}", component.id));
 
                             if editor(&mut dynamic, ui) {
+                                // TODO: Replace with edit command!
                                 let Some(data) = engine.ecs().get_mut(entity, component) else { continue };
                                 serialize_into(std::io::Cursor::new(data), &dynamic).unwrap();
                             }
