@@ -13,7 +13,7 @@ use crate::geometry::{Collider, PointProjection, RayIntersection, TriMeshFlags, 
 use crate::math::{Real, Rot, Vect};
 #[cfg(all(feature = "dim3", feature = "async-collider"))]
 use rapier3d::geometry::ComputedColliderShape;
-use rapier3d::prelude::DMatrix;
+// use rapier3d::prelude::DMatrix;
 use rapier3d::prelude::{FeatureId, Point, Ray, SharedShape, Vector, DIM};
 
 impl Collider {

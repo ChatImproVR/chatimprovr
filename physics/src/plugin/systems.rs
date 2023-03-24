@@ -16,21 +16,22 @@ use crate::geometry::{
     ColliderMassProperties, ColliderScale, CollisionGroups, ContactForceEventThreshold, Friction,
     RapierColliderHandle, Restitution, Sensor, SolverGroups,
 };
-use crate::pipeline::{CollisionEvent, ContactForceEvent};
+// use crate::pipeline::{CollisionEvent, ContactForceEvent};
 use crate::plugin::configuration::{SimulationToRenderTime, TimestepMode};
 use crate::plugin::{RapierConfiguration, RapierContext};
-use crate::prelude::systems::nalgebra::Transform;
+// use crate::prelude::systems::nalgebra::Transform;
 // use crate::prelude::{
 //     BevyPhysicsHooks, BevyPhysicsHooksAdapter, CollidingEntities, KinematicCharacterController,
 //     KinematicCharacterControllerOutput, RigidBodyDisabled,
 // };
 // use crate::utils;
+use crate::prelude::RigidBodyDisabled;
 use crate::Entity;
 // use bevy::ecs::system::{StaticSystemParam, SystemParamItem};
 // use bevy::prelude::*;
 use cimvr_common::Transform;
 use cimvr_engine_interface::prelude::Query;
-use nalgebra::Transform;
+// use nalgebra::Transform;
 use rapier::prelude::*;
 use std::collections::HashMap;
 
@@ -40,14 +41,14 @@ use {
     bevy::scene::SceneInstance,
 };
 
-use crate::control::CharacterCollision;
 #[cfg(feature = "dim2")]
 use bevy::math::Vec3Swizzles;
+use rapier::control::CharacterCollision;
 
 /// Components that will be updated after a physics step.
 pub type RigidBodyWritebackComponents<'a> = (
     Entity,
-    Option<&'a Parent>,
+    // Option<&'a Parent>, // TODO: Implement this later? :shrug:
     Option<&'a mut Transform>,
     Option<&'a mut TransformInterpolation>,
     Option<&'a mut Velocity>,
@@ -58,7 +59,7 @@ pub type RigidBodyWritebackComponents<'a> = (
 pub type RigidBodyComponents<'a> = (
     Entity,
     &'a RigidBody,
-    Option<&'a GlobalTransform>,
+    // Option<&'a GlobalTransform>, // TODO: Do this later :smile:
     Option<&'a Velocity>,
     Option<&'a AdditionalMassProperties>,
     Option<&'a ReadMassProperties>,
@@ -92,14 +93,14 @@ pub type ColliderComponents<'a> = (
 /// System responsible for applying [`GlobalTransform::scale`] and/or [`ColliderScale`] to
 /// colliders.
 pub fn apply_scale(
-    config: Res<RapierConfiguration>,
+    config: RapierConfiguration,
     mut changed_collider_scales: Query<
-        (&mut Collider, &GlobalTransform, Option<&ColliderScale>),
-        Or<(
-            Changed<Collider>,
-            Changed<GlobalTransform>,
-            Changed<ColliderScale>,
-        )>,
+        (&mut Collider, Option<&ColliderScale>),
+        // Or<(
+        //     Changed<Collider>,
+        //     // Changed<GlobalTransform>,
+        //     Changed<ColliderScale>,
+        // )>,
     >,
 ) {
     // NOTE: we don’t have to apply the RapierConfiguration::physics_scale here because
@@ -129,8 +130,8 @@ pub fn apply_scale(
 
 /// System responsible for applying changes the user made to a collider-related component.
 pub fn apply_collider_user_changes(
-    config: Res<RapierConfiguration>,
-    mut context: ResMut<RapierContext>,
+    config: RapierConfiguration,
+    mut context: RapierContext,
     changed_collider_transforms: Query<
         (&RapierColliderHandle, &GlobalTransform),
         (Without<RapierRigidBodyHandle>, Changed<GlobalTransform>),
