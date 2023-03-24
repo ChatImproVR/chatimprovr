@@ -128,6 +128,28 @@ fn editor(value: &mut DynamicValue, ui: &mut Ui) -> bool {
             false
         }
         DynamicValue::NewtypeStruct(name, field) => {
+            if name == "GenericHandle" {
+                return false;
+            }
+
+            /*
+            dbg!(&name);
+            if name.ends_with("Id") {
+                fn shorten<N: std::fmt::UpperHex>(n: N, name: &str) -> String {
+                    format!("{} ({})", name, &format!("{:X}", n)[..6])
+                }
+                match field.as_ref() {
+                    DynamicValue::U8(v) => ui.label(shorten(v, name)),
+                    DynamicValue::U16(v) => ui.label(shorten(v, name)),
+                    DynamicValue::U32(v) => ui.label(shorten(v, name)),
+                    DynamicValue::U64(v) => ui.label(shorten(v, name)),
+                    DynamicValue::U128(v) => ui.label(shorten(v, name)),
+                    _ => ui.label(name.clone()),
+                };
+                return false;
+            }
+            */
+
             ui.horizontal(|ui| {
                 ui.label(name.clone());
                 editor(field, ui)
