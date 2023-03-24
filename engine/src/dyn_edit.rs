@@ -31,7 +31,7 @@ pub fn insert_dyn(ecs: &mut Ecs, dynamic: &DynamicEdit) {
 pub struct DynamicEditor;
 
 impl DynamicEditor {
-    pub fn new(engine: &mut Engine) -> Self {
+    pub fn sub(engine: &mut Engine) -> Self {
         engine.subscribe::<DynamicEditCommand>();
         Self
     }
