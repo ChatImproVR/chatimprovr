@@ -147,11 +147,9 @@ fn editor(value: &mut DynamicValue, ui: &mut Ui) -> bool {
                 return false;
             }
 
-            /*
-            dbg!(&name);
             if name.ends_with("Id") {
                 fn shorten<N: std::fmt::UpperHex>(n: N, name: &str) -> String {
-                    format!("{} ({})", name, &format!("{:X}", n)[..6])
+                    format!("{} ({})", name, &format!("{:06X}", n)[..6])
                 }
                 match field.as_ref() {
                     DynamicValue::U8(v) => ui.label(shorten(v, name)),
@@ -163,7 +161,6 @@ fn editor(value: &mut DynamicValue, ui: &mut Ui) -> bool {
                 };
                 return false;
             }
-            */
 
             ui.horizontal(|ui| {
                 ui.label(name.clone());
