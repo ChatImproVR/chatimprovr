@@ -237,6 +237,7 @@ impl Ecs {
     }
     */
 
+    /// Get each component and its associated data on an entity
     pub fn all_components(&self, entity: EntityId) -> impl Iterator<Item = (&ComponentId, &[u8])> {
         self.map
             .iter()

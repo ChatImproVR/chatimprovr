@@ -124,6 +124,7 @@ pub fn component_size_cached<C: Component>() -> usize {
     })
 }
 
+// TODO: This should be a method of Component!
 /// Get the ComponentId of a Component
 pub fn component_id<C: Component>() -> ComponentId {
     let size = component_size_cached::<C>()

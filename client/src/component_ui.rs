@@ -1,7 +1,10 @@
 use cimvr_engine::{
+    dyn_edit::extract_dyn,
     interface::{
+        component_id,
+        dyn_edit::{DynamicEditCommand, DynamicEditRequest},
         kobble::{DynamicValue, Schema, SchemaDeserializer},
-        prelude::{Access, ComponentId, EntityId, QueryComponent},
+        prelude::{Access, Component, ComponentId, EntityId, QueryComponent, Synchronized},
         serial::{deserialize, serialize, serialize_into},
         ComponentSchema,
     },
@@ -81,9 +84,22 @@ impl ComponentUi {
                             ui.label(format!("{}", component.id));
 
                             if editor(&mut dynamic, ui) {
-                                // TODO: Replace with edit command!
-                                let Some(data) = engine.ecs().get_mut(entity, component) else { continue };
+                                // Create a dynamic edit
+                                let mut edit = extract_dyn(engine.ecs(), entity);
+
+                                // Write new data into it
+                                let Some(data) = edit.components.get_mut(component) else { continue };
+                                data.fill(0);
                                 serialize_into(std::io::Cursor::new(data), &dynamic).unwrap();
+
+                                // Request a dynamic edit locally
+                                engine.send(DynamicEditCommand(edit.clone()));
+
+                                // If the synchronized component was attached, request a remote
+                                // edit too
+                                if edit.components.contains_key(&component_id::<Synchronized>()) {
+                                    engine.send(DynamicEditRequest(edit.clone()));
+                                }
                             }
                         } else {
                             ui.label(format!("Failed to deserialize {}", component.id));
