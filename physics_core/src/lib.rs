@@ -15,8 +15,7 @@
 #[macro_use]
 #[cfg(feature = "serde-serialize")]
 extern crate serde;
-// pub use crate::engine;
-pub mod plugin;
+
 pub extern crate nalgebra as na;
 #[cfg(feature = "dim2")]
 pub extern crate rapier2d as rapier;
@@ -50,8 +49,10 @@ pub mod math {
     pub type Rot = Quat;
 }
 
-// /// Components related to physics dynamics (rigid-bodies, velocities, etc.)
-// pub mod dynamics;
+pub mod plugin;
+
+/// Components related to physics dynamics (rigid-bodies, velocities, etc.)
+pub mod dynamics;
 // /// Components related to physics geometry (colliders, collision-groups, etc.)
 // pub mod geometry;
 // /// Components and resources related to the physics simulation workflow (events, hooks, etc.)
