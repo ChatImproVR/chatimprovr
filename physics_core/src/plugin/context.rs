@@ -1,10 +1,13 @@
-use crate::prelude::*;
+use crate::{math::Vect, prelude::*};
 use cimvr_engine::Engine;
 use rapier::prelude::*;
 
+use super::configuration::TimestepMode;
+
 /// The Rapier context, containing all the state of the physics engine.
-#[cfg_attr(feature = "serde-serialize", derive(Serialize, Deserialize))]
+// #[cfg_attr(feature = "serde-serialize", derive(Serialize, Deserialize))]
 // #[derive(Resource)]
+#[derive(Serialize, Deserialize)]
 pub struct RapierContext {
     /// The island manager, which detects what object is sleeping
     /// (not moving much) to reduce computations.
@@ -59,20 +62,30 @@ pub struct RapierContext {
 }
 
 impl RapierContext {
-    pub fn step_simulation(&mut self, engine: &mut Engine) {
+    /// Advance the simulation, based on the given timestep mode.
+    pub fn step_simulation(
+        &mut self,
+        engine: &mut Engine,
+        gravity: Vect,
+        timestep_mode: TimestepMode,
+    ) {
         //     pub fn step_simulation(
         //     &mut self,
-        //     gravity: Vect,
-        //     timestep_mode: TimestepMode,
+        //     gravity: Vect, // Done
+        //     timestep_mode: TimestepMode, // Done
         //     events: Option<(EventWriter<CollisionEvent>, EventWriter<ContactForceEvent>)>,
+        //     ^- Not Done
         //     hooks: &dyn PhysicsHooks,
+        //     ^- Not Done.
         //     time: &Time,
+        //     ^- Done.
         //     sim_to_render_time: &mut SimulationToRenderTime,
         //     mut interpolation_query: Option<
         //         Query<(&RapierRigidBodyHandle, &mut TransformInterpolation)>,
         //     >,
         // )
         let ecs = engine.ecs();
+        // self.pipeline.step()
         // let time = engine.dispatch_plugin
         // ecs.query()
     }

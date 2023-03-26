@@ -5,15 +5,19 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
-default = ["dim3"]
+default = ["dim3", "serde-serialize"]
+serde-serialize = []
 dim3 = []
 # [feature]
 # dim3 = []
 
 [dependencies]
 glam = "0.23.0"
-nalgebra = "0.32.2"
-rapier3d = "0.17.2"
+nalgebra = { version = "0.32.2", features = ["glam023", "serde-serialize"]}
+rapier3d = {version = "0.17.2", features = ["serde-serialize"]}
 cimvr_engine = {path = "../engine"}
 cimvr_common = {path = "../common"}
 cimvr_engine_interface = {path = "../engine_interface"}
+bitflags = {version = "2", features = ["serde"]} 
+serde = { version = "1", features = ["derive"] }
+
