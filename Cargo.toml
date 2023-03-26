@@ -4,7 +4,7 @@ members = [
     "engine",
     "common",
     "server",
-    "physics",
+    "cimvr_physics_core",
     "engine_derive_macros",
     "example_plugins/camera",
     "example_plugins/channels",
