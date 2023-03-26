@@ -1,7 +1,8 @@
 use crate::math::Vect;
 
 /// Difference between simulation and rendering time
-#[derive(Resource, Default)]
+// #[derive(Resource, Default)]
+#[derive(Default)]
 pub struct SimulationToRenderTime {
     /// Difference between simulation and rendering time
     pub diff: f32,
