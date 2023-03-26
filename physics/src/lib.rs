@@ -22,6 +22,7 @@ pub extern crate rapier2d as rapier;
 #[cfg(feature = "dim3")]
 pub extern crate rapier3d as rapier;
 use cimvr_engine_interface::prelude::EntityId;
+use plugin::context::RapierContext;
 pub use rapier::parry;
 
 /// Type aliases to select the right vector/rotation types based
@@ -72,7 +73,7 @@ use crate::geometry::{
 };
 use crate::pipeline::{CollisionEvent, ContactForceEvent};
 use crate::plugin::configuration::{SimulationToRenderTime, TimestepMode};
-use crate::plugin::{RapierConfiguration, RapierContext};
+use crate::plugin::RapierConfiguration;
 // use crate::prelude::{
 //     BevyPhysicsHooks, BevyPhysicsHooksAdapter, CollidingEntities, KinematicCharacterController,
 //     KinematicCharacterControllerOutput, RigidBodyDisabled,
@@ -89,14 +90,14 @@ use {
     bevy::scene::SceneInstance,
 };
 
-use crate::control::CharacterCollision;
 #[cfg(feature = "dim2")]
 use bevy::math::Vec3Swizzles;
+use rapier3d::control::CharacterCollision;
 
 /// Components that will be updated after a physics step.
 pub type RigidBodyWritebackComponents<'a> = (
     Entity,
-    Option<&'a Parent>,
+    // Option<&'a Parent>, // Add this eventually.
     Option<&'a mut Transform>,
     Option<&'a mut TransformInterpolation>,
     Option<&'a mut Velocity>,
@@ -107,7 +108,7 @@ pub type RigidBodyWritebackComponents<'a> = (
 pub type RigidBodyComponents<'a> = (
     Entity,
     &'a RigidBody,
-    Option<&'a GlobalTransform>,
+    // Option<&'a GlobalTransform>,
     Option<&'a Velocity>,
     Option<&'a AdditionalMassProperties>,
     Option<&'a ReadMassProperties>,
@@ -143,12 +144,12 @@ pub type ColliderComponents<'a> = (
 pub fn apply_scale(
     config: Res<RapierConfiguration>,
     mut changed_collider_scales: Query<
-        (&mut Collider, &GlobalTransform, Option<&ColliderScale>),
-        Or<(
-            Changed<Collider>,
-            Changed<GlobalTransform>,
-            Changed<ColliderScale>,
-        )>,
+        (&mut Collider, Option<&ColliderScale>),
+        // Or<(
+        //     Changed<Collider>,
+        //     Changed<GlobalTransform>,
+        //     Changed<ColliderScale>,
+        // )>,
     >,
 ) {
     // NOTE: we don’t have to apply the RapierConfiguration::physics_scale here because
@@ -510,36 +511,36 @@ pub fn apply_rigid_body_user_changes(
 }
 
 /// System responsible for applying changes the user made to a joint component.
-pub fn apply_joint_user_changes(
-    mut context: ResMut<RapierContext>,
-    changed_impulse_joints: Query<
-        (&RapierImpulseJointHandle, &ImpulseJoint),
-        Changed<ImpulseJoint>,
-    >,
-    changed_multibody_joints: Query<
-        (&RapierMultibodyJointHandle, &MultibodyJoint),
-        Changed<MultibodyJoint>,
-    >,
-) {
-    let scale = context.physics_scale;
-
-    // TODO: right now, we only support propagating changes made to the joint data.
-    //       Re-parenting the joint isn’t supported yet.
-    for (handle, changed_joint) in changed_impulse_joints.iter() {
-        if let Some(joint) = context.impulse_joints.get_mut(handle.0) {
-            joint.data = changed_joint.data.into_rapier(scale);
-        }
-    }
-
-    for (handle, changed_joint) in changed_multibody_joints.iter() {
-        // TODO: not sure this will always work properly, e.g., if the number of Dofs is changed.
-        if let Some((mb, link_id)) = context.multibody_joints.get_mut(handle.0) {
-            if let Some(link) = mb.link_mut(link_id) {
-                link.joint.data = changed_joint.data.into_rapier(scale);
-            }
-        }
-    }
-}
+// pub fn apply_joint_user_changes(
+//     mut context: ResMut<RapierContext>,
+//     changed_impulse_joints: Query<
+//         (&RapierImpulseJointHandle, &ImpulseJoint),
+//         Changed<ImpulseJoint>,
+//     >,
+//     changed_multibody_joints: Query<
+//         (&RapierMultibodyJointHandle, &MultibodyJoint),
+//         Changed<MultibodyJoint>,
+//     >,
+// ) {
+//     let scale = context.physics_scale;
+//
+//     // TODO: right now, we only support propagating changes made to the joint data.
+//     //       Re-parenting the joint isn’t supported yet.
+//     for (handle, changed_joint) in changed_impulse_joints.iter() {
+//         if let Some(joint) = context.impulse_joints.get_mut(handle.0) {
+//             joint.data = changed_joint.data.into_rapier(scale);
+//         }
+//     }
+//
+//     for (handle, changed_joint) in changed_multibody_joints.iter() {
+//         // TODO: not sure this will always work properly, e.g., if the number of Dofs is changed.
+//         if let Some((mb, link_id)) = context.multibody_joints.get_mut(handle.0) {
+//             if let Some(link) = mb.link_mut(link_id) {
+//                 link.joint.data = changed_joint.data.into_rapier(scale);
+//             }
+//         }
+//     }
+// }
 
 /// System responsible for writing the result of the last simulation step into our `bevy_rapier`
 /// components and the [`GlobalTransform`] component.
@@ -1135,8 +1136,8 @@ pub fn sync_removals(
     mut context: ResMut<RapierContext>,
     mut removed_bodies: RemovedComponents<RapierRigidBodyHandle>,
     mut removed_colliders: RemovedComponents<RapierColliderHandle>,
-    mut removed_impulse_joints: RemovedComponents<RapierImpulseJointHandle>,
-    mut removed_multibody_joints: RemovedComponents<RapierMultibodyJointHandle>,
+    // mut removed_impulse_joints: RemovedComponents<RapierImpulseJointHandle>,
+    // mut removed_multibody_joints: RemovedComponents<RapierMultibodyJointHandle>,
     orphan_bodies: Query<Entity, (With<RapierRigidBodyHandle>, Without<RigidBody>)>,
     orphan_colliders: Query<Entity, (With<RapierColliderHandle>, Without<Collider>)>,
     orphan_impulse_joints: Query<Entity, (With<RapierImpulseJointHandle>, Without<ImpulseJoint>)>,
