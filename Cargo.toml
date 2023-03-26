@@ -4,6 +4,7 @@ members = [
     "engine",
     "common",
     "server",
+    "physics",
     "engine_derive_macros",
     "example_plugins/camera",
     "example_plugins/channels",
@@ -19,6 +20,7 @@ members = [
     "example_plugins/gamepad",
     "example_plugins/keyboard",
     "example_plugins/chat",
+
 ]
 
 # Causes a build issue with OpenXR if included in workspace
