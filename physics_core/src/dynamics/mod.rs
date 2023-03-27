@@ -14,7 +14,7 @@ use rapier::dynamics::CoefficientCombineRule as RapierCoefficientCombineRule;
 //
 // mod generic_joint;
 // mod joint;
-mod rigid_body;
+pub mod rigid_body;
 //
 // mod fixed_joint;
 // mod prismatic_joint;

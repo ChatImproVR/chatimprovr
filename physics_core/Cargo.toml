@@ -10,7 +10,6 @@ serde-serialize = []
 dim3 = []
 # [feature]
 # dim3 = []
-
 [dependencies]
 glam = "0.23.0"
 nalgebra = { version = "0.32.2", features = ["glam023", "serde-serialize"]}
@@ -20,4 +19,6 @@ cimvr_common = {path = "../common"}
 cimvr_engine_interface = {path = "../engine_interface"}
 bitflags = {version = "2", features = ["serde"]} 
 serde = { version = "1", features = ["derive"] }
+anyhow = "1.0.70"
+itertools = "0.10.5"
 

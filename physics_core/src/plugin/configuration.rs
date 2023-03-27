@@ -1,5 +1,4 @@
 use crate::math::Vect;
-
 /// Difference between simulation and rendering time
 // #[derive(Resource, Default)]
 #[derive(Default)]
@@ -9,7 +8,7 @@ pub struct SimulationToRenderTime {
 }
 
 /// The different ways of adjusting the timestep length.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum TimestepMode {
     /// Use a fixed timestep: the physics simulation will be advanced by the fixed value
     /// `dt` seconds at each Bevy tick by performing `substeps` of length `dt / substeps`.
@@ -49,7 +48,7 @@ pub enum TimestepMode {
 }
 
 // #[derive(Resource, Copy, Clone, Debug)]
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 /// A resource for specifying configuration information for the physics simulation
 pub struct RapierConfiguration {
     /// Specifying the gravity of the physics simulation.

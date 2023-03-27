@@ -4,7 +4,10 @@ use anyhow::Result;
 use cimvr_common::glam::Mat4;
 use cimvr_common::{render::*, Transform};
 use cimvr_engine::interface::prelude::*;
-use cimvr_engine::{interface::{pkg_namespace, component_id}, Engine};
+use cimvr_engine::{
+    interface::{component_id, pkg_namespace},
+    Engine,
+};
 use gl::HasContext;
 use glow::NativeUniformLocation;
 
@@ -63,12 +66,7 @@ impl RenderPlugin {
     }
 
     /// Draw a frame, prepending camera transform to the given view
-    pub fn frame(
-        &mut self,
-        engine: &mut Engine,
-        vr_view: Mat4,
-        camera_idx: usize,
-    ) -> Result<()> {
+    pub fn frame(&mut self, engine: &mut Engine, vr_view: Mat4, camera_idx: usize) -> Result<()> {
         // Upload render data
         for msg in engine.inbox::<UploadMesh>() {
             if let Err(e) = self.rdr.upload_render_data(&self.gl, &msg) {
@@ -84,10 +82,10 @@ impl RenderPlugin {
         }
 
         // Find camera, if any
-        let camera_entity = match engine
-            .ecs()
-            .find(&[component_id::<CameraComponent>(), component_id::<Transform>()])
-        {
+        let camera_entity = match engine.ecs().find(&[
+            component_id::<CameraComponent>(),
+            component_id::<Transform>(),
+        ]) {
             Some(c) => c,
             None => {
                 log::warn!("No Camera found! Did you attach both Transform and CameraComponent?");
@@ -277,13 +275,13 @@ impl GpuShader {
             gl.uniform_matrix_4_f32_slice(
                 gl.get_uniform_location(self.program, "view").as_ref(),
                 false,
-                &view.to_cols_array()
+                &view.to_cols_array(),
             );
 
             gl.uniform_matrix_4_f32_slice(
                 gl.get_uniform_location(self.program, "proj").as_ref(),
                 false,
-                &proj.to_cols_array()
+                &proj.to_cols_array(),
             );
         }
     }
@@ -327,8 +325,8 @@ fn compile_glsl_program(gl: &gl::Context, sources: &[(u32, &str)]) -> Result<gl:
 
             if !gl.get_shader_compile_status(shader) {
                 return Err(format_err!(
-                        "OpenGL compile shader: {}",
-                        gl.get_shader_info_log(shader)
+                    "OpenGL compile shader: {}",
+                    gl.get_shader_info_log(shader)
                 ));
             }
 
@@ -341,8 +339,8 @@ fn compile_glsl_program(gl: &gl::Context, sources: &[(u32, &str)]) -> Result<gl:
 
         if !gl.get_program_link_status(program) {
             return Err(format_err!(
-                    "OpenGL link shader: {}",
-                    gl.get_program_info_log(program)
+                "OpenGL link shader: {}",
+                gl.get_program_info_log(program)
             ));
         }
 
