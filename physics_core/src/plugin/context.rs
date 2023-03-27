@@ -1,8 +1,11 @@
+use super::configuration::TimestepMode;
+use crate::dynamics::rigid_body::RapierRigidBodyHandle;
+use crate::plugin::plugin::CimvrCollisionEvent;
 use crate::{math::Vect, prelude::*};
 use cimvr_engine::Engine;
+use cimvr_engine_interface::{prelude::*, FrameTime};
+use itertools::{self, Itertools};
 use rapier::prelude::*;
-
-use super::configuration::TimestepMode;
 
 /// The Rapier context, containing all the state of the physics engine.
 // #[cfg_attr(feature = "serde-serialize", derive(Serialize, Deserialize))]
@@ -62,6 +65,10 @@ pub struct RapierContext {
 }
 
 impl RapierContext {
+    /// Makes a new rapier context.
+    pub fn new() -> Self {
+        RapierContext::default()
+    }
     /// Advance the simulation, based on the given timestep mode.
     pub fn step_simulation(
         &mut self,
@@ -84,7 +91,12 @@ impl RapierContext {
         //         Query<(&RapierRigidBodyHandle, &mut TransformInterpolation)>,
         //     >,
         // )
+        let frame_items = engine.inbox::<FrameTime>().collect_vec();
+        let collision_events = engine.inbox::<CimvrCollisionEvent>().collect_vec();
+        // let thing = engine
         let ecs = engine.ecs();
+        let collision_query_comp = QueryComponent::new::<RapierRigidBodyHandle>(Access::Write);
+        ecs.query(&[collision_query_comp]);
         // self.pipeline.step()
         // let time = engine.dispatch_plugin
         // ecs.query()
