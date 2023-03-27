@@ -184,6 +184,16 @@ impl Engine {
         // Distribute messages
         self.propagate();
 
+        // TODO: This is kind of a hack, and it means that host-side systems cannot receive
+        // messages from WASM plugins after PostUpdate. We should really have handles for host-side
+        // inboxes...
+        if stage == Stage::PostUpdate {
+            // Clear external inbox so that unread messages don't build up
+            for inbox in self.external_inbox.values_mut() {
+                inbox.clear();
+            }
+        }
+
         Ok(())
     }
 
@@ -278,9 +288,9 @@ impl Engine {
         self.external_inbox
             .get_mut(&M::CHANNEL.into())
             .expect("Attempted to access a channel we haven't subscribed to")
-            .drain(..)
+            .iter()
             .map(|msg| {
-                deserialize(std::io::Cursor::new(msg.data)).expect("Failed to decode message")
+                deserialize(std::io::Cursor::new(&msg.data)).expect("Failed to decode message")
             })
     }
 
