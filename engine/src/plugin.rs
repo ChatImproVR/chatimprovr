@@ -61,9 +61,9 @@ impl Plugin {
         let mem = instance.get_memory(&mut store, "memory").unwrap();
 
         let dispatch_fn = instance
-            .get_typed_func::<(), u32, _>(&mut store, "_dispatch")
+            .get_typed_func::<(), u32>(&mut store, "_dispatch")
             .context("Getting dispatch function. Did you forget to use make_app_state!()? RTFM!")?;
-        let reserve_fn = instance.get_typed_func::<u32, u32, _>(&mut store, "_reserve")?;
+        let reserve_fn = instance.get_typed_func::<u32, u32>(&mut store, "_reserve")?;
 
         Ok(Self {
             random_fn,

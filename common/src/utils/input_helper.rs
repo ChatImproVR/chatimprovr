@@ -93,6 +93,7 @@ impl InputHelper {
     /// }
     /// ```
     pub fn handle_input_events(&mut self, io: &mut EngineIo) {
+        self.mouse_state.prev_pos = self.mouse_state.position;
         self.pressed_keys.clear();
         self.released_keys.clear();
         self.mouse_state.pressed_buttons.clear();
@@ -131,10 +132,7 @@ impl InputHelper {
 
     fn handle_mouse_event(&mut self, mouse_event: &MouseEvent) {
         match mouse_event {
-            MouseEvent::Moved(x, y) => {
-                self.mouse_state.prev_pos = self.mouse_state.position;
-                self.mouse_state.position = (*x, *y)
-            }
+            MouseEvent::Moved(x, y) => self.mouse_state.position = (*x, *y),
             MouseEvent::Scrolled(hor, vert) => self.mouse_state.scroll = (*hor, *vert),
             MouseEvent::Entered => self.mouse_state.in_window = true,
             MouseEvent::Exited => self.mouse_state.in_window = false,
