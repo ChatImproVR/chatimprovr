@@ -961,7 +961,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "86f0b0d4bf799edbc74508c1e8bf170ff5f41238e5f8225603ca7caaae2b7860"
 
 [[package]]
-name = "particle-life"
+name = "particle-life-2d"
+version = "0.1.0"
+dependencies = [
+ "cimvr_common",
+ "cimvr_engine_interface",
+ "serde",
+ "zwohash",
+]
+
+[[package]]
+name = "particle-life-3d"
 version = "0.1.0"
 dependencies = [
  "cimvr_common",
