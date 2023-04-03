@@ -1,5 +1,0 @@
-[build]
-target = "wasm32-unknown-unknown"   
-
-[alias]
-test_pc = "test --target=x86_64-pc-windows-msvc"
