@@ -30,7 +30,7 @@ impl Default for Orthographic {
             right: 10.,
             bottom: -10.,
             top: 10.,
-            near: 0.1,
+            near: -100.,
             far: 100.,
             proj: [Mat4::IDENTITY; 2],
         }
@@ -97,15 +97,15 @@ impl Orthographic {
 
     pub fn camera_on_positive_z_axis(&self) -> Transform {
         Transform {
-            pos: Vec3::new(0., 0., 10.),
+            pos: Vec3::new(0., 0., 5.),
             orient: Default::default(),
         }
     }
 
-    pub fn camera_on_custom_axis(&self, pos_x: f32, pos_y: f32, pos_z: f32) -> Transform {
+    pub fn camera_on_custom_axis(&self, pos_x: f32, pos_y: f32, pos_z: f32, degree_x: f32, degree_y: f32, degree_z: f32) -> Transform {
         Transform {
             pos: Vec3::new(pos_x, pos_y, pos_z),
-            orient: self.face_towards(Vec3::new(pos_x, pos_y, pos_z), Vec3::Y),
+            orient: Quat::from_euler(cimvr_common::glam::EulerRot::XYZ, degree_x.to_radians(), degree_y.to_radians(), degree_z.to_radians()),
         }
     }
 }
@@ -150,7 +150,9 @@ impl Camera2D {
         let new_projection = self.proj.matrices();
 
         for key in query.iter() {
+            query.write::<Transform>(key, &self.proj.camera_on_custom_axis(0., 0.5, 0., 90.,0.,0.));
         }
+        
 
         for key in query.iter() {
             query.write::<CameraComponent>(
