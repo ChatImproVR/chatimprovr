@@ -3,8 +3,6 @@ use std::fmt::{self, Display};
 
 use serde::{de, ser};
 
-pub type Result<T> = std::result::Result<T, ValidationError>;
-
 // TODO: Make this more descriptive
 #[derive(Debug)]
 pub enum ValidationError {

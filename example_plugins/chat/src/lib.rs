@@ -1,4 +1,7 @@
-use cimvr_common::ui::{Schema, State, UiHandle, UiStateHelper, UiUpdate};
+use cimvr_common::{
+    ui::{Schema, State, UiHandle, UiStateHelper, UiUpdate},
+    utils::client_tracker::{Action, ClientTracker},
+};
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 
@@ -8,19 +11,23 @@ struct ClientState {
     displayed_messages: Vec<String>,
 }
 
-struct ServerState;
+struct ServerState {
+    tracker: ClientTracker,
+}
 
 make_app_state!(ClientState, ServerState);
 
 /// Server to client chat message datatype
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Message, Serialize, Deserialize, Debug)]
+#[locality("Remote")]
 struct ChatDownload {
     username: String,
     text: String,
 }
 
 /// Client to server chat message datatype
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Message, Serialize, Deserialize, Debug)]
+#[locality("Remote")]
 struct ChatUpload(String);
 
 /// Number of chat log messages
@@ -29,12 +36,11 @@ const N_DISPLAYED_MESSAGES: usize = 5;
 // Client code
 impl UserState for ClientState {
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
-        sched.add_system(
-            Self::ui_update,
-            SystemDescriptor::new(Stage::Update)
-                .subscribe::<UiUpdate>()
-                .subscribe::<ChatDownload>(),
-        );
+        sched
+            .add_system(Self::ui_update)
+            .subscribe::<UiUpdate>()
+            .subscribe::<ChatDownload>()
+            .build();
 
         let mut ui = UiStateHelper::new();
 
@@ -119,27 +125,41 @@ impl UserState for ServerState {
     fn new(_io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         // Schedule the update() system to run every Update,
         // and allow it to receive the ChatMessage message
-        sched.add_system(
-            Self::update,
-            SystemDescriptor::new(Stage::Update)
-                .subscribe::<ChatUpload>()
-                .subscribe::<Connections>(),
-        );
+        sched
+            .add_system(Self::update)
+            .subscribe::<ChatUpload>()
+            .subscribe::<Connections>()
+            .build();
 
-        Self
+        Self {
+            tracker: ClientTracker::new(),
+        }
     }
 }
 
 impl ServerState {
     fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
         // Get the list of connected clients (and their usernames)
-        let Some(Connections { clients }) = io.inbox_first() else { return; };
+        let Some(conns) = io.inbox_first() else { return; };
+
+        // Connection/Disconnection messages
+        let callback = |conn: &Connection, action: Action| {
+            io.send(&ChatDownload {
+                username: "SERVER".into(),
+                text: match action {
+                    Action::Connected => format!("User {} connected.", conn.username),
+                    Action::Disconnected => format!("User {} disconnected.", conn.username),
+                },
+            })
+        };
+
+        self.tracker.update(&conns, callback);
 
         // Collect uploaded messages from clients
         let msgs = io.inbox_clients::<ChatUpload>().collect::<Vec<_>>();
         for (sender_client_id, ChatUpload(msg)) in msgs {
             // Find the sender's username
-            let sender = clients.iter().find(|c| c.id == sender_client_id);
+            let sender = self.tracker.clients().find(|c| c.id == sender_client_id);
 
             if let Some(sender) = sender {
                 // Create a packet to send to all clients
@@ -149,24 +169,8 @@ impl ServerState {
                 };
 
                 // Distribute it
-                for client in &clients {
-                    io.send_to_client(&msg, client.id);
-                }
+                io.send(&msg);
             }
         }
     }
-}
-
-impl Message for ChatDownload {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("ChatDownload"),
-        locality: Locality::Remote,
-    };
-}
-
-impl Message for ChatUpload {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("ChatUpload"),
-        locality: Locality::Remote,
-    };
 }

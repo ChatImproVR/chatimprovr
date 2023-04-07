@@ -1,29 +1,27 @@
 use cimvr_common::{
-    desktop::{ElementState, InputEvent, InputEvents, KeyCode},
+    desktop::{InputEvent, KeyCode},
     glam::Vec3,
-    render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
+    render::{Mesh, MeshHandle, Render, UploadMesh, Vertex},
+    utils::input_helper::InputHelper,
     Transform,
 };
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, FrameTime};
 use serde::{Deserialize, Serialize};
 
 struct ServerState;
-
+#[derive(Default)]
 struct ClientState {
-    w_is_pressed: bool,
-    a_is_pressed: bool,
-    s_is_pressed: bool,
-    d_is_pressed: bool,
+    input: InputHelper,
 }
 
-/// Movement command sent to server
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Message, Serialize, Deserialize, Clone, Copy)]
+#[locality("Remote")]
 pub struct MoveCommand {
     pub distance: Vec3,
 }
 
 /// Component identifing the cube
-#[derive(Serialize, Deserialize, Default, Clone, Copy)]
+#[derive(Component, Serialize, Deserialize, Default, Clone, Copy)]
 pub struct CubeFlag;
 
 make_app_state!(ClientState, ServerState);
@@ -40,70 +38,40 @@ impl UserState for ClientState {
         });
 
         // Add update system, and subscribe to needed channels
-        sched.add_system(
-            Self::update,
-            SystemDescriptor::new(Stage::Update)
-                .subscribe::<InputEvents>()
-                .subscribe::<FrameTime>(),
-        );
+        sched
+            .add_system(Self::update)
+            .subscribe::<InputEvent>()
+            .subscribe::<FrameTime>()
+            .build();
 
+        // SystemDescriptor::new(Stage::Update)
+        //     .subscribe::<InputEvent>()
+        //     .subscribe::<FrameTime>(),
         // Initialize state
-        Self {
-            w_is_pressed: false,
-            a_is_pressed: false,
-            s_is_pressed: false,
-            d_is_pressed: false,
-        }
+        Self::default()
     }
 }
 
 impl ClientState {
     fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
+        self.input.handle_input_events(io);
         // Read frame time (or bust!)
         let Some(frame_time) = io.inbox_first::<FrameTime>() else { return };
 
         // Handle input events
-        if let Some(InputEvents(events)) = io.inbox_first() {
-            for event in events {
-                if let InputEvent::Keyboard(cimvr_common::desktop::KeyboardEvent::Key {
-                    key,
-                    state,
-                }) = event
-                {
-                    // Update key press information
-                    let is_pressed = state == ElementState::Pressed;
-
-                    if key == KeyCode::W {
-                        self.w_is_pressed = is_pressed;
-                    }
-
-                    if key == KeyCode::A {
-                        self.a_is_pressed = is_pressed;
-                    }
-
-                    if key == KeyCode::S {
-                        self.s_is_pressed = is_pressed;
-                    }
-
-                    if key == KeyCode::D {
-                        self.d_is_pressed = is_pressed;
-                    }
-                }
-            }
-        }
-
         // Decide which way the cube should move based on keypresses
         let mut move_vector = Vec3::ZERO;
-        if self.w_is_pressed {
-            move_vector += Vec3::new(1., 0., 0.)
+
+        if self.input.key_held(KeyCode::W) {
+            move_vector += Vec3::new(1., 0., 0.);
         }
-        if self.a_is_pressed {
+        if self.input.key_held(KeyCode::A) {
             move_vector += Vec3::new(0., 0., -1.)
         }
-        if self.s_is_pressed {
+        if self.input.key_held(KeyCode::S) {
             move_vector += Vec3::new(-1., 0., 0.)
         }
-        if self.d_is_pressed {
+        if self.input.key_held(KeyCode::D) {
             move_vector += Vec3::new(0., 0., 1.)
         }
 
@@ -123,24 +91,21 @@ impl UserState for ServerState {
         // Define how the cube should be rendered
 
         // Create one cube entity at the origin, and make it synchronize to clients
-        let cube_entity = io.create_entity();
-        io.add_component(cube_entity, &Transform::default());
-        io.add_component(
-            cube_entity,
-            &Render::new(CUBE_HANDLE).primitive(Primitive::Triangles),
-        );
-        io.add_component(cube_entity, &Synchronized);
-        io.add_component(cube_entity, &CubeFlag);
+        io.create_entity()
+            .add_component(Transform::default())
+            .add_component(Render::new(CUBE_HANDLE))
+            .add_component(Synchronized)
+            .add_component(CubeFlag)
+            .build();
 
         // Create the Update system, which interprets movement commands and updates the transform
         // component on the object with CubeFlag
-        sched.add_system(
-            Self::update,
-            SystemDescriptor::new(Stage::Update)
-                .subscribe::<MoveCommand>()
-                .query::<CubeFlag>(Access::Write)
-                .query::<Transform>(Access::Write),
-        );
+        sched
+            .add_system(Self::update)
+            .subscribe::<MoveCommand>()
+            .query::<CubeFlag>(Access::Write)
+            .query::<Transform>(Access::Write)
+            .build();
 
         Self
     }
@@ -180,15 +145,4 @@ fn cube() -> Mesh {
     ];
 
     Mesh { vertices, indices }
-}
-
-impl Component for CubeFlag {
-    const ID: &'static str = pkg_namespace!("Cube Flag");
-}
-
-impl Message for MoveCommand {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("MoveCommand"),
-        locality: Locality::Remote,
-    };
 }

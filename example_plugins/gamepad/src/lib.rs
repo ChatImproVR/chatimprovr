@@ -11,7 +11,8 @@ use serde::{Deserialize, Serialize};
 
 struct ClientState;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Message, Serialize, Deserialize, Debug)]
+#[locality("Remote")]
 struct AxisMessage {
     axis: f32,
 }
@@ -28,10 +29,10 @@ impl UserState for ClientState {
             id: CUBE_HANDLE,
         });
 
-        sched.add_system(
-            Self::update,
-            SystemDescriptor::new(Stage::Update).subscribe::<GamepadState>(),
-        );
+        sched
+            .add_system(Self::update)
+            .subscribe::<GamepadState>()
+            .build();
 
         Self
     }
@@ -49,21 +50,20 @@ impl ClientState {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Copy, Clone, Debug)]
+#[derive(Component, Serialize, Deserialize, Default, Copy, Clone, Debug)]
 struct SpinningCube(ClientId);
 
 struct ServerState;
 
 impl UserState for ServerState {
     fn new(_io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
-        sched.add_system(
-            Self::update,
-            SystemDescriptor::new(Stage::Update)
-                .query::<SpinningCube>(Access::Read)
-                .query::<Transform>(Access::Write)
-                .subscribe::<AxisMessage>()
-                .subscribe::<Connections>(),
-        );
+        sched
+            .add_system(Self::update)
+            .query::<SpinningCube>(Access::Read)
+            .query::<Transform>(Access::Write)
+            .subscribe::<AxisMessage>()
+            .subscribe::<Connections>()
+            .build();
 
         Self
     }
@@ -97,16 +97,18 @@ impl ServerState {
                     orient: Quat::from_euler(EulerRot::XYZ, 0., msg.axis, 0.),
                     pos: Vec3::new(number as f32 * 1.5, 0., 0.),
                 };
-                io.add_component(*entity, &transf);
+                io.add_component(*entity, transf);
             } else {
                 // Otherwise create a new cube
                 let cube_rdr = Render::new(CUBE_HANDLE).primitive(Primitive::Triangles);
 
-                let ent = io.create_entity();
-                io.add_component(ent, &Transform::default());
-                io.add_component(ent, &cube_rdr);
-                io.add_component(ent, &Synchronized);
-                io.add_component(ent, &SpinningCube(client_id));
+                let ent = io
+                    .create_entity()
+                    .add_component(Transform::default())
+                    .add_component(cube_rdr)
+                    .add_component(Synchronized)
+                    .add_component(SpinningCube(client_id))
+                    .build();
 
                 // Add the entity to the list so it appears we don't add anything twice
                 client_to_entity.insert(client_id, ent);
@@ -135,17 +137,6 @@ fn cube() -> Mesh {
     ];
 
     Mesh { vertices, indices }
-}
-
-impl Message for AxisMessage {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("AxisMessage"),
-        locality: Locality::Remote,
-    };
-}
-
-impl Component for SpinningCube {
-    const ID: &'static str = pkg_namespace!("ClientOwner");
 }
 
 pub fn from_euler_angles(roll: f32, pitch: f32, yaw: f32) -> Quat {

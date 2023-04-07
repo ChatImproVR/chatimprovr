@@ -1,3 +1,5 @@
+//! UI Example
+//! This example is intended to be run with other plugins such as `cube` or `fluid_sim`
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 
@@ -8,14 +10,8 @@ use server::ServerState;
 
 make_app_state!(ClientState, ServerState);
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Message, Clone, Debug, Serialize, Deserialize)]
+#[locality("Remote")]
 pub struct ChangeColor {
     rgb: [f32; 3],
-}
-
-impl Message for ChangeColor {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        id: pkg_namespace!("ChangeColor"),
-        locality: Locality::Remote,
-    };
 }

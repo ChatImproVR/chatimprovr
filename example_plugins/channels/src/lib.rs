@@ -9,31 +9,23 @@ struct ServerState;
 
 make_app_state!(ClientState, ServerState);
 
+// It's important to make sure your package name is UNIQUE if you use this macro.
 /// Message datatype
-/// Implements Serialize and Deserialize, making it compatible with the Message trait.
-#[derive(Serialize, Deserialize, Debug)]
+/// Implements Serialize and Deserialize, making it compatible with the Message trait. We
+/// derive the Message trait, with locality "Remote" because we want this message sent
+/// server-side.
+#[derive(Message, Serialize, Deserialize, Debug)]
+#[locality("Remote")]
 struct MyMessage {
     a: i32,
     b: f32,
-}
-
-impl Message for MyMessage {
-    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
-        // Here we define the universally unique name for this message.
-        // Note that this macro simply concatenates the package name with the name you provide.
-        // We could have written "channels_example/MyMessage" or even "jdasjdlfkjasdjfk" instead.
-        // It's important to make sure your package name is UNIQUE if you use this macro.
-        id: pkg_namespace!("MyMessage"),
-        // Sent to server
-        locality: Locality::Remote,
-    };
 }
 
 // Client code
 impl UserState for ClientState {
     fn new(_io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         // Schedule the update() system to run every Update
-        sched.add_system(Self::update, SystemDescriptor::new(Stage::Update));
+        sched.add_system(Self::update).build();
 
         Self { increment: 0 }
     }
@@ -56,10 +48,10 @@ impl UserState for ServerState {
     fn new(_io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         // Schedule the update() system to run every Update,
         // and allow it to receive the MyMessage message
-        sched.add_system(
-            Self::update,
-            SystemDescriptor::new(Stage::Update).subscribe::<MyMessage>(),
-        );
+        sched
+            .add_system(Self::update)
+            .subscribe::<MyMessage>()
+            .build();
 
         Self
     }

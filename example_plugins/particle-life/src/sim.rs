@@ -1,5 +1,5 @@
 use cimvr_common::glam::Vec2;
-use cimvr_engine_interface::{pcg::Pcg, prelude::*};
+use cimvr_engine_interface::pcg::Pcg;
 
 use crate::query_accel::QueryAccelerator;
 
@@ -18,7 +18,7 @@ pub struct Particle {
     pub color: Color,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Behaviour {
     /// Magnitude of the default repulsion force
     pub default_repulse: f32,
@@ -31,6 +31,7 @@ pub struct Behaviour {
 }
 
 /// Display colors and physical behaviour coefficients
+#[derive(Clone, Debug)]
 pub struct SimConfig {
     pub colors: Vec<[f32; 3]>,
     pub behaviours: Vec<Behaviour>,
@@ -79,6 +80,7 @@ impl SimState {
 
         let len = self.particles.len();
         for i in 0..len {
+            let mut total_accel = Vec2::ZERO;
             for neighbor in accel.query_neighbors(&points, i) {
                 let a = self.particles[i];
                 let b = self.particles[neighbor];
@@ -93,15 +95,16 @@ impl SimState {
                 let normal = diff.normalize();
                 let behav = self.config.get_bahaviour(a.color, b.color);
                 let accel = normal * behav.interact(dist) / dist;
-
-                let vel = self.particles[i].vel + accel * dt;
-
-                // Dampen velocity
-                let vel = vel * (1. - dt * self.config.damping);
-
-                self.particles[i].vel = vel;
-                self.particles[i].pos += vel * dt;
+                total_accel += accel;
             }
+
+            let vel = self.particles[i].vel + total_accel * dt;
+
+            // Dampen velocity
+            let vel = vel * (1. - dt * self.config.damping);
+
+            self.particles[i].vel = vel;
+            self.particles[i].pos += vel * dt;
         }
     }
 

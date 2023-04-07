@@ -1,17 +1,14 @@
 use std::f32::consts::FRAC_PI_2;
 
 use cimvr_common::{
-    desktop::{
-        ElementState, InputEvent, InputEvents, KeyboardEvent, ModifiersState, MouseButton,
-        MouseEvent,
-    },
+    desktop::{InputEvent, MouseButton},
     glam::{Mat3, Quat, Vec3, Vec4},
     render::{CameraComponent, Mesh, MeshHandle, Render, UploadMesh, Vertex},
-    utils::camera::Perspective,
+    utils::{camera::Perspective, input_helper::InputHelper},
     vr::VrUpdate,
     Transform,
 };
-use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
+use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*};
 
 struct Camera {
     arcball: ArcBall,
@@ -19,6 +16,9 @@ struct Camera {
     proj: Perspective,
     left_hand: EntityId,
     right_hand: EntityId,
+    input: InputHelper,
+    /// Keep track of whether we've ever received a VR update, since we'll always receive desktop events!
+    is_vr: bool,
 }
 
 make_app_state!(Camera, DummyUserState);
@@ -28,78 +28,91 @@ const HAND_RDR_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Hand"));
 impl UserState for Camera {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
         // Create camera
-        let camera_ent = io.create_entity();
-        io.add_component(camera_ent, &Transform::identity());
-        io.add_component(
-            camera_ent,
-            &CameraComponent {
+        io.create_entity()
+            .add_component(Transform::identity())
+            .add_component(CameraComponent {
                 clear_color: [0.; 3],
                 projection: Default::default(),
-            },
-        );
+            })
+            .build();
 
         io.send(&hand());
 
         // Schedule the system
         // In the future it would be super cool to do this like Bevy and be able to just infer the
         // query from the type arguments and such...
-        schedule.add_system(
-            Self::update,
-            SystemDescriptor::new(Stage::PreUpdate)
-                .subscribe::<InputEvents>()
-                .subscribe::<VrUpdate>()
-                .query::<Transform>(Access::Write)
-                .query::<CameraComponent>(Access::Write),
-        );
+        schedule
+            .add_system(Self::update)
+            .stage(Stage::PreUpdate)
+            .subscribe::<InputEvent>()
+            .subscribe::<VrUpdate>()
+            .query::<Transform>(Access::Write)
+            .query::<CameraComponent>(Access::Write)
+            .build();
 
-        let left_hand = io.create_entity();
-        let right_hand = io.create_entity();
+        let left_hand = io
+            .create_entity()
+            .add_component(Render::new(HAND_RDR_ID))
+            .build();
 
-        io.add_component(left_hand, &Render::new(HAND_RDR_ID));
-        io.add_component(right_hand, &Render::new(HAND_RDR_ID));
+        let right_hand = io
+            .create_entity()
+            .add_component(Render::new(HAND_RDR_ID))
+            .build();
 
         Self {
+            input: InputHelper::new(),
             arcball: ArcBall::default(),
             arcball_control: ArcBallController::default(),
             proj: Perspective::new(),
             left_hand,
             right_hand,
+            is_vr: false,
         }
     }
 }
 
 impl Camera {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
-        // Handle input events for desktop mode
-        if let Some(input) = io.inbox_first::<InputEvents>() {
-            // Handle window resizing
-            self.proj.handle_input_events(&input);
-
-            //dbg!(&input);
-
-            // Handle pivot/pan
-            for event in input.0 {
-                self.arcball_control.handle_event(&event, &mut self.arcball);
-            }
-
-            // Set camera transform to arcball position
-            for key in query.iter() {
-                query.write::<Transform>(key, &self.arcball.camera_transf());
-            }
-        }
-
         // Handle events for VR
         if let Some(update) = io.inbox_first::<VrUpdate>() {
+            if !update.left_controller.events.is_empty() {
+                dbg!(&update.left_controller.events);
+            }
+
+            if !update.right_controller.events.is_empty() {
+                dbg!(&update.right_controller.events);
+            }
+
+            self.is_vr = true;
             // Handle FOV changes (But NOT position. Position is extremely time-sensitive, so it
             // is actually prepended to the view matrix)
             self.proj.handle_vr_update(&update);
 
-            if let Some(pos) = update.grip_left {
-                io.add_component(self.left_hand, &pos);
+            if let Some(pos) = update.left_controller.grip {
+                io.add_component(self.left_hand, pos);
             }
 
-            if let Some(pos) = update.grip_right {
-                io.add_component(self.right_hand, &pos);
+            if let Some(pos) = update.right_controller.grip {
+                io.add_component(self.right_hand, pos);
+            }
+        }
+
+        // Handle input events for desktop mode
+        if !self.is_vr {
+            for input in io.inbox::<InputEvent>() {
+                // Handle window resizing
+                self.proj.handle_event(&input);
+            }
+
+            self.input.handle_input_events(io);
+
+            // Handle pivot/pan
+            self.arcball_control.update(&self.input, &mut self.arcball);
+
+            // Set camera transform to arcball position
+            for key in query.iter() {
+                query.write::<Transform>(key, &self.arcball.camera_transf());
             }
         }
 
@@ -156,46 +169,22 @@ pub struct ArcBallController {
     pub swivel_sensitivity: f32,
     pub zoom_sensitivity: f32,
     pub closest_zoom: f32,
-    pub last_mouse: Option<(f32, f32)>,
-    pub mouse_left: bool,
-    pub mouse_right: bool,
-    pub modifiers: ModifiersState,
 }
 
 impl ArcBallController {
-    pub fn handle_event(&mut self, event: &InputEvent, arcball: &mut ArcBall) {
-        match event {
-            InputEvent::Mouse(mouse) => match mouse {
-                MouseEvent::Moved(x, y) => {
-                    if let Some((lx, ly)) = self.last_mouse {
-                        let (dx, dy) = (x - lx, y - ly);
+    pub fn update(&mut self, helper: &InputHelper, arcball: &mut ArcBall) {
+        let (dx, dy) = helper.mouse_diff();
 
-                        if self.mouse_left && !self.modifiers.shift {
-                            self.pivot(arcball, dx, dy);
-                        } else if self.mouse_right || (self.mouse_left && self.modifiers.shift) {
-                            self.pan(arcball, dx, dy)
-                        }
-                    }
+        if helper.mouse_held(MouseButton::Left) && !helper.held_shift() {
+            self.pivot(arcball, dx, dy);
+        } else if helper.mouse_held(MouseButton::Right)
+            || (helper.mouse_held(MouseButton::Left) && helper.held_shift())
+        {
+            self.pan(arcball, dx, dy)
+        }
 
-                    self.last_mouse = Some((*x, *y));
-                }
-                MouseEvent::Scrolled(_, dy) => {
-                    self.zoom(arcball, *dy);
-                }
-                MouseEvent::Clicked(button, state, _) => {
-                    let b = *state == ElementState::Pressed;
-                    match button {
-                        MouseButton::Left => self.mouse_left = b,
-                        MouseButton::Right => self.mouse_right = b,
-                        _ => (),
-                    }
-                }
-                _ => (),
-            },
-            InputEvent::Keyboard(KeyboardEvent::Modifiers(modifiers)) => {
-                self.modifiers = *modifiers;
-            }
-            _ => (),
+        if let Some((_, dy)) = helper.mousewheel_scroll_diff() {
+            self.zoom(arcball, dy);
         }
     }
 
@@ -228,14 +217,10 @@ impl ArcBallController {
 impl Default for ArcBallController {
     fn default() -> Self {
         Self {
-            modifiers: ModifiersState::default(),
             pan_sensitivity: 0.0015,
             swivel_sensitivity: 0.005,
             zoom_sensitivity: 0.3,
             closest_zoom: 0.01,
-            last_mouse: None,
-            mouse_left: false,
-            mouse_right: false,
         }
     }
 }

@@ -52,7 +52,7 @@ fn main() -> Result<()> {
     std::thread::spawn(move || connection_listener(bind_addr, conn_tx));
 
     let mut server = Server::new(conn_rx, engine, hotload);
-    let target = Duration::from_millis(25);
+    let target = Duration::from_millis(15);
 
     loop {
         let start = Instant::now();

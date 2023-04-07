@@ -4,6 +4,7 @@ members = [
     "engine",
     "common",
     "server",
+    "engine_derive_macros",
     "example_plugins/camera",
     "example_plugins/channels",
     "example_plugins/dancing_cubes",

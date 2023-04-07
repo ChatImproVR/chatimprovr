@@ -10,48 +10,31 @@ from time import sleep
 
 def main():
     parser = argparse.ArgumentParser(
-        prog='ChatImproVR helper script',
-        description='Launches the client and server, searches plugin paths',
+        prog="ChatImproVR helper script",
+        description="Launches the client and server, searches plugin paths",
         epilog="""
         Also searches the CIMVR_PLUGINS environment variable for WASM plugins.
         Multiple paths can be searched by seperating them with a semicolon (;) 
-        """
+        """,
     )
     parser.add_argument(
         "plugins",
-        nargs='*',
+        nargs="*",
         help="""
         Plugins to launch. Plugins can be the truncated form
         ("thing.wasm" becomes "thing"), or full paths /home/me/plugin.wasm/...
-        """
+        """,
     )
     parser.add_argument(
-        "--client", "-c",
-        action='store_true',
-        help="Only run the client"
+        "--client", "-c", action="store_true", help="Only run the client"
     )
+    parser.add_argument("--username", "-u", help="Set username on client (--username)")
+    parser.add_argument("--remote", "-r", help="Set remote host on client (--connect)")
     parser.add_argument(
-        "--username", "-u",
-        help="Set username on client (--username)"
+        "--server", "-s", action="store_true", help="Only run the server"
     )
-    parser.add_argument(
-        "--remote", "-r",
-        help="Set remote host on client (--connect)"
-    )
-    parser.add_argument(
-        "--server", "-s",
-        action='store_true',
-        help="Only run the server"
-    )
-    parser.add_argument(
-        "--verbose", "-v",
-        help="Verbose debug output"
-    )
-    parser.add_argument(
-        "--vr",
-        action='store_true',
-        help="Run the client in VR mode"
-    )
+    parser.add_argument("--verbose", "-v", help="Verbose debug output")
+    parser.add_argument("--vr", action="store_true", help="Run the client in VR mode")
     args = parser.parse_args()
 
     # The script is assumed to be at the root of the project
@@ -67,9 +50,7 @@ def main():
 
     # Find executables
     server_exe = find_exe(
-        "CIMVR_SERVER",
-        ["cimvr_server", "cimvr_server.exe"],
-        root_path
+        "CIMVR_SERVER", ["cimvr_server", "cimvr_server.exe"], root_path
     )
     if args.verbose:
         print(f"Server exe: {server_exe}")
@@ -78,9 +59,7 @@ def main():
         return
 
     client_exe = find_exe(
-        "CIMVR_CLIENT",
-        ["cimvr_client", "cimvr_client.exe"],
-        root_path
+        "CIMVR_CLIENT", ["cimvr_client", "cimvr_client.exe"], root_path
     )
     if args.verbose:
         print(f"Client exe: {client_exe}")
@@ -101,7 +80,7 @@ def main():
         if path:
             plugins.append(path)
         else:
-            print(f"No plugin named \"{name}\" found.")
+            print(f'No plugin named "{name}" found.')
             print("Searched:")
             for folder in get_plugin_folders(root_path):
                 print("\t" + folder)
@@ -152,7 +131,17 @@ def get_plugin_folders(root_path):
     # Also check CIMVR_PLUGINS, which is a semicolon-seperated list
     wasm_env_var = "CIMVR_PLUGINS"
     if wasm_env_var in os.environ:
-        plugin_folders += os.environ[wasm_env_var].split(';')
+        plugin_path_list = os.environ[wasm_env_var].split(";")
+        for path in plugin_path_list:
+            # If the path is already in the list, don't add it again
+            if path not in plugin_folders:
+                plugin_folders.append(path)
+                # print(f"Found {path}")
+
+            target_release = join(path, "target", wasm_target, "release")
+            if target_release not in plugin_folders:
+                plugin_folders.append(target_release)
+                # print(f"Found {target_release}")
 
     return plugin_folders
 
@@ -180,10 +169,11 @@ def find_exe(env_var, names, root_path):
     else:
         build_path = join(root_path, "target", "release")
         client_build_path = join(root_path, "client", "target", "release")
-        possible_locations = \
-            [join(root_path, x) for x in names]\
-            + [join(build_path, x) for x in names]\
+        possible_locations = (
+            [join(root_path, x) for x in names]
+            + [join(build_path, x) for x in names]
             + [join(client_build_path, x) for x in names]
+        )
 
         for path in possible_locations:
             if isfile(path):

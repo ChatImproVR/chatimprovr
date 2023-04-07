@@ -1,7 +1,7 @@
 use glam::Mat4;
 
 use crate::{
-    desktop::{InputEvent, InputEvents, WindowEvent},
+    desktop::{InputEvent, WindowEvent},
     vr::{VrFov, VrUpdate},
 };
 
@@ -41,13 +41,11 @@ impl Perspective {
     }
 
     /// Returns and appropriate perspective matrix matching the size of the window
-    pub fn handle_input_events(&mut self, input: &InputEvents) {
+    pub fn handle_event(&mut self, input: &InputEvent) {
         // Handle input events for desktop mode
-        let InputEvents(events) = input;
-        for event in events {
-            if let InputEvent::Window(WindowEvent::Resized { width, height }) = event {
-                self.screen_size = (*width, *height);
-            }
+        // let InputEvents(events) = input;
+        if let InputEvent::Window(WindowEvent::Resized { width, height }) = input {
+            self.screen_size = (*width, *height);
         }
 
         // Get projection matrix
@@ -62,7 +60,7 @@ impl Perspective {
     }
 
     pub fn handle_vr_update(&mut self, update: &VrUpdate) {
-        self.proj = [update.fov_left, update.fov_right]
+        self.proj = [update.headset.left.proj, update.headset.right.proj]
             .map(|fov| vr_projection_from_fov(fov, self.near_plane, self.far_plane));
     }
 }
@@ -92,9 +90,9 @@ pub fn vr_projection_from_fov(fov: VrFov, near: f32, far: f32) -> Mat4 {
     let a43 = -(far * near) / (far - near);
 
     Mat4::from_cols_array_2d(&[
-        [a11, 0.0, a31, 0.0],  //
-        [0.0, a22, a32, 0.0],  //
-        [0.0, 0.0, a33, a43],  //
-        [0.0, 0.0, -1.0, 0.0], //
+        [a11, 0.0, 0.0, 0.0],
+        [0.0, a22, 0.0, 0.0],
+        [a31, a32, a33, -1.0],
+        [0.0, 0.0, a43, 0.0],
     ])
 }
