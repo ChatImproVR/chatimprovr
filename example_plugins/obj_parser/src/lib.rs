@@ -34,11 +34,11 @@ struct ServerState;
 impl UserState for ServerState {
     // Implement a constructor
     fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
-        let ent = io.create_entity();
+        let ent = io.create_entity().build();
         io.add_component(ent, &Transform::identity());
         io.add_component(ent, &Render::new(SHIP_RDR).primitive(Primitive::Triangles));
         io.add_component(ent, &Synchronized);
-
+        
         println!("Hello, server!");
         Self
     }
