@@ -1,10 +1,16 @@
 pushd client
-cargo b -r
-popd
+if cargo b -r; then
+    popd
+else
+    exit
+fi
 
 pushd server
-cargo b -r
-popd
+if cargo b -r; then
+    popd
+else
+    exit
+fi
 
 pushd example_plugins
 ./compile_all.sh
