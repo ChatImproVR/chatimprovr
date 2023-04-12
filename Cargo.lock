@@ -804,7 +804,6 @@ version = "0.1.0"
 dependencies = [
  "cimvr_common",
  "cimvr_engine_interface",
- "obj_parser",
  "serde",
 ]
 
@@ -944,19 +943,10 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-name = "obj_parser"
-version = "0.2.0"
-dependencies = [
- "cimvr_common",
- "cimvr_engine_interface",
- "serde",
-=======
 name = "obj_reader"
 version = "0.1.0"
 dependencies = [
  "cimvr_common",
->>>>>>> 98d248a828160c34f3d7c423989727b66d34f99c
 ]
 
 [[package]]
