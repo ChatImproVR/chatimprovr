@@ -1,6 +1,7 @@
-use std::collections::HashSet;
-
-use cimvr_common::ui::{Schema, State, UiHandle, UiStateHelper, UiUpdate};
+use cimvr_common::{
+    ui::{Schema, State, UiHandle, UiStateHelper, UiUpdate},
+    utils::client_tracker::{Action, ClientTracker},
+};
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 
@@ -11,7 +12,7 @@ struct ClientState {
 }
 
 struct ServerState {
-    last_clients: HashSet<Connection>,
+    tracker: ClientTracker,
 }
 
 make_app_state!(ClientState, ServerState);
@@ -131,7 +132,7 @@ impl UserState for ServerState {
             .build();
 
         Self {
-            last_clients: HashSet::new(),
+            tracker: ClientTracker::new(),
         }
     }
 }
@@ -139,31 +140,26 @@ impl UserState for ServerState {
 impl ServerState {
     fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
         // Get the list of connected clients (and their usernames)
-        let Some(Connections { clients }) = io.inbox_first() else { return; };
-        let clients: HashSet<Connection> = clients.into_iter().collect();
+        let Some(conns) = io.inbox_first() else { return; };
 
         // Connection/Disconnection messages
-        for connected in clients.difference(&self.last_clients) {
-            let msg = ChatDownload {
+        let callback = |conn: &Connection, action: Action| {
+            io.send(&ChatDownload {
                 username: "SERVER".into(),
-                text: format!("User {} connected.", connected.username),
-            };
-            io.send(&msg);
-        }
+                text: match action {
+                    Action::Connected => format!("User {} connected.", conn.username),
+                    Action::Disconnected => format!("User {} disconnected.", conn.username),
+                },
+            })
+        };
 
-        for disconnected in self.last_clients.difference(&clients) {
-            let msg = ChatDownload {
-                username: "SERVER".into(),
-                text: format!("User {} disconnected.", disconnected.username),
-            };
-            io.send(&msg);
-        }
+        self.tracker.update(&conns, callback);
 
         // Collect uploaded messages from clients
         let msgs = io.inbox_clients::<ChatUpload>().collect::<Vec<_>>();
         for (sender_client_id, ChatUpload(msg)) in msgs {
             // Find the sender's username
-            let sender = clients.iter().find(|c| c.id == sender_client_id);
+            let sender = self.tracker.clients().find(|c| c.id == sender_client_id);
 
             if let Some(sender) = sender {
                 // Create a packet to send to all clients
@@ -176,7 +172,5 @@ impl ServerState {
                 io.send(&msg);
             }
         }
-
-        self.last_clients = clients;
     }
 }
