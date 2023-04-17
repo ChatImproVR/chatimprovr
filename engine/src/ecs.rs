@@ -237,6 +237,13 @@ impl Ecs {
     }
     */
 
+    /// Get each component and its associated data on an entity
+    pub fn all_components(&self, entity: EntityId) -> impl Iterator<Item = (&ComponentId, &[u8])> {
+        self.map
+            .iter()
+            .filter_map(move |(comp, entities)| Some((comp, entities.get(&entity)?.as_slice())))
+    }
+
     pub fn export(&mut self, query: &[QueryComponent]) -> EcsMap {
         let entities: Vec<EntityId> = self.query(query).into_iter().collect();
 

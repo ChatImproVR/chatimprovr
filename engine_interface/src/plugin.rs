@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::{
     component_id,
     pcg::Pcg,
@@ -5,6 +7,7 @@ use crate::{
     serial::{
         deserialize, serialize, serialize_into, serialized_size, EcsData, ReceiveBuf, SendBuf,
     },
+    ComponentSchema,
 };
 pub use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
@@ -110,6 +113,8 @@ pub struct EngineIo {
     pub(crate) outbox: Vec<MessageData>,
     /// Inbox
     pub(crate) inbox: Inbox,
+    /// Schema which have been sent already
+    pub(crate) schema_set: HashSet<ComponentId>,
 }
 
 /// Scheduling of systems
@@ -293,6 +298,7 @@ impl EngineIo {
             pcg: Pcg::new(),
             outbox: vec![],
             inbox,
+            schema_set: Default::default(),
         }
     }
 
@@ -315,8 +321,24 @@ impl EngineIo {
     pub fn add_component<C: Component>(&mut self, entity: EntityId, data: C) {
         let data = serialize(&data).expect("Failed to serialize component data");
 
+        let id = component_id::<C>();
+
+        // Send schema information to host on first use
+        if !self.schema_set.contains(&id) {
+            match kobble::record_schema::<C>() {
+                Ok(schema) => {
+                    self.send(&ComponentSchema {
+                        id: id.clone(),
+                        schema,
+                    });
+                    self.schema_set.insert(id.clone());
+                }
+                Err(e) => crate::println!("Error generating schema for {}; {:?}", id.id, e),
+            }
+        }
+
         self.commands
-            .push(EcsCommand::AddComponent(entity, component_id::<C>(), data));
+            .push(EcsCommand::AddComponent(entity, id, data));
     }
 
     /// Delete an entity and all of it's components

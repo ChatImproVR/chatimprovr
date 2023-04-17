@@ -29,6 +29,8 @@ mod desktop_input;
 mod gamepad;
 mod render;
 mod ui;
+mod component_ui;
+mod plugin_ui;
 
 use structopt::StructOpt;
 

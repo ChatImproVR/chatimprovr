@@ -1,5 +1,5 @@
 use cimvr_common::{
-    render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
+    render::{Mesh, MeshHandle, Primitive, Render, RenderExtra, UploadMesh, Vertex},
     Transform,
 };
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
@@ -31,16 +31,14 @@ impl UserState for ClientState {
 impl UserState for ServerState {
     fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
         // Create an entity
-        let _cube_ent = io
-            .create_entity()
+        io.create_entity()
             // Attach a Transform component (which defaults to the origin)
             .add_component(Transform::default())
             // Attach the Render component, which details how the object should be drawn
             // Note that we use CUBE_HANDLE here, to tell the rendering engine to draw the cube
-            .add_component(Render::new(CUBE_HANDLE).primitive(Primitive::Triangles))
+            .add_component(Render::new(CUBE_HANDLE))
             // Attach the Synchronized component, which will copy the object to clients
             .add_component(Synchronized)
-            // And get the entity ID
             .build();
 
         Self

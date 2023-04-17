@@ -7,6 +7,7 @@
 /// Code specific to WASM plugins
 pub mod plugin;
 
+pub use kobble;
 use std::{cell::RefCell, collections::HashMap};
 mod component_validate_error;
 pub mod component_validation;
@@ -32,6 +33,9 @@ pub mod network;
 
 /// PCG algorithm for generating random universally-unique entity IDs
 pub mod pcg;
+
+/// Dynamic editing feedback to server
+pub mod dyn_edit;
 
 /// Convenience imports for the lazy
 // #[macro_use]
@@ -104,34 +108,23 @@ fn validate_component<C: Component>(c: &C) {
     }
 }
 
-/// Component size cache
-pub(crate) struct SizeCache(HashMap<&'static str, usize>);
-
-thread_local! {
-    /// Thread local component size cache
-    static SIZE_CACHE: RefCell<Lazy<SizeCache>> = RefCell::new(Lazy::new(|| SizeCache::new()));
-}
-
-impl SizeCache {
-    pub fn new() -> Self {
-        SizeCache(HashMap::new())
-    }
-
-    /// Get the size in bytse of the given component
-    #[track_caller]
-    pub fn size<C: Component>(&mut self) -> usize {
-        let SizeCache(map) = self;
-        *map.entry(C::ID)
-            .or_insert_with(|| max_component_size::<C>())
-    }
-}
-
 /// Get the size of a component
 #[track_caller]
 pub fn component_size_cached<C: Component>() -> usize {
-    SIZE_CACHE.with(|cache| cache.borrow_mut().size::<C>())
+    thread_local! {
+        /// Thread local component size cache
+        static SIZE_CACHE: RefCell<Lazy<HashMap<&'static str, usize>>>
+            = RefCell::new(Lazy::new(|| HashMap::new()));
+    }
+    SIZE_CACHE.with(|cache| {
+        *cache
+            .borrow_mut()
+            .entry(C::ID)
+            .or_insert_with(|| max_component_size::<C>())
+    })
 }
 
+// TODO: This should be a method of Component!
 /// Get the ComponentId of a Component
 pub fn component_id<C: Component>() -> ComponentId {
     let size = component_size_cached::<C>()
@@ -141,4 +134,18 @@ pub fn component_id<C: Component>() -> ComponentId {
         id: C::ID.into(),
         size,
     }
+}
+
+/// Component schema information
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ComponentSchema {
+    pub id: ComponentId,
+    pub schema: kobble::Schema,
+}
+
+impl Message for ComponentSchema {
+    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+        id: pkg_namespace!("ComponentSchema"),
+        locality: Locality::Local,
+    };
 }

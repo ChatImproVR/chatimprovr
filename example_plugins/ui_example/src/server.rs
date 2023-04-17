@@ -23,13 +23,11 @@ impl UserState for ServerState {
 impl ServerState {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         if let Some(ChangeColor { rgb }) = io.inbox_first() {
-            for ent in query.iter() {
-                // The default shader uses RenderExtra to set the color
+            for entity in query.iter() {
                 let mut extra = [0.; 4 * 4];
                 extra[..3].copy_from_slice(&rgb);
-                // This value must be 1 to get the color to show. See the default vertex shader!
                 extra[3] = 1.;
-                io.add_component(ent, RenderExtra(extra));
+                io.add_component(entity, RenderExtra(extra));
             }
         }
     }
