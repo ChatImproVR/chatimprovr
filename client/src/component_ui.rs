@@ -175,7 +175,7 @@ fn editor(value: &mut DynamicValue, ui: &mut Ui) -> bool {
             })
             .inner
         }
-        DynamicValue::Tuple(fields) => {
+        DynamicValue::UniformSequence(fields) | DynamicValue::Tuple(fields) => {
             let mut changed = false;
             for field_val in fields {
                 ui.horizontal(|ui| {

@@ -1393,7 +1393,7 @@ checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 [[package]]
 name = "kobble"
 version = "0.1.0"
-source = "git+https://github.com/ChatImproVR/Kobble.git#ff172717561a2ecf03cebe11d50866d160680400"
+source = "git+https://github.com/ChatImproVR/Kobble.git#51c168dac16348f000c56b985cdcfe281c3074b8"
 dependencies = [
  "once_cell",
  "serde",
