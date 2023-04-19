@@ -13,7 +13,7 @@ impl UserState for ServerState {
             .add_system(Self::update)
             .query("Color changers")
             .intersect::<Render>(Access::Read)
-            .finish()
+            .qcommit()
             .subscribe::<UiUpdate>()
             .subscribe::<ChangeColor>()
             .build();

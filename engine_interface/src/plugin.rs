@@ -212,7 +212,7 @@ impl<'a, U> QueryBuilder<'a, U> {
         self
     }
 
-    pub fn finish(self) -> SystemBuilder<'a, U> {
+    pub fn qcommit(self) -> SystemBuilder<'a, U> {
         self.sys
     }
 }

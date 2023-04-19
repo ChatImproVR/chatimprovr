@@ -106,7 +106,7 @@ impl UserState for ServerState {
             .query("Cubes")
             .intersect::<CubeFlag>(Access::Write)
             .intersect::<Transform>(Access::Write)
-            .finish()
+            .qcommit()
             .build();
 
         Self

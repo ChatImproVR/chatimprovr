@@ -36,7 +36,7 @@ impl UserState for ServerState {
             .add_system(Self::update)
             .query("My Query Name")
             .intersect::<MyComponent>(Access::Write)
-            .finish()
+            .qcommit()
             .build();
 
         Self { increment: 0 }
@@ -70,7 +70,7 @@ impl UserState for ClientState {
             .add_system(Self::update)
             .query("My other query")
             .intersect::<MyComponent>(Access::Read)
-            .finish()
+            .qcommit()
             .build();
 
         Self
