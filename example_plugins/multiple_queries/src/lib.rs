@@ -9,33 +9,32 @@ struct ServerState {
 
 make_app_state!(ClientState, ServerState);
 
-/// Component datatype
-/// Implements Serialize and Deserialize, making it compatible with the Component trait.
 #[derive(Component, Serialize, Deserialize, Default, Clone, Copy, Debug)]
 struct MyComponent {
     a: i32,
     b: f32,
 }
 
-// Server code
+#[derive(Component, Serialize, Deserialize, Default, Clone, Copy, Debug)]
+struct MyOtherComponent {
+    frogge: u128,
+}
+
 impl UserState for ServerState {
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
-        // Create a new entity
-        let _entity_id = io
-            .create_entity()
-            // Add MyComponent to it, so that it's updated in update()
+        io.create_entity()
             .add_component(MyComponent { a: 0, b: 0.0 })
-            // Add Sychronized to it, so that it is sent to the client each frame
+            .add_component(MyOtherComponent { frogge: u128::MAX })
             .add_component(Synchronized)
-            // Get it's ID
             .build();
 
-        // Schedule the update() system to run every Update
-        // Queries all entities with MyComponent attached, and allows us to write to them
         sched
             .add_system(Self::update)
             .query("My Query Name")
             .intersect::<MyComponent>(Access::Write)
+            .finish()
+            .query("My Other Query Name")
+            .intersect::<MyOtherComponent>(Access::Write)
             .finish()
             .build();
 
@@ -57,6 +56,10 @@ impl ServerState {
             );
         }
 
+        for key in query.iter("My Other Query Name") {
+            query.write(key, &MyOtherComponent { frogge: 0 });
+        }
+
         self.increment += 1;
     }
 }
@@ -68,8 +71,11 @@ impl UserState for ClientState {
         // querying all entities with the MyComponent component attached
         sched
             .add_system(Self::update)
-            .query("My other query")
+            .query("My query")
             .intersect::<MyComponent>(Access::Read)
+            .finish()
+            .query("My other query")
+            .intersect::<MyOtherComponent>(Access::Read)
             .finish()
             .build();
 
@@ -79,9 +85,12 @@ impl UserState for ClientState {
 
 impl ClientState {
     fn update(&mut self, _io: &mut EngineIo, query: &mut QueryResult) {
-        // Write all MyComponents to the console
-        for key in query.iter("My other query") {
+        for key in query.iter("My query") {
             dbg!(query.read::<MyComponent>(key));
+        }
+
+        for key in query.iter("My other query") {
+            dbg!(query.read::<MyOtherComponent>(key));
         }
     }
 }

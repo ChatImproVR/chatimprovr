@@ -171,7 +171,12 @@ pub struct SystemBuilder<'sched, U> {
     callback: Callback<U>,
 }
 
-impl<U> SystemBuilder<'_, U> {
+pub struct QueryBuilder<'sched, U> {
+    sys: SystemBuilder<'sched, U>,
+    name: String,
+}
+
+impl<'a, U> SystemBuilder<'a, U> {
     /// Run the system during the specified Stage
     pub fn stage(mut self, stage: Stage) -> Self {
         self.desc.stage = stage;
@@ -179,9 +184,11 @@ impl<U> SystemBuilder<'_, U> {
     }
 
     /// Query the given component and provide an access level to it.
-    pub fn query<T: Component>(mut self, access: Access) -> Self {
-        self.desc.query.push(QueryComponent::new::<T>(access));
-        self
+    pub fn query(self, name: &'static str) -> QueryBuilder<'a, U> {
+        QueryBuilder {
+            sys: self,
+            name: name.to_string(),
+        }
     }
 
     /// Subscribe to the given channel by telling it which message type you want.
@@ -197,13 +204,31 @@ impl<U> SystemBuilder<'_, U> {
     }
 }
 
+impl<'a, U> QueryBuilder<'a, U> {
+    pub fn intersect<T: Component>(mut self, access: Access) -> Self {
+        let query = self
+            .sys
+            .desc
+            .queries
+            .entry(self.name.to_string())
+            .or_insert(Query::new());
+
+        query.push(QueryComponent::new::<T>(access));
+        self
+    }
+
+    pub fn finish(self) -> SystemBuilder<'a, U> {
+        self.sys
+    }
+}
+
 impl<U: UserState> PluginState<U> {
     fn dispatch(&mut self, io: &mut EngineIo, ecs: EcsData, system_idx: usize) {
         // Call system function with user data
         let system = self.sched.callbacks[system_idx];
 
         // Get query results
-        let query = self.sched.systems[system_idx].query.clone();
+        let query = self.sched.systems[system_idx].queries.clone();
         let mut query_result = QueryResult::new(ecs, query);
 
         // Run the user's system
