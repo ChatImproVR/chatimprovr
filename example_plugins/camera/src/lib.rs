@@ -49,7 +49,7 @@ impl UserState for Camera {
             .query("Camera")
             .intersect::<Transform>(Access::Write)
             .intersect::<CameraComponent>(Access::Write)
-            .finish()
+            .qcommit()
             .build();
 
         let left_hand = io

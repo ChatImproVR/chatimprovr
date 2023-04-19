@@ -38,7 +38,7 @@ impl UserState for ServerState {
             .query("Cubes")
             .intersect::<Transform>(Access::Write)
             .intersect::<MoveCube>(Access::Read)
-            .finish()
+            .qcommit()
             .build();
 
         sched
@@ -46,7 +46,7 @@ impl UserState for ServerState {
             .stage(Stage::PostInit)
             .query("Cube")
             .intersect::<MoveCube>(Access::Read)
-            .finish()
+            .qcommit()
             .build();
 
         Self

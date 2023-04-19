@@ -62,7 +62,7 @@ impl UserState for ServerState {
             .query("Spinning cubes")
             .intersect::<SpinningCube>(Access::Read)
             .intersect::<Transform>(Access::Write)
-            .finish()
+            .qcommit()
             .subscribe::<AxisMessage>()
             .subscribe::<Connections>()
             .build();
