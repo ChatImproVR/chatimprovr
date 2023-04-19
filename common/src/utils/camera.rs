@@ -131,32 +131,30 @@ impl Default for Orthographic{
 }
 
 impl Orthographic{
-    pub fn update_proj(&mut self, width: f32, height: f32, input: &InputEvent) {
+    pub fn update_proj(&mut self, mut width: f32, mut height: f32, input: &InputEvent) {
         
         // Check if the screen size changes
         if let InputEvent::Window(WindowEvent::Resized { width: screen_width, height: screen_height }) = input {
             self.screen_size = (*screen_width, *screen_height);
         }
 
-        // Calculate the ratio of the screen size: need to work on this part again
-        let mut x_ratio = width;
-        let mut y_ratio = height;
+        // Ge the aspect ratio
+        let aspect_ratio = self.screen_size.0 as f32 / self.screen_size.1 as f32;
 
-        while x_ratio / 10. >= 1. {
-            x_ratio /= 10.;
+        // If the world aspect ratio is biggeer or equal to the screen size, then update the height that matches the screen aspect ratio
+        if width / height >= aspect_ratio as f32{
+            height = width / aspect_ratio as f32;
         }
-
-        while y_ratio / 10. >= 1. {
-            y_ratio /= 10.;
+        // Otherwise, update the width screen aspect ratio oto the world aspect ratio
+        else{
+            width = height * aspect_ratio as f32;
         }
-
-        // Update the ideal projection matrix of the screen
-        self.left = self.screen_size.0 as f32 / 2. / -(width / 2.) * x_ratio;
-        self.right = self.screen_size.0 as f32 / 2. / (width / 2.) *  x_ratio;
-        self.bottom = self.screen_size.1 as f32 / 2. / -(height / 2.) * y_ratio;
-        self.top = self.screen_size.1 as f32 / 2. / (height / 2.) * y_ratio;
-
-        dbg!(self.left, self.right, self.bottom, self.top);
+        
+        // Get the correct values for setting up the orthographic arguments
+        self.left = -width / 2.;
+        self.right = width / 2.;
+        self.bottom = -height / 2.;
+        self.top = height / 2.;
 
         // Recreate the new projection matrix based on the updated screen size        
         let new_proj = Mat4::orthographic_rh_gl(
