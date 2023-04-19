@@ -46,8 +46,10 @@ impl UserState for Camera {
             .stage(Stage::PreUpdate)
             .subscribe::<InputEvent>()
             .subscribe::<VrUpdate>()
-            .query::<Transform>(Access::Write)
-            .query::<CameraComponent>(Access::Write)
+            .query("Camera")
+            .intersect::<Transform>(Access::Write)
+            .intersect::<CameraComponent>(Access::Write)
+            .finish()
             .build();
 
         let left_hand = io
@@ -111,7 +113,7 @@ impl Camera {
             self.arcball_control.update(&self.input, &mut self.arcball);
 
             // Set camera transform to arcball position
-            for key in query.iter() {
+            for key in query.iter("Camera") {
                 query.write::<Transform>(key, &self.arcball.camera_transf());
             }
         }
@@ -120,7 +122,7 @@ impl Camera {
 
         let clear_color = [0.; 3];
 
-        for key in query.iter() {
+        for key in query.iter("Camera") {
             query.write::<CameraComponent>(
                 key,
                 &CameraComponent {
