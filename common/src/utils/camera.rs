@@ -1,8 +1,14 @@
-use glam::Mat4;
+use glam::{
+    Mat4,
+    Vec3,
+    Quat,
+    EulerRot,
+};
 
 use crate::{
     desktop::{InputEvent, WindowEvent},
     vr::{VrFov, VrUpdate},
+    Transform,
 };
 
 /// Perspective camera matrix utility
@@ -95,4 +101,93 @@ pub fn vr_projection_from_fov(fov: VrFov, near: f32, far: f32) -> Mat4 {
         [a31, a32, a33, -1.0],
         [0.0, 0.0, a43, 0.0],
     ])
+}
+
+pub struct Orthographic {
+    screen_size: (u32, u32),
+    pub left: f32,
+    pub right: f32,
+    pub bottom: f32,
+    pub top: f32,
+    pub near: f32,
+    pub far: f32,
+    proj: [Mat4; 2],
+}
+
+
+impl Default for Orthographic{
+    fn default() -> Self {
+        Self {
+            screen_size: (1920, 1080),
+            left: -10.,
+            right: 10.,
+            bottom: -10.,
+            top: 10.,
+            near: -100.,
+            far: 100.,
+            proj: [Mat4::IDENTITY; 2],
+        }
+    }
+}
+
+impl Orthographic{
+    pub fn update_proj(&mut self, mut width: f32, mut height: f32, input: &InputEvent) {
+        
+        // Check if the screen size changes
+        if let InputEvent::Window(WindowEvent::Resized { width: screen_width, height: screen_height }) = input {
+            self.screen_size = (*screen_width, *screen_height);
+        }
+
+        // Ge the aspect ratio
+        let aspect_ratio = self.screen_size.0 as f32 / self.screen_size.1 as f32;
+
+        // If the world aspect ratio is biggeer or equal to the screen size, then update the height that matches the screen aspect ratio
+        if width / height >= aspect_ratio as f32{
+            height = width / aspect_ratio as f32;
+        }
+        // Otherwise, update the width screen aspect ratio oto the world aspect ratio
+        else{
+            width = height * aspect_ratio as f32;
+        }
+        
+        // Get the correct values for setting up the orthographic arguments
+        self.left = -width / 2.;
+        self.right = width / 2.;
+        self.bottom = -height / 2.;
+        self.top = height / 2.;
+
+        // Recreate the new projection matrix based on the updated screen size        
+        let new_proj = Mat4::orthographic_rh_gl(
+            self.left,
+            self.right,
+            self.bottom,
+            self.top,
+            self.near,
+            self.far,
+        );
+        self.proj = [new_proj; 2];
+    }
+
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn matrices(&self) -> [Mat4; 2] {
+        self.proj
+    }
+
+    pub fn camera_on_positive_z_axis(&self) -> Transform {
+    // This camera control is for 2D arcade games that are played on a flat screen: z-axis is to us
+        Transform {
+            pos: Vec3::new(0., 0., 5.),
+            orient: Default::default(),
+        }
+    }
+
+    pub fn camera_on_custom_axis(&self, pos_x: f32, pos_y: f32, pos_z: f32, degree_x: f32, degree_y: f32, degree_z: f32) -> Transform {
+        Transform {
+            pos: Vec3::new(pos_x, pos_y, pos_z),
+            orient: Quat::from_euler(EulerRot::XYZ, degree_x.to_radians(), degree_y.to_radians(), degree_z.to_radians()),
+        }
+    }
 }
