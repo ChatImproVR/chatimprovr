@@ -1,4 +1,6 @@
 //! Types used for communication with the engine
+use std::collections::HashMap;
+
 use crate::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -10,7 +12,7 @@ pub struct SystemDescriptor {
     /// Channels this system subscribes to
     pub subscriptions: Vec<ChannelId>,
     /// Component queries
-    pub query: Query,
+    pub query: HashMap<String, Query>,
 }
 
 /// This flag indicates which stage the plugin is to be executed **after**.
@@ -38,7 +40,7 @@ impl Default for SystemDescriptor {
         Self {
             stage: Stage::Update,
             subscriptions: vec![],
-            query: vec![],
+            query: Default::default(),
         }
     }
 }
