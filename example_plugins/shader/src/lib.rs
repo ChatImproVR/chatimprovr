@@ -59,7 +59,7 @@ void main() {
 "#;
 
 impl UserState for ClientState {
-    fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
+    fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
         // Make the cube mesh available to the rendering engine
         io.send(&UploadMesh {
             mesh: cube(),
@@ -72,22 +72,7 @@ impl UserState for ClientState {
             id: CUBE_SHADER,
         });
 
-        sched
-            .add_system(Self::deleteme)
-            .query::<RenderExtra>(Access::Read)
-            .query::<Synchronized>(Access::Read)
-            .build();
-
         Self
-    }
-}
-
-impl ClientState {
-    fn deleteme(&mut self, _io: &mut EngineIo, query: &mut QueryResult) {
-        for key in query.iter() {
-            let time = query.read::<RenderExtra>(key).0[0];
-            dbg!((time, key));
-        }
     }
 }
 

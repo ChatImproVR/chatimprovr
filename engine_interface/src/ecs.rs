@@ -94,11 +94,16 @@ impl QueryResult {
         let query = &self.query[name];
         let (initial, xs) = query.split_first().expect("No components in components");
 
-        self.ecs[&initial.component]
+        let tmp = HashMap::new();
+        self.ecs
+            .get(&initial.component)
+            .unwrap_or_else(|| &tmp)
             .keys()
             .filter(|entity_id| {
-                xs.iter()
-                    .all(|q| self.ecs[&q.component].contains_key(&entity_id))
+                xs.iter().all(|q| match self.ecs.get(&q.component) {
+                    Some(c) => c.contains_key(&entity_id),
+                    None => false,
+                })
             })
             .copied()
             .collect::<Vec<_>>()

@@ -103,8 +103,10 @@ impl UserState for ServerState {
         sched
             .add_system(Self::update)
             .subscribe::<MoveCommand>()
-            .query::<CubeFlag>(Access::Write)
-            .query::<Transform>(Access::Write)
+            .query("Cubes")
+            .intersect::<CubeFlag>(Access::Write)
+            .intersect::<Transform>(Access::Write)
+            .finish()
             .build();
 
         Self
@@ -116,7 +118,7 @@ impl ServerState {
         // Check for movement commands
         if let Some(MoveCommand { distance }) = io.inbox_first() {
             // Update each object accordingly
-            for key in query.iter() {
+            for key in query.iter("Cubes") {
                 query.modify::<Transform>(key, |tf| {
                     tf.pos += distance;
                 })
