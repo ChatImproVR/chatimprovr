@@ -44,7 +44,8 @@ impl Camera2D {
         
         for input in io.inbox::<InputEvent>() {
 
-            self.proj.update_proj(30., 60., &input);
+            // Provie the width and the height of the world application size
+            self.proj.update_proj(80., 120., &input);
         }
 
         let clear_color = [0.; 3];
