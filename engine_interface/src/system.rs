@@ -12,7 +12,7 @@ pub struct SystemDescriptor {
     /// Channels this system subscribes to
     pub subscriptions: Vec<ChannelId>,
     /// Component queries
-    pub query: HashMap<String, Query>,
+    pub queries: HashMap<String, Query>,
 }
 
 /// This flag indicates which stage the plugin is to be executed **after**.
@@ -40,7 +40,7 @@ impl Default for SystemDescriptor {
         Self {
             stage: Stage::Update,
             subscriptions: vec![],
-            query: Default::default(),
+            queries: Default::default(),
         }
     }
 }

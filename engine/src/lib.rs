@@ -206,7 +206,7 @@ impl Engine {
             }
 
             // Query ECS
-            let ecs_data = query_ecs_data(&mut self.ecs, &system.query).context("ECS query")?;
+            let ecs_data = query_ecs_data(&mut self.ecs, &system.queries).context("ECS query")?;
 
             // Write input data
             let recv_buf = ReceiveBuf {

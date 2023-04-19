@@ -181,7 +181,7 @@ impl<U> SystemBuilder<'_, U> {
     pub fn query<T: Component>(&mut self, name: &'static str) -> QueryBuilder<'_> {
         let query = self
             .desc
-            .query
+            .queries
             .entry(name.to_string())
             .or_insert(Query::new());
         QueryBuilder { query }
@@ -213,7 +213,7 @@ impl<U: UserState> PluginState<U> {
         let system = self.sched.callbacks[system_idx];
 
         // Get query results
-        let query = self.sched.systems[system_idx].query.clone();
+        let query = self.sched.systems[system_idx].queries.clone();
         let mut query_result = QueryResult::new(ecs, query);
 
         // Run the user's system

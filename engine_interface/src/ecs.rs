@@ -157,7 +157,7 @@ impl QueryResult {
             .expect("Wrote to non-queried component id")
             .get_mut(&entity)
             .expect("Wrote to non-extant entity");
-        w[..data.len()].copy_from_slice(&data);
+        *w = data.clone();
 
         // Write host command
         self.commands
