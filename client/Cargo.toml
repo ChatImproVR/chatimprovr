@@ -28,7 +28,7 @@ egui = { version = "0.19.0", default-features = false, features = [
 egui_glow = { version = "0.19.0", features = ["winit"], git = "https://github.com/Masterchef365/egui.git", branch = "fix-glow-winit-dpi" }
 egui-winit = { version = "0.19.0", default-features = false }
 raw-window-handle = "0.5.0"
-gilrs = "0.10.1"
+gilrs ="0.10.1"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 openxr = { version = "0.17.1", optional = true, features = ["loaded"] }
