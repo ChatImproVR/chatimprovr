@@ -53,12 +53,9 @@ impl Camera2D {
         let clear_color = [0.; 3];
         let new_projection = self.proj.matrices();
 
-        for key in query.iter() {
+        for key in query.iter("Camera2D") {
             query.write::<Transform>(key, &self.proj.camera_on_positive_z_axis());
-        }
         
-
-        for key in query.iter() {
             query.write::<CameraComponent>(
                 key,
                 &CameraComponent {
