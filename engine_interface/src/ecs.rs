@@ -90,7 +90,7 @@ impl QueryResult {
     }
 
     /// Iterate through query entities
-    pub fn iter(&self, name: &'static str) -> impl Iterator<Item = EntityId> + '_ {
+    pub fn iter(&self, name: &'static str) -> impl Iterator<Item = EntityId> {
         let query = &self.query[name];
         let (initial, xs) = query.split_first().expect("No components in components");
 
@@ -101,6 +101,8 @@ impl QueryResult {
                     .all(|q| self.ecs[&q.component].contains_key(&entity_id))
             })
             .copied()
+            .collect::<Vec<_>>()
+            .into_iter()
     }
 
     /*
