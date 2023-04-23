@@ -201,11 +201,17 @@ pub fn check_component_data_size(component_size: u16, size: usize) {
 }
 
 impl Query {
+    /// Creates a new Query, assigning the label `name`.
+    /// This name is used for both indexing, and for 
     pub fn new(name: &str) -> Self {
-        Self {
-            name: name.to_string(),
-            ..Default::default()
-        }
+        Self::default().rename(name)
+    }
+
+    /// Renames this query. Useful in situations where you do not control the construction of the
+    /// original query, e.g. from a library.
+    pub fn rename(mut self, name: &str) -> Self {
+        self.name = name.to_string();
+        self
     }
 
     /// Require this component to be present for each entity returned by this query.
