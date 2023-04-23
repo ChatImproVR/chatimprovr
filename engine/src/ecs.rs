@@ -33,9 +33,9 @@ impl Ecs {
     /// Returns the list of relevant entities
     /// Empty queries panic.
     /// If a component requested does not exist, panic.
-    pub fn query(&mut self, query: &[QueryComponent]) -> HashSet<EntityId> {
+    pub fn query(&mut self, query: &Query) -> HashSet<EntityId> {
         //let (init, rest) = q.split_first().expect("Empty query");
-        let Some((init, rest)) = query.split_first() else { return HashSet::new() };
+        let Some((init, rest)) = query.intersect.split_first() else { return HashSet::new() };
 
         // Initialize to the entities in the first term..
         // TODO: Pick smallest?
@@ -58,6 +58,7 @@ impl Ecs {
         entities
     }
 
+    /*
     /// Returns a semi-random entity matching the given query, if any
     pub fn find(&mut self, query: &[ComponentId]) -> Option<EntityId> {
         // TODO: Optimize me
@@ -71,6 +72,7 @@ impl Ecs {
 
         self.query(&query).drain().next()
     }
+    */
 
     /// Import an entity ID from elsewhere
     pub fn import_entity(&mut self, id: EntityId) {
@@ -238,7 +240,7 @@ impl Ecs {
     }
     */
 
-    pub fn export(&mut self, query: &[QueryComponent]) -> EcsMap {
+    pub fn export(&mut self, query: &Query) -> EcsMap {
         let entities: Vec<EntityId> = self.query(query).into_iter().collect();
 
         let mut exp = EcsMap::new();
@@ -254,7 +256,7 @@ impl Ecs {
         exp
     }
 
-    pub fn import(&mut self, query: &[QueryComponent], imported: EcsMap) {
+    pub fn import(&mut self, query: &Query, imported: EcsMap) {
         // Remove existing entities in the given query
         let entities: Vec<EntityId> = self.query(query).into_iter().collect();
         for id in entities {
@@ -279,7 +281,7 @@ pub fn query_ecs_data(ecs: &mut Ecs, queries: &HashMap<String, Query>) -> Result
     for (_, query) in queries {
         let entities = ecs.query(query).into_iter().collect::<Vec<_>>();
         for &entity in &entities {
-            for query_component in query {
+            for query_component in &query.intersect {
                 if let Some(data) = ecs.get_raw(entity, &query_component.component) {
                     map.entry(query_component.component.clone())
                         .or_default()

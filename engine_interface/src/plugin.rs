@@ -166,11 +166,6 @@ pub struct SystemBuilder<'sched, U> {
     callback: Callback<U>,
 }
 
-pub struct QueryBuilder<'sched, U> {
-    sys: SystemBuilder<'sched, U>,
-    name: String,
-}
-
 impl<'a, U> SystemBuilder<'a, U> {
     /// Run the system during the specified Stage
     pub fn stage(mut self, stage: Stage) -> Self {
@@ -179,11 +174,9 @@ impl<'a, U> SystemBuilder<'a, U> {
     }
 
     /// Query the given component and provide an access level to it.
-    pub fn query(self, name: &'static str) -> QueryBuilder<'a, U> {
-        QueryBuilder {
-            sys: self,
-            name: name.to_string(),
-        }
+    pub fn query(mut self, query: Query) -> Self {
+        self.desc.queries.insert(query.name.clone(), query);
+        self
     }
 
     /// Subscribe to the given channel by telling it which message type you want.
@@ -196,24 +189,6 @@ impl<'a, U> SystemBuilder<'a, U> {
     pub fn build(self) {
         self.sched.systems.push(self.desc);
         self.sched.callbacks.push(self.callback);
-    }
-}
-
-impl<'a, U> QueryBuilder<'a, U> {
-    pub fn intersect<T: Component>(mut self, access: Access) -> Self {
-        let query = self
-            .sys
-            .desc
-            .queries
-            .entry(self.name.to_string())
-            .or_insert(Query::new());
-
-        query.push(QueryComponent::new::<T>(access));
-        self
-    }
-
-    pub fn qcommit(self) -> SystemBuilder<'a, U> {
-        self.sys
     }
 }
 

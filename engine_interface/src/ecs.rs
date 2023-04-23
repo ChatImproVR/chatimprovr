@@ -21,7 +21,11 @@ pub struct QueryComponent {
 }
 
 /// A description of an ECS query
-pub type Query = Vec<QueryComponent>;
+#[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct Query {
+    pub name: String,
+    pub intersect: Vec<QueryComponent>,
+}
 
 /// Universally-unique Entity ID
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -92,7 +96,10 @@ impl QueryResult {
     /// Iterate through query entities
     pub fn iter(&self, name: &'static str) -> impl Iterator<Item = EntityId> {
         let query = &self.query[name];
-        let (initial, xs) = query.split_first().expect("No components in components");
+        let (initial, xs) = query
+            .intersect
+            .split_first()
+            .expect("No components in components");
 
         let tmp = HashMap::new();
         self.ecs
@@ -191,4 +198,19 @@ pub fn check_component_data_size(component_size: u16, size: usize) {
         size,
         component_size
     );
+}
+
+impl Query {
+    pub fn new(name: &str) -> Self {
+        Self {
+            name: name.to_string(),
+            ..Default::default()
+        }
+    }
+
+    /// Require this component to be present for each entity returned by this query.
+    pub fn intersect<T: Component>(mut self, access: Access) -> Self {
+        self.intersect.push(QueryComponent::new::<T>(access));
+        self
+    }
 }
