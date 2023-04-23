@@ -23,14 +23,14 @@ impl UserState for Camera2D {
             .build();
 
         // Schedule the system
-        // In the future it would be super cool to do this like Bevy and be able to just infer the
-        // query from the type arguments and such...
         schedule
             .add_system(Self::update)
             .stage(Stage::PreUpdate)
             .subscribe::<InputEvent>()
-            .query::<Transform>(Access::Write)
-            .query::<CameraComponent>(Access::Write)
+            .query("Camera")
+                .intersect::<Transform>(Access::Write)
+                .intersect::<CameraComponent>(Access::Write)
+                .qcommit()
             .build();
 
         Self {
@@ -51,16 +51,16 @@ impl Camera2D {
         let clear_color = [0.; 3];
         let new_projection = self.proj.matrices();
 
-        for key in query.iter() {
+        for key in query.iter("Camera") {
             query.write::<Transform>(key, &self.proj.camera_on_positive_z_axis());
         }
         
 
-        for key in query.iter() {
+        for key in query.iter("Camera") {
             query.write::<CameraComponent>(
                 key,
                 &CameraComponent {
-                    clear_color: clear_color,
+                    clear_color,
                     projection: new_projection,
                 },
             );
