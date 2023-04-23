@@ -94,12 +94,13 @@ impl QueryResult {
     }
 
     /// Iterate through query entities
+    #[track_caller]
     pub fn iter(&self, name: &'static str) -> impl Iterator<Item = EntityId> {
-        let query = &self.query[name];
+        let query = &self.query.get(name).expect("Did not recognize this query name");
         let (initial, xs) = query
             .intersect
             .split_first()
-            .expect("No components in components");
+            .expect("No components");
 
         let tmp = HashMap::new();
         self.ecs
