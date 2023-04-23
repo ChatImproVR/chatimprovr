@@ -202,7 +202,7 @@ pub fn check_component_data_size(component_size: u16, size: usize) {
 
 impl Query {
     /// Creates a new Query, assigning the label `name`.
-    /// This name is used for both indexing, and for 
+    /// This name is used for both indexing, and for
     pub fn new(name: &str) -> Self {
         Self::default().rename(name)
     }

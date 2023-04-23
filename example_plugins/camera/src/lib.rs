@@ -46,10 +46,11 @@ impl UserState for Camera {
             .stage(Stage::PreUpdate)
             .subscribe::<InputEvent>()
             .subscribe::<VrUpdate>()
-            .query("Camera")
-            .intersect::<Transform>(Access::Write)
-            .intersect::<CameraComponent>(Access::Write)
-            .qcommit()
+            .query(
+                Query::new("Camera")
+                    .intersect::<Transform>(Access::Write)
+                    .intersect::<CameraComponent>(Access::Write),
+            )
             .build();
 
         let left_hand = io

@@ -2,7 +2,7 @@ use anyhow::Result;
 
 use cimvr_engine::hotload::Hotloader;
 use cimvr_engine::interface::prelude::{
-    Access, ClientId, ConnectionRequest, Connections, Synchronized, Query,
+    Access, ClientId, ConnectionRequest, Connections, Query, Synchronized,
 };
 use cimvr_engine::interface::serial::deserialize;
 use cimvr_engine::Config;

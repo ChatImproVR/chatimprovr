@@ -35,18 +35,17 @@ impl UserState for ServerState {
         sched
             .add_system(Self::cube_move)
             .subscribe::<FrameTime>()
-            .query("Cubes")
-            .intersect::<Transform>(Access::Write)
-            .intersect::<MoveCube>(Access::Read)
-            .qcommit()
+            .query(
+                Query::new("Cubes")
+                    .intersect::<Transform>(Access::Write)
+                    .intersect::<MoveCube>(Access::Read),
+            )
             .build();
 
         sched
             .add_system(Self::startup)
             .stage(Stage::PostInit)
-            .query("Cube")
-            .intersect::<MoveCube>(Access::Read)
-            .qcommit()
+            .query(Query::new("Cube").intersect::<MoveCube>(Access::Read))
             .build();
 
         Self

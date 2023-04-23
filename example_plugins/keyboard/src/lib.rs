@@ -103,10 +103,11 @@ impl UserState for ServerState {
         sched
             .add_system(Self::update)
             .subscribe::<MoveCommand>()
-            .query("Cubes")
-            .intersect::<CubeFlag>(Access::Write)
-            .intersect::<Transform>(Access::Write)
-            .qcommit()
+            .query(
+                Query::new("Cubes")
+                    .intersect::<CubeFlag>(Access::Write)
+                    .intersect::<Transform>(Access::Write),
+            )
             .build();
 
         Self

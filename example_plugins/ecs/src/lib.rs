@@ -66,9 +66,7 @@ impl UserState for ClientState {
         // querying all entities with the MyComponent component attached
         sched
             .add_system(Self::update)
-            .query("My other query")
-            .intersect::<MyComponent>(Access::Read)
-            .qcommit()
+            .query(Query::new("My other query").intersect::<MyComponent>(Access::Read))
             .build();
 
         Self
