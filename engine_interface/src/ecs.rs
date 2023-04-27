@@ -2,12 +2,12 @@
 //!
 //!
 
-use std::ops::Range;
+use std::collections::HashMap;
 
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::{
-    component_id, component_size_cached,
+    component_id,
     serial::{deserialize, serialize, EcsData},
 };
 
@@ -21,7 +21,10 @@ pub struct QueryComponent {
 }
 
 /// A description of an ECS query
-pub type Query = Vec<QueryComponent>;
+#[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct Query {
+    pub intersect: Vec<QueryComponent>,
+}
 
 /// Universally-unique Entity ID
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -77,11 +80,11 @@ pub struct QueryResult {
     /// ECS data from host
     ecs: EcsData,
     /// The original query, for reference
-    query: Query,
+    query: HashMap<String, Query>,
 }
 
 impl QueryResult {
-    pub(crate) fn new(ecs: EcsData, query: Query) -> Self {
+    pub(crate) fn new(ecs: EcsData, query: HashMap<String, Query>) -> Self {
         Self {
             commands: vec![],
             ecs,
@@ -90,10 +93,31 @@ impl QueryResult {
     }
 
     /// Iterate through query entities
-    pub fn iter(&self) -> impl Iterator<Item = EntityId> {
-        self.ecs.entities.clone().into_iter()
+    #[track_caller]
+    pub fn iter(&self, name: &'static str) -> impl Iterator<Item = EntityId> {
+        let query = &self
+            .query
+            .get(name)
+            .expect("Did not recognize this query name");
+        let (initial, xs) = query.intersect.split_first().expect("No components");
+
+        let tmp = HashMap::new();
+        self.ecs
+            .get(&initial.component)
+            .unwrap_or_else(|| &tmp)
+            .keys()
+            .filter(|entity_id| {
+                xs.iter().all(|q| match self.ecs.get(&q.component) {
+                    Some(c) => c.contains_key(&entity_id),
+                    None => false,
+                })
+            })
+            .copied()
+            .collect::<Vec<_>>()
+            .into_iter()
     }
 
+    /*
     /// Get the index of the given entity id
     #[track_caller]
     fn get_entity_index(&self, entity: EntityId) -> usize {
@@ -124,30 +148,30 @@ impl QueryResult {
 
         (component_idx, begin..end)
     }
+    */
 
     /// Read the data in the given component
     #[track_caller]
-    pub fn read<T: Component>(&self, entity: EntityId) -> T {
+    pub fn read<C: Component>(&self, entity: EntityId) -> C {
         // TODO: Cache query lookups!
-        let (component_idx, range) = self.indices::<T>(entity);
-        let dense = &self.ecs.components[component_idx];
-        deserialize(&dense[range]).expect("Failed to deserialize component for reading")
+        let r = &self.ecs[&component_id::<C>()][&entity];
+        deserialize(r.as_slice()).expect("Failed to deserialize component for reading")
     }
 
     /// Write the given data to the component
     #[track_caller]
     pub fn write<C: Component>(&mut self, entity: EntityId, component: &C) {
-        let entity_idx = self.get_entity_index(entity);
-        let entity = self.ecs.entities[entity_idx];
-        // Serialize data
-        // TODO: Never allocate in hot loops!
         let data = serialize(component).expect("Failed to serialize component for writing");
 
         // Write back to ECS storage for possible later modification. This is never read by the
-        // host, but MAY be read by us!
-        let (component_idx, range) = self.indices::<C>(entity);
-        let dense = &mut self.ecs.components[component_idx];
-        dense[range].copy_from_slice(&data);
+        // host (for now), but MAY be read by the plugin!
+        let w = self
+            .ecs
+            .get_mut(&component_id::<C>())
+            .expect("Wrote to non-queried component id")
+            .get_mut(&entity)
+            .expect("Wrote to non-extant entity");
+        *w = data.clone();
 
         // Write host command
         self.commands
@@ -174,4 +198,18 @@ pub fn check_component_data_size(component_size: u16, size: usize) {
         size,
         component_size
     );
+}
+
+impl Query {
+    /// Creates a new Query, assigning the label `name`.
+    /// This name is used for both indexing, and for
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Require this component to be present for each entity returned by this query.
+    pub fn intersect<T: Component>(mut self, access: Access) -> Self {
+        self.intersect.push(QueryComponent::new::<T>(access));
+        self
+    }
 }

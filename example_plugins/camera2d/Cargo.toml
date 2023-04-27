@@ -1,10 +1,10 @@
 [package]
-name = "chat"
+name = "camera2d"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib"]
 
 [dependencies]
 cimvr_common = { path = "../../common" }

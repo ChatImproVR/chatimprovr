@@ -20,6 +20,8 @@ members = [
     "example_plugins/keyboard",
     "example_plugins/chat",
     "example_plugins/vr-teleport",
+    "example_plugins/multiple_queries",
+    "example_plugins/camera2d",
 ]
 
 # Causes a build issue with OpenXR if included in workspace

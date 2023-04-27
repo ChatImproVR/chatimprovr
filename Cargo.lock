@@ -124,6 +124,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "camera2d"
+version = "0.1.0"
+dependencies = [
+ "cimvr_common",
+ "cimvr_engine_interface",
+ "serde",
+]
+
+[[package]]
 name = "cc"
 version = "1.0.78"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -912,6 +921,15 @@ dependencies = [
  "log",
  "wasi",
  "windows-sys 0.42.0",
+]
+
+[[package]]
+name = "multiple_queries"
+version = "0.1.0"
+dependencies = [
+ "cimvr_common",
+ "cimvr_engine_interface",
+ "serde",
 ]
 
 [[package]]

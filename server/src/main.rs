@@ -2,7 +2,7 @@ use anyhow::Result;
 
 use cimvr_engine::hotload::Hotloader;
 use cimvr_engine::interface::prelude::{
-    Access, ClientId, ConnectionRequest, Connections, QueryComponent, Synchronized,
+    Access, ClientId, ConnectionRequest, Connections, Query, Synchronized,
 };
 use cimvr_engine::interface::serial::deserialize;
 use cimvr_engine::Config;
@@ -197,7 +197,7 @@ impl Server {
             ecs: self
                 .engine
                 .ecs()
-                .export(&[QueryComponent::new::<Synchronized>(Access::Read)]),
+                .export(&Query::new().intersect::<Synchronized>(Access::Read)),
             messages: self.engine.network_inbox(),
         };
 
