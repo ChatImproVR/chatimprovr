@@ -40,9 +40,13 @@ impl UserState for Teleporter {
             .add_system(Self::update)
             .stage(Stage::PreUpdate)
             .subscribe::<VrUpdate>()
-            .query::<Transform>(Access::Write)
-            // Filter to camera component, so that we write to the camera's position
-            .query::<CameraComponent>(Access::Read)
+            .query(
+                "Camera",
+                Query::new()
+                    .intersect::<Transform>(Access::Write)
+                    // Filter to camera component, so that we write to the camera's position
+                    .intersect::<CameraComponent>(Access::Read),
+            )
             .build();
 
         let left_hand = io
@@ -81,7 +85,7 @@ impl UserState for Teleporter {
 impl Teleporter {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         let mut camera_transf = Transform::identity();
-        for entity in query.iter() {
+        for entity in query.iter("Camera") {
             camera_transf = query.read::<Transform>(entity);
         }
 
@@ -124,7 +128,7 @@ impl Teleporter {
 
             self.update_path = false;
 
-            for camera_entity in query.iter() {
+            for camera_entity in query.iter("") {
                 // Place the camera (reference frame) so that the new position has the left eye over
                 // the desired end location
                 let end_pos = self.path.sample(self.path.end_time());

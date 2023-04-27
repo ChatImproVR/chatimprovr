@@ -67,7 +67,7 @@ impl Camera {
 
                 // Sometimes the first InputEvent comes in before the first VrUpdate, and so we
                 // need to reset the position back to zero here.
-                for ent in query.iter() {
+                for ent in query.iter("Camera") {
                     query.write(ent, &Transform::identity());
                 }
             }
