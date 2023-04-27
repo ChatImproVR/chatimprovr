@@ -85,7 +85,7 @@ impl RenderPlugin {
         let camera_entity = match engine
             .ecs()
             .query(
-                &Query::new("Camera")
+                &Query::new()
                     .intersect::<CameraComponent>(Access::Read)
                     .intersect::<Transform>(Access::Read),
             )
@@ -109,7 +109,7 @@ impl RenderPlugin {
 
         // Prepare data
         let entities = engine.ecs().query(
-            &Query::new("RenderObjects")
+            &Query::new()
                 .intersect::<Render>(Access::Read)
                 .intersect::<Transform>(Access::Read),
         );

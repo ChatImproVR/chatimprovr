@@ -197,7 +197,7 @@ impl Server {
             ecs: self
                 .engine
                 .ecs()
-                .export(&Query::new("Synchronized").intersect::<Synchronized>(Access::Read)),
+                .export(&Query::new().intersect::<Synchronized>(Access::Read)),
             messages: self.engine.network_inbox(),
         };
 

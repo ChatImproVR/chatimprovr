@@ -159,7 +159,7 @@ impl Client {
                         self.engine.broadcast_local(msg);
                     }
                     self.engine.ecs().import(
-                        &Query::new("Synchronized").intersect::<Synchronized>(Access::Write),
+                        &Query::new().intersect::<Synchronized>(Access::Write),
                         recv.ecs,
                     );
                 }
