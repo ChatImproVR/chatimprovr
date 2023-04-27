@@ -4,10 +4,7 @@ use anyhow::Result;
 use cimvr_common::glam::Mat4;
 use cimvr_common::{render::*, Transform};
 use cimvr_engine::interface::prelude::*;
-use cimvr_engine::{
-    interface::{pkg_namespace},
-    Engine,
-};
+use cimvr_engine::{interface::pkg_namespace, Engine};
 use gl::HasContext;
 use glow::NativeUniformLocation;
 

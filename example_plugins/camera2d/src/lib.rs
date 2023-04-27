@@ -24,7 +24,8 @@ impl UserState for Camera2D {
             .add_system(Self::update)
             .stage(Stage::PreUpdate)
             .subscribe::<InputEvent>()
-            .query("Camera",
+            .query(
+                "Camera",
                 Query::new()
                     .intersect::<Transform>(Access::Write)
                     .intersect::<CameraComponent>(Access::Write),

@@ -46,7 +46,8 @@ impl UserState for Camera {
             .stage(Stage::PreUpdate)
             .subscribe::<InputEvent>()
             .subscribe::<VrUpdate>()
-            .query("Camera",
+            .query(
+                "Camera",
                 Query::new()
                     .intersect::<Transform>(Access::Write)
                     .intersect::<CameraComponent>(Access::Write),

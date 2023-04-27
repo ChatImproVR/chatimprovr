@@ -30,8 +30,14 @@ impl UserState for ServerState {
 
         sched
             .add_system(Self::update)
-            .query("My Query Name",Query::new().intersect::<MyComponent>(Access::Write))
-            .query("My Other Query Name",Query::new().intersect::<MyOtherComponent>(Access::Write))
+            .query(
+                "My Query Name",
+                Query::new().intersect::<MyComponent>(Access::Write),
+            )
+            .query(
+                "My Other Query Name",
+                Query::new().intersect::<MyOtherComponent>(Access::Write),
+            )
             .build();
 
         Self { increment: 0 }
@@ -67,8 +73,14 @@ impl UserState for ClientState {
         // querying all entities with the MyComponent component attached
         sched
             .add_system(Self::update)
-            .query("My query",Query::new().intersect::<MyComponent>(Access::Read))
-            .query("My other query",Query::new().intersect::<MyOtherComponent>(Access::Read))
+            .query(
+                "My query",
+                Query::new().intersect::<MyComponent>(Access::Read),
+            )
+            .query(
+                "My other query",
+                Query::new().intersect::<MyOtherComponent>(Access::Read),
+            )
             .build();
 
         Self
