@@ -17,18 +17,21 @@ struct ServerState {
 
 make_app_state!(ClientState, ServerState);
 
-/// Server to client chat message datatype
+/// Server to client chat message datatype;
+/// used to tell clients to display the given chat message
 #[derive(Message, Serialize, Deserialize, Debug)]
 #[locality("Remote")]
-struct ChatDownload {
-    username: String,
-    text: String,
+pub struct ChatDownload {
+    pub username: String,
+    pub text: String,
 }
 
-/// Client to server chat message datatype
+/// Client to server chat message datatype;
+/// used to tell the server to broadcast this chat message to all other clients
+/// The server will decide how to set the username of the corresponding ChatDownload
 #[derive(Message, Serialize, Deserialize, Debug)]
 #[locality("Remote")]
-struct ChatUpload(String);
+pub struct ChatUpload(pub String);
 
 /// Number of chat log messages
 const N_DISPLAYED_MESSAGES: usize = 5;
