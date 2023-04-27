@@ -174,8 +174,8 @@ impl<'a, U> SystemBuilder<'a, U> {
     }
 
     /// Query the given component and provide an access level to it.
-    pub fn query(mut self, query: Query) -> Self {
-        self.desc.queries.insert(query.name.clone(), query);
+    pub fn query(mut self, name: &'static str, query: Query) -> Self {
+        self.desc.queries.insert(name.to_string(), query);
         self
     }
 

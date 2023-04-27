@@ -23,7 +23,6 @@ pub struct QueryComponent {
 /// A description of an ECS query
 #[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Query {
-    pub name: String,
     pub intersect: Vec<QueryComponent>,
 }
 
@@ -204,15 +203,8 @@ pub fn check_component_data_size(component_size: u16, size: usize) {
 impl Query {
     /// Creates a new Query, assigning the label `name`.
     /// This name is used for both indexing, and for
-    pub fn new(name: &str) -> Self {
-        Self::default().rename(name)
-    }
-
-    /// Renames this query. Useful in situations where you do not control the construction of the
-    /// original query, e.g. from a library.
-    pub fn rename(mut self, name: &str) -> Self {
-        self.name = name.to_string();
-        self
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /// Require this component to be present for each entity returned by this query.
