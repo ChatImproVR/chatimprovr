@@ -11,7 +11,7 @@ impl UserState for ServerState {
     fn new(_io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         sched
             .add_system(Self::update)
-            .query(Query::new("Color changers").intersect::<Render>(Access::Read))
+            .query("Color changers",Query::new().intersect::<Render>(Access::Read))
             .subscribe::<UiUpdate>()
             .subscribe::<ChangeColor>()
             .build();

@@ -59,8 +59,8 @@ impl UserState for ServerState {
     fn new(_io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         sched
             .add_system(Self::update)
-            .query(
-                Query::new("Spinning cubes")
+            .query("Spinning cubes",
+                Query::new()
                     .intersect::<SpinningCube>(Access::Read)
                     .intersect::<Transform>(Access::Write),
             )
