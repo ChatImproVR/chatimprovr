@@ -9,6 +9,7 @@ pub use glam;
 pub mod desktop;
 pub mod gamepad;
 mod generic_handle;
+pub mod gpgpu;
 pub mod render;
 mod transform;
 pub mod ui;

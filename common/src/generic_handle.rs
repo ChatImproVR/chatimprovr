@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+// TODO: Move me to `cimvr_engine_interface`?
 /// A generic handle type, which is integer sized but represents a namespace
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct GenericHandle(u128);
