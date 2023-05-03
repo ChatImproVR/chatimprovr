@@ -961,6 +961,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "obj_reader"
+version = "0.1.0"
+dependencies = [
+ "cimvr_common",
+]
+
+[[package]]
 name = "object"
 version = "0.30.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
