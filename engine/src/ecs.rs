@@ -305,10 +305,12 @@ pub fn apply_ecs_commands(
     for command in commands {
         // TODO: Throw error on modification of non-queried data...
         match command {
-            EcsCommand::Create(id) => ecs.import_entity(*id),
+            EcsCommand::Create(id) => {
+                ecs.import_entity(*id);
+                ecs.add_component(*id, &plugin_idx);
+            }
             EcsCommand::Delete(id) => ecs.remove_entity(*id),
             EcsCommand::AddComponent(entity, component, data) => {
-                ecs.add_component(*entity, &plugin_idx);
                 ecs.add_component_raw(*entity, component, data)
             }
         }
