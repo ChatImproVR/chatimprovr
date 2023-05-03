@@ -35,14 +35,18 @@ impl UserState for ServerState {
         sched
             .add_system(Self::cube_move)
             .subscribe::<FrameTime>()
-            .query::<Transform>(Access::Write)
-            .query::<MoveCube>(Access::Read)
+            .query(
+                "Cubes",
+                Query::new()
+                    .intersect::<Transform>(Access::Write)
+                    .intersect::<MoveCube>(Access::Read),
+            )
             .build();
 
         sched
             .add_system(Self::startup)
             .stage(Stage::PostInit)
-            .query::<MoveCube>(Access::Read)
+            .query("Cube", Query::new().intersect::<MoveCube>(Access::Read))
             .build();
 
         Self
@@ -51,10 +55,6 @@ impl UserState for ServerState {
 
 impl ServerState {
     fn startup(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
-        for k in query.iter() {
-            io.remove_entity(k);
-        }
-
         // Cube mesh
         let cube_rdr = Render::new(CUBE_HANDLE)
             .primitive(Primitive::Lines)
@@ -85,7 +85,7 @@ impl ServerState {
 
     fn cube_move(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         if let Some(FrameTime { time, .. }) = io.inbox_first() {
-            for key in query.iter() {
+            for key in query.iter("Cubes") {
                 let mov = query.read::<MoveCube>(key);
 
                 let theta = mov.r + time / 10.;

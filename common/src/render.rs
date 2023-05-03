@@ -22,12 +22,12 @@ pub struct Vertex {
     pub uvw: [f32; 3],
 }
 
-/// Unique identifier for a remote RenderData resource
+/// Unique identifier for a RenderData resource
 #[derive(Serialize, Deserialize, Default, Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct MeshHandle(GenericHandle);
 make_handle!(MeshHandle);
 
-/// Unique identifier for a remote Shader program
+/// Unique identifier for a Shader program
 #[derive(Serialize, Deserialize, Default, Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ShaderHandle(GenericHandle);
 make_handle!(ShaderHandle);
