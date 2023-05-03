@@ -7,7 +7,6 @@ use cimvr_common::{
 };
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, FrameTime};
 use serde::{Deserialize, Serialize};
-
 struct ServerState;
 #[derive(Default)]
 struct ClientState {

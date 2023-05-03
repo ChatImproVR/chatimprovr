@@ -19,6 +19,7 @@ members = [
     "example_plugins/gamepad",
     "example_plugins/keyboard",
     "example_plugins/chat",
+    "obj_loader",
     "example_plugins/multiple_queries",
     "example_plugins/camera2d",
 ]
