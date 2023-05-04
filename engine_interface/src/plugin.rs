@@ -222,6 +222,7 @@ impl<C: UserState, S: UserState> Context<C, S> {
     /// Called from _reserve() oddly enough, because this structure manages memory.
     pub fn new() -> Self {
         setup_panic();
+        setup_logging();
 
         Self {
             user: None,

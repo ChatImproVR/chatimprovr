@@ -1,23 +1,58 @@
+use log::{Level, Metadata, Record};
+
 extern "C" {
+    /// Host function for logging
     #[cfg(target_family = "wasm")]
-    fn _print(ptr: *const u8, len: usize);
+    fn _log(ptr: *const u8, len: usize, level: u32);
 }
 
-pub fn _print_str(s: &str) {
+/// Safe, convenient abstraction over raw _log()
+pub fn _log_str(s: &str, level: Level) {
     #[cfg(target_family = "wasm")]
     unsafe {
-        _print(s.as_ptr(), s.len());
+        _log(s.as_ptr(), s.len(), level as usize as u32);
     }
 
     #[cfg(not(target_family = "wasm"))]
-    println!("{}", s);
+    println!("{} {:?}", s, level);
 }
 
 /// Set up printing for panics
+/// NOTE: It's okay to call this before setup_logging(), because
+/// it calls the _log() hostcall directly
 pub(crate) fn setup_panic() {
     std::panic::set_hook(Box::new(|e| {
-        _print_str(&(e.to_string() + "\n"));
+        _log_str(&format!("{e:#}\n"), Level::Error);
     }))
+}
+
+/// Logger instance
+static LOGGER: LogToHost = LogToHost;
+
+/// Setup logging to host
+pub(crate) fn setup_logging() {
+    log::set_logger(&LOGGER).unwrap();
+}
+
+/// Writes log messages with the _log() hostcall
+struct LogToHost;
+
+impl log::Log for LogToHost {
+    fn enabled(&self, _metadata: &Metadata) -> bool {
+        // It's up to the host!
+        true
+    }
+
+    fn log(&self, record: &Record) {
+        if self.enabled(record.metadata()) {
+            // TODO: Send all metadata!
+            // TODO: Avoid allocating each log message
+            _log_str(&format!("{}", record.args()), record.metadata().level())
+        }
+    }
+
+    // Logs are already flushed each message!
+    fn flush(&self) {}
 }
 
 /// Similar to the print!() macro from the stdlib, but for plugins.
@@ -25,7 +60,7 @@ pub(crate) fn setup_panic() {
 macro_rules! print {
     ($($arg:tt)*) => {{
         // TODO: Yes I am aware this is slow. It is also EASY
-        _print_str(&format_args!($($arg)*).to_string());
+        $crate::log::info!($($arg)*)
     }};
 }
 
@@ -33,9 +68,7 @@ macro_rules! print {
 #[macro_export]
 macro_rules! println {
     ($($arg:tt)*) => {{
-        // TODO: Yes I am aware this is slow. It is also EASY
-        let s = format_args!($($arg)*).to_string();
-        _print_str(&(s + "\n"));
+        $crate::log::info!($($arg)*)
     }};
 }
 
@@ -47,14 +80,14 @@ macro_rules! dbg {
     // `$val` expression could be a block (`{ .. }`), in which case the `eprintln!`
     // will be malformed.
     () => {
-        $crate::println!("[{}:{}]", $crate::file!(), $crate::line!())
+        $crate::log::debug!("[{}:{}]", $crate::file!(), $crate::line!())
     };
     ($val:expr $(,)?) => {
         // Use of `match` here is intentional because it affects the lifetimes
         // of temporaries - https://stackoverflow.com/a/48732525/1063961
         match $val {
             tmp => {
-                $crate::println!("[{}:{}] {} = {:#?}",
+                $crate::log::debug!("[{}:{}] {} = {:#?}",
                     std::file!(), std::line!(), std::stringify!($val), &tmp);
                 tmp
             }
