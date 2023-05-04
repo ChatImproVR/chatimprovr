@@ -223,6 +223,7 @@ impl<C: UserState, S: UserState> Context<C, S> {
     pub fn new() -> Self {
         setup_panic();
         setup_logging();
+        log::info!("huh?");
 
         Self {
             user: None,

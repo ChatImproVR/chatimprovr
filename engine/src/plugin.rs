@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use cimvr_engine_interface::serial::{
     deserialize, serialize_into, serialized_size, ReceiveBuf, SendBuf,
 };
+use log::Level;
 use rand::prelude::*;
 use std::{io::Cursor, path::Path};
 use wasmtime::{Caller, Extern, Func, Instance, Memory, Module, Store, TypedFunc};
@@ -12,7 +13,7 @@ pub struct Plugin {
     module: Module,
     instance: Instance,
     mem: Memory,
-    print_fn: Func,
+    log_fn: Func,
     random_fn: Func,
     dispatch_fn: TypedFunc<(), u32>,
     reserve_fn: TypedFunc<u32, u32>,
@@ -20,21 +21,34 @@ pub struct Plugin {
 
 impl Plugin {
     /// Load the plugin in an uninitialized state
-    pub fn new(wt: &wasmtime::Engine, plugin_path: impl AsRef<Path>) -> Result<Self> {
+    pub fn new(wt: &wasmtime::Engine, plugin_path: impl AsRef<Path>, name: String) -> Result<Self> {
         let bytes = std::fs::read(plugin_path)?;
         let module = Module::new(wt, &bytes)?;
         let mut store = Store::new(wt, ());
 
-        // Basic printing functionality
-        let print_fn = Func::wrap(
+        // Basic logging functionality
+        let log_fn = Func::wrap(
             &mut store,
-            |mut caller: Caller<'_, ()>, ptr: u32, len: u32| {
-                // TODO: Shorten this
+            move |mut caller: Caller<'_, ()>, ptr: u32, len: u32, level: u32| {
+                // TODO: Don't allocate each message!
                 let mem = caller.get_export("memory").unwrap().into_memory().unwrap();
                 let mut buf = vec![0; len as usize];
                 mem.read(caller, ptr as usize, &mut buf).unwrap();
-                let s = String::from_utf8(buf).unwrap();
-                print!("{}", s);
+                let text = String::from_utf8(buf).unwrap();
+
+                let level = match level {
+                    1 => Level::Error,
+                    2 => Level::Warn,
+                    3 => Level::Info,
+                    4 => Level::Debug,
+                    5 => Level::Trace,
+                    other => {
+                        log::error!("[{name}] Unknown log level {other}! See error message below");
+                        Level::Error
+                    }
+                };
+
+                log::log!(level, "[{name}] {text}");
             },
         );
 
@@ -46,8 +60,8 @@ impl Plugin {
                     You may only use io functions supplied by the host! Maybe you want include_bytes!()";
         for imp in module.imports() {
             match (imp.name(), imp.ty()) {
-                ("_print", wasmtime::ExternType::Func(_)) => {
-                    imports.push(print_fn.into());
+                ("_log", wasmtime::ExternType::Func(_)) => {
+                    imports.push(log_fn.into());
                 }
                 ("_random", wasmtime::ExternType::Func(_)) => {
                     imports.push(random_fn.into());
@@ -69,7 +83,7 @@ impl Plugin {
             random_fn,
             mem,
             module,
-            print_fn,
+            log_fn,
             store,
             instance,
             dispatch_fn,

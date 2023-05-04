@@ -44,11 +44,9 @@ impl log::Log for LogToHost {
     }
 
     fn log(&self, record: &Record) {
-        if self.enabled(record.metadata()) {
-            // TODO: Send all metadata!
-            // TODO: Avoid allocating each log message
-            _log_str(&format!("{}", record.args()), record.metadata().level())
-        }
+        // TODO: Send all metadata!
+        // TODO: Avoid allocating each log message
+        _log_str(&format!("{}", record.args()), record.metadata().level())
     }
 
     // Logs are already flushed each message!

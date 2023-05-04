@@ -4,7 +4,10 @@ pub mod network;
 pub mod plugin;
 pub mod timing;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, path::PathBuf};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 use timing::Timing;
 
 use anyhow::{format_err, Context, Ok, Result};
@@ -64,9 +67,18 @@ struct PluginState {
 #[derive(Component, Copy, Clone, Debug, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PluginIndex(usize);
 
+fn plugin_name(path: &Path) -> String {
+    path.file_name()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .trim_end_matches(".wasm")
+        .to_string()
+}
+
 impl PluginState {
     pub fn new(path: PathBuf, wasm: &wasmtime::Engine) -> Result<Self> {
-        let code = Plugin::new(wasm, &path)?;
+        let code = Plugin::new(wasm, &path, plugin_name(&path))?;
         Ok(PluginState {
             path,
             code,
@@ -77,7 +89,7 @@ impl PluginState {
     }
 
     pub fn name(&self) -> String {
-        self.path.file_name().unwrap().to_str().unwrap().to_string()
+        plugin_name(&self.path)
     }
 }
 

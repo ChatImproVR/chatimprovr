@@ -1,4 +1,4 @@
-use cimvr_engine_interface::{make_app_state, prelude::*, println};
+use cimvr_engine_interface::{log, make_app_state, prelude::*, println};
 // All state associated with client-side behaviour
 struct ClientState;
 
@@ -10,6 +10,8 @@ impl UserState for ClientState {
         // NOTE: We are using the println defined by cimvr_engine_interface here, NOT the standard library!
         cimvr_engine_interface::println!("This prints");
         std::println!("But this doesn't");
+
+        log::error!("You can also use the log crate!");
 
         Self
     }
