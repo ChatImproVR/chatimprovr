@@ -85,8 +85,8 @@ impl ServerState {
 
     fn cube_move(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         if let Some(FrameTime { time, .. }) = io.inbox_first() {
-            for key in query.iter("Cubes") {
-                let mov = query.read::<MoveCube>(key);
+            for entity in query.iter("Cubes") {
+                let mov = query.read::<MoveCube>(entity);
 
                 let theta = mov.r + time / 10.;
                 let k = 3.;
@@ -106,7 +106,7 @@ impl ServerState {
                     ),
                 };
 
-                query.write::<Transform>(key, &transf);
+                query.write::<Transform>(entity, &transf);
             }
         }
     }

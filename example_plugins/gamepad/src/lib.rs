@@ -83,12 +83,12 @@ impl ServerState {
         // For each entity mapping to a client that we know about, store the mapping
         // client -> entity
         // If the entity exists but the client doesn't, remove the entity
-        for key in query.iter("Spinning cubes") {
-            let SpinningCube(client_id) = query.read::<SpinningCube>(key);
+        for entity in query.iter("Spinning cubes") {
+            let SpinningCube(client_id) = query.read::<SpinningCube>(entity);
             if conns.clients.iter().find(|c| c.id == client_id).is_some() {
-                client_to_entity.insert(client_id, key);
+                client_to_entity.insert(client_id, entity);
             } else {
-                io.remove_entity(key);
+                io.remove_entity(entity);
             }
         }
 
