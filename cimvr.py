@@ -44,8 +44,7 @@ def main():
 
     # cimvr new "subcommand" - workaround for argparse
     if len(args.plugins) == 2 and args.plugins[0] == "new":
-        # This means you cannot have a plugin named "new" 
-        # but if you do f*** you anyway
+        # This means you cannot have a plugin named "new" (but why would you?)
         create_new(args.plugins[1])
         return;
 
@@ -220,18 +219,18 @@ def create_new(dir_name):
         f.write(new_content)
         f.truncate()
 
-    shutil
     print("Edited Cargo.toml")
-    
-    # Append the export line to the user's .bashrc file
-    bashrc_export_line = BASHRC_EXPORT_LINE.format(os.path.abspath(dir_name))
-    with open(BASHRC_FILE, "a") as f:
-        f.write("\n" + bashrc_export_line + "\n")
 
     to_delete = os.path.join(dir_name, ".git")
     #if input(f"Remove template git path {to_delete}? [y/N] ") == 'y':
     print(f"Deleting {to_delete}")
     shutil.rmtree(to_delete);
+    
+    # Append the export line to the user's .bashrc file
+    bashrc_export_line = BASHRC_EXPORT_LINE.format(os.path.abspath(dir_name))
+    with open(BASHRC_FILE, "a") as f:
+        f.write("\n" + bashrc_export_line + "\n")
+    print(f"Edited {BASHRC_FILE}")
     
     print("Done.")
 
