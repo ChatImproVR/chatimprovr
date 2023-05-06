@@ -4,6 +4,10 @@ from os.path import dirname, join, isfile
 import argparse
 from subprocess import Popen
 from time import sleep
+import shutil
+import subprocess
+import sys
+
 
 # TODO: Enable this script to `cargo run` the server and client.
 
@@ -35,7 +39,15 @@ def main():
     )
     parser.add_argument("--verbose", "-v", help="Verbose debug output")
     parser.add_argument("--vr", action="store_true", help="Run the client in VR mode")
+
     args = parser.parse_args()
+
+    # cimvr new "subcommand" - workaround for argparse
+    if len(args.plugins) == 2 and args.plugins[0] == "new":
+        # This means you cannot have a plugin named "new" 
+        # but if you do f*** you anyway
+        create_new(args.plugins[1])
+        return;
 
     # The script is assumed to be at the root of the project
     root_path = dirname(__file__)
@@ -180,6 +192,48 @@ def find_exe(env_var, names, root_path):
                 return path
 
     return None
+
+
+def create_new(dir_name):
+    # Courtesy of ChatGPT 5/6/2023
+    REPO_URL = "https://github.com/ChatImproVR/template.git"
+    CARGO_TOML_FILE = "Cargo.toml"
+    CARGO_TOML_NAME_FIELD = "name = \"template_plugin\""
+
+    # TODO: Is this barbaric?
+    BASHRC_FILE = os.path.expanduser("~/.bashrc")
+    BASHRC_EXPORT_LINE = "export CIMVR_PLUGINS=\"$CIMVR_PLUGINS;{}\""
+    
+    # Clone the git repository into the specified directory
+    subprocess.run(["git", "clone", REPO_URL, dir_name], check=True)
+    
+    # Edit the name field in the Cargo.toml file
+    cargo_toml_path = os.path.join(dir_name, CARGO_TOML_FILE)
+    with open(cargo_toml_path, "r+") as f:
+        content = f.read()
+        name = os.path.basename(dir_name)
+        new_content = content.replace(
+            CARGO_TOML_NAME_FIELD, 
+            f"name = \"{name}\""
+        )
+        f.seek(0)
+        f.write(new_content)
+        f.truncate()
+
+    shutil
+    print("Edited Cargo.toml")
+    
+    # Append the export line to the user's .bashrc file
+    bashrc_export_line = BASHRC_EXPORT_LINE.format(os.path.abspath(dir_name))
+    with open(BASHRC_FILE, "a") as f:
+        f.write("\n" + bashrc_export_line + "\n")
+
+    to_delete = os.path.join(dir_name, ".git")
+    #if input(f"Remove template git path {to_delete}? [y/N] ") == 'y':
+    print(f"Deleting {to_delete}")
+    shutil.rmtree(to_delete);
+    
+    print("Done.")
 
 
 if __name__ == "__main__":
