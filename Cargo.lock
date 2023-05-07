@@ -1462,6 +1462,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
+name = "vr-teleport"
+version = "0.1.0"
+dependencies = [
+ "cimvr_common",
+ "cimvr_engine_interface",
+ "serde",
+]
+
+[[package]]
 name = "walkdir"
 version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
