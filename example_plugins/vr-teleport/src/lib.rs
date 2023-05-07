@@ -128,7 +128,7 @@ impl Teleporter {
 
             self.update_path = false;
 
-            for camera_entity in query.iter("") {
+            for camera_entity in query.iter("Camera") {
                 // Place the camera (reference frame) so that the new position has the left eye over
                 // the desired end location
                 let end_pos = self.path.sample(self.path.end_time());

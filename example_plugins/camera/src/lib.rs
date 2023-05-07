@@ -89,8 +89,8 @@ impl Camera {
             self.arcball_control.update(&self.input, &mut self.arcball);
 
             // Set camera transform to arcball position
-            for key in query.iter("Camera") {
-                query.write::<Transform>(key, &self.arcball.camera_transf());
+            for entity in query.iter("Camera") {
+                query.write::<Transform>(entity, &self.arcball.camera_transf());
             }
         }
 
@@ -98,9 +98,9 @@ impl Camera {
 
         let clear_color = [0.; 3];
 
-        for key in query.iter("Camera") {
+        for entity in query.iter("Camera") {
             query.write::<CameraComponent>(
-                key,
+                entity,
                 &CameraComponent {
                     clear_color,
                     projection,

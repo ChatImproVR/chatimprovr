@@ -20,6 +20,7 @@ members = [
     "example_plugins/keyboard",
     "example_plugins/chat",
     "example_plugins/vr-teleport",
+    "obj_loader",
     "example_plugins/multiple_queries",
     "example_plugins/camera2d",
 ]
