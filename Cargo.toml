@@ -23,6 +23,8 @@ members = [
     "obj_loader",
     "example_plugins/multiple_queries",
     "example_plugins/camera2d",
+    "example_plugins/parenting",
+    "example_plugins/parenting_demo",
 ]
 
 # Causes a build issue with OpenXR if included in workspace

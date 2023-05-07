@@ -1,0 +1,15 @@
+[package]
+name = "parenting"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+library = []
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+cimvr_common = { path = "../../common" }
+cimvr_engine_interface = { path = "../../engine_interface" }
+serde = { version = "1", features = ["derive"] }
