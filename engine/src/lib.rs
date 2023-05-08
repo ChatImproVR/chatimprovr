@@ -326,7 +326,7 @@ impl Engine {
         // Delete all unsaved entities from that plugin
         let indices = self
             .ecs
-            .query(&[QueryComponent::new::<PluginIndex>(Access::Read)]);
+            .query(&Query::new().intersect::<PluginIndex>(Access::Read));
         for ent in indices {
             if let Some(PluginIndex(idx)) = self.ecs().get::<PluginIndex>(ent) {
                 // Only those from the plugin that have no Saved component

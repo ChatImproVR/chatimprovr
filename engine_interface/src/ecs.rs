@@ -21,7 +21,10 @@ pub struct QueryComponent {
 }
 
 /// A description of an ECS query
-pub type Query = Vec<QueryComponent>;
+#[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct Query {
+    pub intersect: Vec<QueryComponent>,
+}
 
 /// Universally-unique Entity ID
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -90,9 +93,13 @@ impl QueryResult {
     }
 
     /// Iterate through query entities
+    #[track_caller]
     pub fn iter(&self, name: &'static str) -> impl Iterator<Item = EntityId> {
-        let query = &self.query[name];
-        let (initial, xs) = query.split_first().expect("No components in components");
+        let query = &self
+            .query
+            .get(name)
+            .expect("Did not recognize this query name");
+        let (initial, xs) = query.intersect.split_first().expect("No components");
 
         let tmp = HashMap::new();
         self.ecs
@@ -143,6 +150,16 @@ impl QueryResult {
     }
     */
 
+    /// Returns `true` if the given entity was queried, and has the given component
+    #[track_caller]
+    pub fn has_component<C: Component>(&self, entity: EntityId) -> bool {
+        if let Some(comp) = self.ecs.get(&component_id::<C>()) {
+            comp.contains_key(&entity)
+        } else {
+            false
+        }
+    }
+
     /// Read the data in the given component
     #[track_caller]
     pub fn read<C: Component>(&self, entity: EntityId) -> C {
@@ -191,4 +208,18 @@ pub fn check_component_data_size(component_size: u16, size: usize) {
         size,
         component_size
     );
+}
+
+impl Query {
+    /// Creates a new Query, assigning the label `name`.
+    /// This name is used for both indexing, and for
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Require this component to be present for each entity returned by this query.
+    pub fn intersect<T: Component>(mut self, access: Access) -> Self {
+        self.intersect.push(QueryComponent::new::<T>(access));
+        self
+    }
 }

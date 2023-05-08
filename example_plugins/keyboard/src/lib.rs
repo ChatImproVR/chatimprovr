@@ -7,7 +7,6 @@ use cimvr_common::{
 };
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, FrameTime};
 use serde::{Deserialize, Serialize};
-
 struct ServerState;
 #[derive(Default)]
 struct ClientState {
@@ -103,10 +102,12 @@ impl UserState for ServerState {
         sched
             .add_system(Self::update)
             .subscribe::<MoveCommand>()
-            .query("Cubes")
-            .intersect::<CubeFlag>(Access::Write)
-            .intersect::<Transform>(Access::Write)
-            .qcommit()
+            .query(
+                "Cubes",
+                Query::new()
+                    .intersect::<CubeFlag>(Access::Write)
+                    .intersect::<Transform>(Access::Write),
+            )
             .build();
 
         Self
@@ -118,8 +119,8 @@ impl ServerState {
         // Check for movement commands
         if let Some(MoveCommand { distance }) = io.inbox_first() {
             // Update each object accordingly
-            for key in query.iter("Cubes") {
-                query.modify::<Transform>(key, |tf| {
+            for entity in query.iter("Cubes") {
+                query.modify::<Transform>(entity, |tf| {
                     tf.pos += distance;
                 })
             }

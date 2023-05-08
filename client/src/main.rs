@@ -6,7 +6,7 @@ extern crate openxr as xr;
 use anyhow::{bail, Context, Result};
 use cimvr_common::glam::Mat4;
 use cimvr_engine::hotload::Hotloader;
-use cimvr_engine::interface::prelude::{Access, ConnectionRequest, QueryComponent, Synchronized};
+use cimvr_engine::interface::prelude::{Access, ConnectionRequest, Query, Synchronized};
 use cimvr_engine::interface::serial::{deserialize, serialize};
 use cimvr_engine::network::{
     length_delimit_message, AsyncBufferedReceiver, ClientToServer, ReadState, ServerToClient,
@@ -157,7 +157,7 @@ impl Client {
                         self.engine.broadcast_local(msg);
                     }
                     self.engine.ecs().import(
-                        &[QueryComponent::new::<Synchronized>(Access::Read)],
+                        &Query::new().intersect::<Synchronized>(Access::Write),
                         recv.ecs,
                     );
                 }

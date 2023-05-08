@@ -1,5 +1,4 @@
 use cimvr_engine_interface::{make_app_state, prelude::*, println};
-
 // All state associated with client-side behaviour
 struct ClientState;
 

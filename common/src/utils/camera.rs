@@ -1,9 +1,4 @@
-use glam::{
-    Mat4,
-    Vec3,
-    Quat,
-    EulerRot,
-};
+use glam::{EulerRot, Mat4, Quat, Vec3};
 
 use crate::{
     desktop::{InputEvent, WindowEvent},
@@ -114,8 +109,7 @@ pub struct Orthographic {
     proj: [Mat4; 2],
 }
 
-
-impl Default for Orthographic{
+impl Default for Orthographic {
     fn default() -> Self {
         Self {
             screen_size: (1920, 1080),
@@ -130,11 +124,14 @@ impl Default for Orthographic{
     }
 }
 
-impl Orthographic{
+impl Orthographic {
     pub fn update_proj(&mut self, mut width: f32, mut height: f32, input: &InputEvent) {
-        
         // Check if the screen size changes
-        if let InputEvent::Window(WindowEvent::Resized { width: screen_width, height: screen_height }) = input {
+        if let InputEvent::Window(WindowEvent::Resized {
+            width: screen_width,
+            height: screen_height,
+        }) = input
+        {
             self.screen_size = (*screen_width, *screen_height);
         }
 
@@ -142,21 +139,21 @@ impl Orthographic{
         let aspect_ratio = self.screen_size.0 as f32 / self.screen_size.1 as f32;
 
         // If the world aspect ratio is biggeer or equal to the screen size, then update the height that matches the screen aspect ratio
-        if width / height >= aspect_ratio as f32{
+        if width / height >= aspect_ratio as f32 {
             height = width / aspect_ratio as f32;
         }
         // Otherwise, update the width screen aspect ratio oto the world aspect ratio
-        else{
+        else {
             width = height * aspect_ratio as f32;
         }
-        
+
         // Get the correct values for setting up the orthographic arguments
         self.left = -width / 2.;
         self.right = width / 2.;
         self.bottom = -height / 2.;
         self.top = height / 2.;
 
-        // Recreate the new projection matrix based on the updated screen size        
+        // Recreate the new projection matrix based on the updated screen size
         let new_proj = Mat4::orthographic_rh_gl(
             self.left,
             self.right,
@@ -177,17 +174,30 @@ impl Orthographic{
     }
 
     pub fn camera_on_positive_z_axis(&self) -> Transform {
-    // This camera control is for 2D arcade games that are played on a flat screen: z-axis is to us
+        // This camera control is for 2D arcade games that are played on a flat screen: z-axis is to us
         Transform {
             pos: Vec3::new(0., 0., 5.),
             orient: Default::default(),
         }
     }
 
-    pub fn camera_on_custom_axis(&self, pos_x: f32, pos_y: f32, pos_z: f32, degree_x: f32, degree_y: f32, degree_z: f32) -> Transform {
+    pub fn camera_on_custom_axis(
+        &self,
+        pos_x: f32,
+        pos_y: f32,
+        pos_z: f32,
+        degree_x: f32,
+        degree_y: f32,
+        degree_z: f32,
+    ) -> Transform {
         Transform {
             pos: Vec3::new(pos_x, pos_y, pos_z),
-            orient: Quat::from_euler(EulerRot::XYZ, degree_x.to_radians(), degree_y.to_radians(), degree_z.to_radians()),
+            orient: Quat::from_euler(
+                EulerRot::XYZ,
+                degree_x.to_radians(),
+                degree_y.to_radians(),
+                degree_z.to_radians(),
+            ),
         }
     }
 }

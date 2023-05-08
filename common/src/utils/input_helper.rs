@@ -1,4 +1,5 @@
 use cimvr_engine_interface::prelude::EngineIo;
+use cimvr_engine_interface::prelude::*;
 use std::collections::HashSet;
 
 use crate::desktop::{
@@ -94,10 +95,12 @@ impl InputHelper {
     /// ```
     pub fn handle_input_events(&mut self, io: &mut EngineIo) {
         self.mouse_state.prev_pos = self.mouse_state.position;
+        self.mouse_state.scroll = (0., 0.);
         self.pressed_keys.clear();
         self.released_keys.clear();
         self.mouse_state.pressed_buttons.clear();
         self.mouse_state.released_buttons.clear();
+
         for event in io.inbox::<InputEvent>() {
             self.update(&event);
         }
