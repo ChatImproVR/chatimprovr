@@ -1,17 +1,15 @@
 //! Types for interfacing with the Host's rendering engine
 use bytemuck::{Pod, Zeroable};
 use cimvr_engine_interface::{pkg_namespace, prelude::*, serial::FixedOption};
-use glam::Mat4;
+use glam::{Mat4, Vec2, Vec4};
 use serde::{Deserialize, Serialize};
 
 use crate::{make_handle, render::MeshHandle, GenericHandle};
 
-// const COMPUTE_
-
 /// Unique identifier for a Compute Shader
 #[derive(Serialize, Deserialize, Default, Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub struct ComputeShader(GenericHandle);
-make_handle!(ComputeShader);
+pub struct ComputeShaderHandle(GenericHandle);
+make_handle!(ComputeShaderHandle);
 
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct GpuBufferHandle {
@@ -57,32 +55,40 @@ impl BufferLayout {
     }
 }
 
-/// A buffer and it's associated data
+/// A buffer and its associated data
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BufferPacket {
     pub handle: GpuBufferHandle,
     pub data: Vec<u8>,
 }
 
+/// Creates a compute shader on the GPU with the given GLSL source
+#[derive(Message, Serialize, Deserialize, Debug, Clone)]
+#[locality("Local")]
+pub struct GpuShaderUpload(pub ComputeShaderHandle, pub String);
+
 /// plugin to GPU data transfer
 #[derive(Message, Serialize, Deserialize, Debug, Clone)]
 #[locality("Local")]
-pub struct GpuBufferUpload(BufferPacket);
+pub struct GpuBufferUpload(pub BufferPacket);
 
+/*
 /// GPU to plugin data transfer
 #[derive(Message, Serialize, Deserialize, Debug, Clone)]
 #[locality("Local")]
 pub struct GpuBufferDownload(BufferPacket);
+*/
 
 /// GPGPU compute operation
 #[derive(Serialize, Deserialize, Debug, Clone)]
-enum GpuComputeOperation {
+pub enum ComputeOperation {
     InvokeComputeShader {
-        shader: ComputeShader,
+        shader: ComputeShaderHandle,
         x: i32,
         y: i32,
         z: i32,
         buffers: Vec<GpuBufferHandle>,
+        uniforms: Vec<(String, UniformWrite)>,
     },
     /// Executes a builtin shader which copies consecutive pairs of vec4s from the source buffer
     /// into the color and uv fields of the vertices of the referenced mesh
@@ -91,10 +97,22 @@ enum GpuComputeOperation {
     //CopyToIndices(GpuBuffer, MeshHandle),
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+enum UniformWrite {
+    Float(f32),
+    Vec2(Vec2),
+    Vec4(Vec4),
+    Mat4(Mat4),
+}
+
+#[derive(Message, Serialize, Deserialize, Debug, Clone)]
+#[locality("Local")]
+pub struct ComputeJob(Vec<ComputeOperation>);
+
 #[derive(Message, Serialize, Deserialize, Debug, Clone)]
 #[locality("Local")]
 pub struct GpuDeclarePipeline {
-    stages: Vec<ComputeShader>,
+    stages: Vec<ComputeShaderHandle>,
 }
 
 impl BufferPacket {

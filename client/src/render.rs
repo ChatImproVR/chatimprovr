@@ -11,12 +11,15 @@ use glow::NativeUniformLocation;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use crate::gpgpu::ComputeEngine;
+
 const DEFAULT_SHADER: ShaderHandle = ShaderHandle::new(pkg_namespace!("Default shader"));
 
 /// Rendering Plugin, containing interfacing with ChatImproVR for RenderEngine
 pub struct RenderPlugin {
     gl: Arc<glow::Context>,
     rdr: RenderEngine,
+    compute: ComputeEngine,
 }
 
 // TODO: destructors! (lol)
@@ -51,8 +54,9 @@ impl RenderPlugin {
         engine.subscribe::<ShaderSource>();
 
         let rdr = RenderEngine::new(&gl)?;
+        let compute = ComputeEngine::new();
 
-        Ok(Self { gl, rdr })
+        Ok(Self { gl, rdr, compute })
     }
 
     pub fn set_screen_size(&mut self, width: u32, height: u32) {
@@ -313,7 +317,7 @@ impl GpuShader {
 }
 
 /// Compiles (*_SHADER, <source>) into a shader program for OpenGL
-fn compile_glsl_program(gl: &gl::Context, sources: &[(u32, &str)]) -> Result<gl::Program> {
+pub fn compile_glsl_program(gl: &gl::Context, sources: &[(u32, &str)]) -> Result<gl::Program> {
     // Compile default shaders
     unsafe {
         let program = gl.create_program().expect("Cannot create program");
