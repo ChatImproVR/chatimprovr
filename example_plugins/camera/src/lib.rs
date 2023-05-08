@@ -3,27 +3,23 @@ use std::f32::consts::FRAC_PI_2;
 use cimvr_common::{
     desktop::{InputEvent, MouseButton},
     glam::{Mat3, Quat, Vec3, Vec4},
-    render::{CameraComponent, Mesh, MeshHandle, Render, UploadMesh, Vertex},
+    render::CameraComponent,
     utils::{camera::Perspective, input_helper::InputHelper},
     vr::VrUpdate,
     Transform,
 };
-use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*};
+use cimvr_engine_interface::{make_app_state, prelude::*};
 
 struct Camera {
     arcball: ArcBall,
     arcball_control: ArcBallController,
     proj: Perspective,
-    left_hand: EntityId,
-    right_hand: EntityId,
     input: InputHelper,
     /// Keep track of whether we've ever received a VR update, since we'll always receive desktop events!
     is_vr: bool,
 }
 
 make_app_state!(Camera, DummyUserState);
-
-const HAND_RDR_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Hand"));
 
 impl UserState for Camera {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
@@ -35,8 +31,6 @@ impl UserState for Camera {
                 projection: Default::default(),
             })
             .build();
-
-        io.send(&hand());
 
         // Schedule the system
         // In the future it would be super cool to do this like Bevy and be able to just infer the
@@ -54,23 +48,11 @@ impl UserState for Camera {
             )
             .build();
 
-        let left_hand = io
-            .create_entity()
-            .add_component(Render::new(HAND_RDR_ID))
-            .build();
-
-        let right_hand = io
-            .create_entity()
-            .add_component(Render::new(HAND_RDR_ID))
-            .build();
-
         Self {
             input: InputHelper::new(),
             arcball: ArcBall::default(),
             arcball_control: ArcBallController::default(),
             proj: Perspective::new(),
-            left_hand,
-            right_hand,
             is_vr: false,
         }
     }
@@ -80,26 +62,18 @@ impl Camera {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         // Handle events for VR
         if let Some(update) = io.inbox_first::<VrUpdate>() {
-            if !update.left_controller.events.is_empty() {
-                dbg!(&update.left_controller.events);
-            }
+            if !self.is_vr {
+                self.is_vr = true;
 
-            if !update.right_controller.events.is_empty() {
-                dbg!(&update.right_controller.events);
+                // Sometimes the first InputEvent comes in before the first VrUpdate, and so we
+                // need to reset the position back to zero here.
+                for ent in query.iter("Camera") {
+                    query.write(ent, &Transform::identity());
+                }
             }
-
-            self.is_vr = true;
             // Handle FOV changes (But NOT position. Position is extremely time-sensitive, so it
             // is actually prepended to the view matrix)
             self.proj.handle_vr_update(&update);
-
-            if let Some(pos) = update.left_controller.grip {
-                io.add_component(self.left_hand, pos);
-            }
-
-            if let Some(pos) = update.right_controller.grip {
-                io.add_component(self.right_hand, pos);
-            }
         }
 
         // Handle input events for desktop mode
@@ -115,8 +89,8 @@ impl Camera {
             self.arcball_control.update(&self.input, &mut self.arcball);
 
             // Set camera transform to arcball position
-            for key in query.iter("Camera") {
-                query.write::<Transform>(key, &self.arcball.camera_transf());
+            for entity in query.iter("Camera") {
+                query.write::<Transform>(entity, &self.arcball.camera_transf());
             }
         }
 
@@ -124,9 +98,9 @@ impl Camera {
 
         let clear_color = [0.; 3];
 
-        for key in query.iter("Camera") {
+        for entity in query.iter("Camera") {
             query.write::<CameraComponent>(
-                key,
+                entity,
                 &CameraComponent {
                     clear_color,
                     projection,
@@ -240,32 +214,7 @@ impl Default for ArcBall {
     }
 }
 
-fn hand() -> UploadMesh {
-    let s = 0.15;
-
-    let vertices = vec![
-        Vertex::new([-s, -s, -s], [0.0, 1.0, 1.0]),
-        Vertex::new([s, -s, -s], [1.0, 0.0, 1.0]),
-        Vertex::new([s, s, -s], [1.0, 1.0, 0.0]),
-        Vertex::new([-s, s, -s], [0.0, 1.0, 1.0]),
-        Vertex::new([-s, -s, s], [1.0, 0.0, 1.0]),
-        Vertex::new([s, -s, s], [1.0, 1.0, 0.0]),
-        Vertex::new([s, s, s], [0.0, 1.0, 1.0]),
-        Vertex::new([-s, s, s], [1.0, 0.0, 1.0]),
-    ];
-
-    let indices = vec![
-        3, 1, 0, 2, 1, 3, 2, 5, 1, 6, 5, 2, 6, 4, 5, 7, 4, 6, 7, 0, 4, 3, 0, 7, 7, 2, 3, 6, 2, 7,
-        0, 5, 4, 1, 5, 0,
-    ];
-
-    UploadMesh {
-        mesh: Mesh { vertices, indices },
-        id: HAND_RDR_ID,
-    }
-}
-
-// TODO: Add a PR to glam?
+// TODO: Submit a PR to glam?
 fn face_towards(dir: Vec3, up: Vec3) -> Quat {
     let zaxis = dir.normalize();
     let xaxis = up.cross(zaxis).normalize();

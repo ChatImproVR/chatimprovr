@@ -19,9 +19,12 @@ members = [
     "example_plugins/gamepad",
     "example_plugins/keyboard",
     "example_plugins/chat",
+    "example_plugins/vr-teleport",
     "obj_loader",
     "example_plugins/multiple_queries",
     "example_plugins/camera2d",
+    "example_plugins/parenting",
+    "example_plugins/parenting_demo",
 ]
 
 # Causes a build issue with OpenXR if included in workspace

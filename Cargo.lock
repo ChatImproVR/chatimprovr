@@ -986,6 +986,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "86f0b0d4bf799edbc74508c1e8bf170ff5f41238e5f8225603ca7caaae2b7860"
 
 [[package]]
+name = "parenting"
+version = "0.1.0"
+dependencies = [
+ "cimvr_common",
+ "cimvr_engine_interface",
+ "serde",
+]
+
+[[package]]
+name = "parenting_demo"
+version = "0.1.0"
+dependencies = [
+ "cimvr_common",
+ "cimvr_engine_interface",
+ "parenting",
+ "serde",
+]
+
+[[package]]
 name = "particle-life"
 version = "0.1.0"
 dependencies = [
@@ -1460,6 +1479,15 @@ name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
+
+[[package]]
+name = "vr-teleport"
+version = "0.1.0"
+dependencies = [
+ "cimvr_common",
+ "cimvr_engine_interface",
+ "serde",
+]
 
 [[package]]
 name = "walkdir"

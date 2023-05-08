@@ -149,4 +149,3 @@ pub fn obj_lines_to_mesh(obj: &str) -> Mesh {
 
     m
 }
-

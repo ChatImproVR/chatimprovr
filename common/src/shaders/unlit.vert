@@ -14,6 +14,6 @@ void main() {
     gl_Position = proj * view * transf * vec4(pos, 1.);
     vec4 extra_c = extra[0];
     vec3 color = mix(uvw, extra_c.xyz, extra_c.w);
-    gl_PointSize = 5.0;
+    gl_PointSize = 2.0;
     f_color = vec4(color, 1.);
 }

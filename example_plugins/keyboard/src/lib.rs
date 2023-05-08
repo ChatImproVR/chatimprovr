@@ -119,8 +119,8 @@ impl ServerState {
         // Check for movement commands
         if let Some(MoveCommand { distance }) = io.inbox_first() {
             // Update each object accordingly
-            for key in query.iter("Cubes") {
-                query.modify::<Transform>(key, |tf| {
+            for entity in query.iter("Cubes") {
+                query.modify::<Transform>(entity, |tf| {
                     tf.pos += distance;
                 })
             }

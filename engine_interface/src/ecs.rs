@@ -150,6 +150,16 @@ impl QueryResult {
     }
     */
 
+    /// Returns `true` if the given entity was queried, and has the given component
+    #[track_caller]
+    pub fn has_component<C: Component>(&self, entity: EntityId) -> bool {
+        if let Some(comp) = self.ecs.get(&component_id::<C>()) {
+            comp.contains_key(&entity)
+        } else {
+            false
+        }
+    }
+
     /// Read the data in the given component
     #[track_caller]
     pub fn read<C: Component>(&self, entity: EntityId) -> C {
