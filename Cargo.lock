@@ -198,6 +198,7 @@ dependencies = [
  "rand",
  "serde",
  "wasmtime",
+ "xxhash-rust",
 ]
 
 [[package]]
@@ -1902,6 +1903,12 @@ dependencies = [
  "unicode-xid",
  "url",
 ]
+
+[[package]]
+name = "xxhash-rust"
+version = "0.8.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "735a71d46c4d68d71d4b24d03fdc2b98e38cea81730595801db779c04fe80d70"
 
 [[package]]
 name = "zstd"

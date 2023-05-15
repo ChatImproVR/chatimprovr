@@ -29,6 +29,7 @@ egui_glow = { version = "0.19.0", features = ["winit"], git = "https://github.co
 egui-winit = { version = "0.19.0", default-features = false }
 raw-window-handle = "0.5.0"
 gilrs = { version = "0.10.2", default-features = false, features = ["xinput"] }
+directories = "5.0.1"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 openxr = { version = "0.17.1", optional = true, features = ["loaded"] }

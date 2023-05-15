@@ -6,7 +6,9 @@ extern crate openxr as xr;
 use anyhow::{bail, Context, Result};
 use cimvr_common::glam::Mat4;
 use cimvr_engine::hotload::Hotloader;
-use cimvr_engine::interface::prelude::{Access, ConnectionRequest, Query, Synchronized};
+use cimvr_engine::interface::prelude::{
+    Access, ConnectionRequest, ConnectionResponse, PluginData, Query, Synchronized,
+};
 use cimvr_engine::interface::serial::{deserialize, serialize};
 use cimvr_engine::network::{
     length_delimit_message, AsyncBufferedReceiver, ClientToServer, ReadState, ServerToClient,
@@ -14,6 +16,7 @@ use cimvr_engine::network::{
 use cimvr_engine::Config;
 use cimvr_engine::Engine;
 use gamepad::GamepadPlugin;
+use plugin_cache::FileCache;
 use render::RenderPlugin;
 use std::io::Write;
 use std::net::{SocketAddr, TcpStream};
@@ -27,6 +30,7 @@ mod vr;
 mod desktop;
 mod desktop_input;
 mod gamepad;
+mod plugin_cache;
 mod render;
 mod ui;
 
@@ -42,9 +46,6 @@ pub struct Opt {
     #[structopt(short, long, default_value = "127.0.0.1:5031")]
     pub connect: SocketAddr,
 
-    /// Plugins
-    pub plugins: Vec<PathBuf>,
-
     /// Whether to use VR
     #[structopt(long)]
     pub vr: bool,
@@ -59,7 +60,6 @@ struct Client {
     render: RenderPlugin,
     recv_buf: AsyncBufferedReceiver,
     conn: TcpStream,
-    hotload: Hotloader,
     gamepad: GamepadPlugin,
     ui: OverlayUi,
 }
@@ -88,21 +88,51 @@ fn main() -> Result<()> {
 // code uplication!
 
 impl Client {
-    pub fn new(
-        gl: Arc<gl::Context>,
-        plugins: &[PathBuf],
-        addr: SocketAddr,
-        username: String,
-    ) -> Result<Self> {
-        // Connect to remote host
+    pub fn new(gl: Arc<gl::Context>, addr: SocketAddr, username: String) -> Result<Self> {
+        // Set up plugin cache
+        let plugin_cache = FileCache::new()?;
+
+        // Request connection to remote host
         let mut conn = TcpStream::connect(addr)?;
         conn.set_nonblocking(true)?;
-        let req = ConnectionRequest::new(username);
+        let manifest = plugin_cache.manifest().keys().copied().collect();
+        let req = ConnectionRequest::new(username, manifest);
         let req = serialize(&req).unwrap();
         conn.write_all(&req)?;
 
-        // Set up hotloading
-        let hotload = Hotloader::new(&plugins)?;
+        // Receive response from server
+        let mut recv_buf = AsyncBufferedReceiver::new();
+        let response: ConnectionResponse;
+        loop {
+            match recv_buf.read(&mut conn)? {
+                ReadState::Complete(data) => {
+                    response = deserialize(std::io::Cursor::new(data))?;
+                    break;
+                }
+                other => {
+                    // TODO: Make this error message more helpful...
+                    bail!("Failed to connect to remote host");
+                }
+            }
+        }
+
+        // Load needed plugins into memory
+        let mut plugins = vec![];
+        for (name, plugin) in response.plugins {
+            let bytecode;
+            match plugin {
+                PluginData::Cached(digest) => {
+                    let path = plugin_cache
+                        .manifest()
+                        .get(&digest)
+                        .expect("Server did not send all plugins it was supposed to");
+                    bytecode = std::fs::read(path)?;
+                }
+                PluginData::Download(data) => bytecode = data,
+            }
+
+            plugins.push((name, bytecode));
+        }
 
         // Set up engine and initialize plugins
         let mut engine = Engine::new(&plugins, Config { is_server: false })?;
@@ -118,11 +148,10 @@ impl Client {
         engine.init_plugins()?;
 
         Ok(Self {
-            hotload,
+            recv_buf,
             gamepad,
             conn,
             ui,
-            recv_buf: AsyncBufferedReceiver::new(),
             engine,
             render,
         })
@@ -134,13 +163,6 @@ impl Client {
 
     /// Synchronize with remote and with plugin hotloading
     pub fn download(&mut self) -> Result<()> {
-        // Check for hotloaded plugins
-        for path in self.hotload.hotload()? {
-            log::info!("Reloading {}", path.display());
-            self.engine.reload(path)?;
-        }
-
-        // Synchronize
         loop {
             match self.recv_buf.read(&mut self.conn)? {
                 ReadState::Invalid => {
@@ -153,9 +175,19 @@ impl Client {
                 ReadState::Complete(buf) => {
                     // Update state!
                     let recv: ServerToClient = deserialize(std::io::Cursor::new(buf))?;
+
+                    // Load hotloaded plugins
+                    for (name, bytecode) in recv.hotload {
+                        log::info!("Reloading {}", name);
+                        self.engine.reload(name, &bytecode)?;
+                    }
+
+                    // Receive remote messages
                     for msg in recv.messages {
                         self.engine.broadcast_local(msg);
                     }
+
+                    // Synchronize ECS state 
                     self.engine.ecs().import(
                         &Query::new().intersect::<Synchronized>(Access::Write),
                         recv.ecs,
