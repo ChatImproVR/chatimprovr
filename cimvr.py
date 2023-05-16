@@ -98,7 +98,7 @@ def main():
         cmds += [cmd]
 
     if args.client:
-        cmd = [client_exe] + plugins
+        cmd = [client_exe]
         if args.vr:
             cmd.append("--vr")
         if args.remote:
