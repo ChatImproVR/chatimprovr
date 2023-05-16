@@ -5,7 +5,7 @@ use cimvr_engine::interface::prelude::{
     Access, ClientId, ConnectionRequest, ConnectionResponse, Connections, Digest, PluginData,
     Query, Synchronized,
 };
-use cimvr_engine::interface::serial::{deserialize, serialize_into};
+use cimvr_engine::interface::serial::{deserialize, serialize, serialize_into};
 use cimvr_engine::{calculate_digest, Config};
 use cimvr_engine::{interface::system::Stage, network::*, Engine};
 
@@ -174,7 +174,6 @@ impl Server {
 
         // Check for new connections
         for (mut stream, req) in self.conn_rx.try_iter() {
-            stream.set_nonblocking(true)?;
             let addr = stream.peer_addr()?;
 
             // Create connection on our side
@@ -196,9 +195,10 @@ impl Server {
             };
 
             // Write response
-            if let Err(e) = serialize_into(&mut stream, &resp) {
+            if let Err(e) = length_delimit_message(&resp, &mut stream) {
                 log::error!("Client connection failed; {:#}", e);
             } else {
+                stream.set_nonblocking(true)?;
                 // Remember connection on our side
                 self.conns.push(Connection {
                     msg_buf: AsyncBufferedReceiver::new(),

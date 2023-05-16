@@ -106,13 +106,16 @@ impl Client {
         loop {
             match recv_buf.read(&mut conn)? {
                 ReadState::Complete(data) => {
+                    dbg!(data.len());
                     response = deserialize(std::io::Cursor::new(data))?;
                     break;
                 }
-                other => {
-                    // TODO: Make this error message more helpful...
-                    bail!("Failed to connect to remote host");
+                ReadState::Incomplete => {
+                    // Don't busy the CPU too much while waiting for a response
+                    std::thread::yield_now();
                 }
+                ReadState::Disconnected => bail!("Remote host hung up"),
+                ReadState::Invalid => bail!("Invalid message from remote"),
             }
         }
 
@@ -187,7 +190,7 @@ impl Client {
                         self.engine.broadcast_local(msg);
                     }
 
-                    // Synchronize ECS state 
+                    // Synchronize ECS state
                     self.engine.ecs().import(
                         &Query::new().intersect::<Synchronized>(Access::Write),
                         recv.ecs,
