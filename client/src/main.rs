@@ -13,7 +13,7 @@ use cimvr_engine::interface::serial::{deserialize, serialize};
 use cimvr_engine::network::{
     length_delimit_message, AsyncBufferedReceiver, ClientToServer, ReadState, ServerToClient,
 };
-use cimvr_engine::Config;
+use cimvr_engine::{Config, calculate_digest};
 use cimvr_engine::Engine;
 use gamepad::GamepadPlugin;
 use plugin_cache::FileCache;
@@ -90,7 +90,7 @@ fn main() -> Result<()> {
 impl Client {
     pub fn new(gl: Arc<gl::Context>, addr: SocketAddr, username: String) -> Result<Self> {
         // Set up plugin cache
-        let plugin_cache = FileCache::new()?;
+        let mut plugin_cache = FileCache::new()?;
 
         // Request connection to remote host
         let mut conn = TcpStream::connect(addr)?;
@@ -131,7 +131,11 @@ impl Client {
                         .expect("Server did not send all plugins it was supposed to");
                     bytecode = std::fs::read(path)?;
                 }
-                PluginData::Download(data) => bytecode = data,
+                PluginData::Download(data) => {
+                    log::info!("Downloaded {}, saving...", name);
+                    plugin_cache.add_file(&name, &data)?;
+                    bytecode = data;
+                }
             }
 
             plugins.push((name, bytecode));

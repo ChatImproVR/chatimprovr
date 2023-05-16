@@ -195,6 +195,7 @@ impl Server {
             };
 
             // Write response
+            // TODO: Make this async - blocks whole server just to upload plugin data!
             if let Err(e) = length_delimit_message(&resp, &mut stream) {
                 log::error!("Client connection failed; {:#}", e);
             } else {

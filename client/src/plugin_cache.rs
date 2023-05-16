@@ -58,8 +58,8 @@ fn read_manifest(path: &Path) -> Result<Manifest> {
         let Some(fname) = path.file_name() else { continue };
         let fname = fname.to_str().ok_or(format_err!("Invalid cache name"))?;
 
-        if let Ok(name) = fname.parse() {
-            manifest.insert(name, path);
+        if let Ok(CacheName(digest, _)) = fname.parse() {
+            manifest.insert(digest, path);
         }
     }
 
