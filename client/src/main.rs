@@ -106,7 +106,6 @@ impl Client {
         loop {
             match recv_buf.read(&mut conn)? {
                 ReadState::Complete(data) => {
-                    dbg!(data.len());
                     response = deserialize(std::io::Cursor::new(data))?;
                     break;
                 }

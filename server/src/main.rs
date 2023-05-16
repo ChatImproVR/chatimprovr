@@ -159,11 +159,15 @@ impl Server {
             self.engine.reload(name.clone(), &bytecode)?;
 
             // Update bytecode on our side so that newly connected clients will have the current code
-            *self
+            let (entry_digest, entry_bytecode) = self
                 .bytecode
                 .iter_mut()
-                .find_map(|(_, plugin_name, code)| (plugin_name == &name).then(|| code))
-                .unwrap() = bytecode.clone();
+                .find_map(|(digest, plugin_name, code)| {
+                    (plugin_name == &name).then(|| (digest, code))
+                })
+                .unwrap();
+            *entry_digest = calculate_digest(&bytecode);
+            *entry_bytecode = bytecode.clone();
 
             // Remember which plugins were hotloaded, so that we can send code to
             // the clients!
