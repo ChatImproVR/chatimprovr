@@ -9,14 +9,15 @@ struct ClientState;
 
 make_app_state!(ClientState, ServerState);
 
-const LENGTH : f32 = 100.0;
+const POSITIVE_LENGTH : f32 = 5.0;
+const NEGATIVE_LENGTH: f32 = 2.0;
 
 fn x_positive_line() -> Mesh {
 
     // List of vertex positions and colors
     let vertices = vec![
         Vertex::new([0., 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([LENGTH, 0., 0.], [1.0, 0.0, 0.0]),
+        Vertex::new([POSITIVE_LENGTH, 0., 0.], [1.0, 0.0, 0.0]),
     ];
 
     // Each 2 indices (indexing into vertices) define a line
@@ -29,7 +30,7 @@ fn x_positive_line() -> Mesh {
 
 fn x_negative_dotted_line() -> Mesh {
 
-    let iteration = (LENGTH * 20.) as u32;
+    let iteration = (NEGATIVE_LENGTH * 20.) as u32;
 
     let vertices = (0..iteration).map(|i| Vertex::new([-0.05 * i as f32, 0., 0.], [1.0, 0.0, 0.0])).collect::<Vec<Vertex>>();
 
@@ -44,7 +45,7 @@ fn y_positive_line() -> Mesh {
     // List of vertex positions and colors
     let vertices = vec![
         Vertex::new([0., 0., 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., LENGTH, 0.], [0.0, 1.0, 0.0]),
+        Vertex::new([0., POSITIVE_LENGTH, 0.], [0.0, 1.0, 0.0]),
     ];
 
     // Each 2 indices (indexing into vertices) define a line
@@ -57,7 +58,7 @@ fn y_positive_line() -> Mesh {
 
 fn y_negative_dotted_line() -> Mesh {
 
-    let iteration = (LENGTH * 20.) as u32;
+    let iteration = (NEGATIVE_LENGTH * 20.) as u32;
 
     let vertices = (0..iteration).map(|i| Vertex::new([0., -0.05 * i as f32, 0.], [0.0, 1.0, 0.0])).collect::<Vec<Vertex>>();
 
@@ -71,7 +72,7 @@ fn z_positive_line() -> Mesh {
     // List of vertex positions and colors
     let vertices = vec![
         Vertex::new([0., 0., 0.], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., LENGTH], [0.0, 0.0, 1.0]),
+        Vertex::new([0., 0., POSITIVE_LENGTH], [0.0, 0.0, 1.0]),
     ];
 
     // Each 2 indices (indexing into vertices) define a line
@@ -84,7 +85,7 @@ fn z_positive_line() -> Mesh {
 
 fn z_negative_dotted_line() -> Mesh {
 
-    let iteration = (LENGTH * 20.) as u32;
+    let iteration = (NEGATIVE_LENGTH * 20.) as u32;
 
     let vertices = (0..iteration).map(|i| Vertex::new([0., 0., -0.05 * i as f32], [0.0, 0.0, 1.0])).collect::<Vec<Vertex>>();
 
