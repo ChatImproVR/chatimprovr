@@ -26,6 +26,7 @@ members = [
     "example_plugins/parenting",
     "example_plugins/parenting_demo",
     "example_plugins/xyz_reference",
+    "example_plugins/obj-axes",
 ]
 
 # Causes a build issue with OpenXR if included in workspace
