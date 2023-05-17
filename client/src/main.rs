@@ -44,7 +44,7 @@ use structopt::StructOpt;
 pub struct Opt {
     /// Remote host address, defaults to local server
     #[structopt(short, long, default_value = "127.0.0.1:5031")]
-    pub connect: SocketAddr,
+    pub connect: String,
 
     /// Whether to use VR
     #[structopt(long)]
@@ -88,7 +88,7 @@ fn main() -> Result<()> {
 // code uplication!
 
 impl Client {
-    pub fn new(gl: Arc<gl::Context>, addr: SocketAddr, username: String) -> Result<Self> {
+    pub fn new(gl: Arc<gl::Context>, addr: String, username: String) -> Result<Self> {
         // Set up plugin cache
         let mut plugin_cache = FileCache::new()?;
 

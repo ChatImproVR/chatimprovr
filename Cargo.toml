@@ -25,6 +25,7 @@ members = [
     "example_plugins/camera2d",
     "example_plugins/parenting",
     "example_plugins/parenting_demo",
+    "example_plugins/xyz_reference",
 ]
 
 # Causes a build issue with OpenXR if included in workspace
