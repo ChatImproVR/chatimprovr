@@ -47,6 +47,38 @@ pub fn mainloop(args: Opt) -> Result<()> {
                 glutin_ctx.window().request_redraw();
             }
             Event::RedrawRequested(_) => {
+                // Login page
+                if client.is_none() {
+                    egui_glow.run(glutin_ctx.window(), |ctx| {
+                        egui::CentralPanel::default().show(ctx, |ui| {
+                            ui.label("ChatImproVR login:");
+
+                            ui.horizontal(|ui| {
+                                ui.label("Address: ");
+                                ui.text_edit_singleline(&mut input_addr);
+                                ui.add(
+                                    DragValue::new(&mut input_port)
+                                        .prefix("Port: ")
+                                        .clamp_range(1..=u16::MAX as _),
+                                );
+                            });
+
+                            ui.horizontal(|ui| {
+                                ui.label("Username: ");
+                                ui.text_edit_singleline(&mut input_username);
+                            });
+
+                            if ui.button("Connect").clicked() {
+                                let full_addr = format!("{input_addr}:{input_port}");
+                                log::info!("Logging into {} as {}", full_addr, input_username);
+                                let c = Client::new(gl.clone(), full_addr, input_username.clone())
+                                    .expect("Failed to create client");
+                                client = Some(c);
+                            }
+                        });
+                    });
+                }
+
                 if let Some(client) = &mut client {
                     // Download messages from server
                     client.download().expect("Message download");
@@ -75,37 +107,6 @@ pub fn mainloop(args: Opt) -> Result<()> {
                     client
                         .render_frame(Mat4::IDENTITY, 0)
                         .expect("Frame render");
-                }
-
-                // Login page
-                if client.is_none() {
-                    egui_glow.run(glutin_ctx.window(), |ctx| {
-                        egui::CentralPanel::default().show(ctx, |ui| {
-                            ui.label("ChatImproVR login:");
-
-                            ui.horizontal(|ui| {
-                                ui.label("Address: ");
-                                ui.text_edit_singleline(&mut input_addr);
-                                ui.add(
-                                    DragValue::new(&mut input_port)
-                                        .prefix("Port: ")
-                                        .clamp_range(1..=u16::MAX as _),
-                                );
-                            });
-
-                            ui.horizontal(|ui| {
-                                ui.label("Username: ");
-                                ui.text_edit_singleline(&mut input_username);
-                            });
-
-                            if ui.button("Connect").clicked() {
-                                let full_addr = format!("{input_addr}:{input_port}");
-                                log::info!("Logging into {} as {}", full_addr, input_username);
-                                let c = Client::new(gl.clone(), full_addr, input_username.clone())                                   .expect("Failed to create client");
-                                client = Some(c);
-                            }
-                        });
-                    });
                 }
 
                 // Render UI
