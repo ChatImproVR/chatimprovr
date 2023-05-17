@@ -3,6 +3,7 @@ use crate::{Client, Opt};
 use anyhow::Result;
 use cimvr_common::glam::Mat4;
 use cimvr_engine::interface::system::Stage;
+use egui::DragValue;
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
 use std::sync::Arc;
@@ -33,7 +34,10 @@ pub fn mainloop(args: Opt) -> Result<()> {
     let mut input = DesktopInputHandler::new();
 
     // Setup client code
-    let mut client = Client::new(gl, args.connect, args.username.unwrap())?;
+    let mut client: Option<Client> = None; //Client::new(gl, args.connect, args.username.unwrap())?;
+    let mut input_username = "Anon".to_string();
+    let mut input_port = 5031;
+    let mut input_addr = "127.0.0.1".to_string();
 
     // Run event loop
     event_loop.run(move |event, _, control_flow| {
@@ -43,45 +47,63 @@ pub fn mainloop(args: Opt) -> Result<()> {
                 glutin_ctx.window().request_redraw();
             }
             Event::RedrawRequested(_) => {
-                // Download messages from server
-                client.download().expect("Message download");
+                if let Some(client) = &mut client {
+                    // Download messages from server
+                    client.download().expect("Message download");
 
-                // Send input history
-                input.get_history(client.engine());
-                let gamepad_state = client.gamepad.update();
-                client.engine().send(gamepad_state);
+                    // Send input history
+                    input.get_history(client.engine());
+                    let gamepad_state = client.gamepad.update();
+                    client.engine().send(gamepad_state);
 
-                // Pre update stage
-                client
-                    .engine()
-                    .dispatch(Stage::PreUpdate)
-                    .expect("Frame pre-update");
+                    // Pre update stage
+                    client
+                        .engine()
+                        .dispatch(Stage::PreUpdate)
+                        .expect("Frame pre-update");
 
-                // Update stage
-                client
-                    .engine()
-                    .dispatch(Stage::Update)
-                    .expect("Frame udpate");
+                    // Update stage
+                    client
+                        .engine()
+                        .dispatch(Stage::Update)
+                        .expect("Frame udpate");
 
-                // Collect UI input
-                egui_glow.run(glutin_ctx.window(), |ctx| client.update_ui(ctx));
+                    // Collect UI input
+                    egui_glow.run(glutin_ctx.window(), |ctx| client.update_ui(ctx));
 
-                // Render frame
-                client
-                    .render_frame(Mat4::IDENTITY, 0)
-                    .expect("Frame render");
+                    // Render frame
+                    client
+                        .render_frame(Mat4::IDENTITY, 0)
+                        .expect("Frame render");
+                }
+
+                // Login page
+                if client.is_none() {
+                    egui_glow.run(glutin_ctx.window(), |ctx| {
+                        egui::CentralPanel::default().show(ctx, |ui| {
+                            ui.label("Among us");
+                            if ui.button("Connect").clicked() {
+                                let full_addr = format!("{input_addr}:{input_port}");
+                                log::info!("Logging into {} as {}", full_addr, input_username);
+                            }
+                            ui.add(DragValue::new(&mut input_port).clamp_range(1..=u16::MAX as _));
+                        });
+                    });
+                }
 
                 // Render UI
                 egui_glow.paint(glutin_ctx.window());
 
-                // Post update stage
-                client
-                    .engine()
-                    .dispatch(Stage::PostUpdate)
-                    .expect("Frame post-update");
+                if let Some(client) = &mut client {
+                    // Post update stage
+                    client
+                        .engine()
+                        .dispatch(Stage::PostUpdate)
+                        .expect("Frame post-update");
 
-                // Upload messages to server
-                client.upload().expect("Message upload");
+                    // Upload messages to server
+                    client.upload().expect("Message upload");
+                }
 
                 glutin_ctx.swap_buffers().unwrap();
             }
@@ -92,7 +114,9 @@ pub fn mainloop(args: Opt) -> Result<()> {
 
                 match event {
                     WindowEvent::Resized(ph) => {
-                        client.set_resolution(ph.width, ph.height);
+                        if let Some(client) = &mut client {
+                            client.set_resolution(ph.width, ph.height);
+                        }
                         glutin_ctx.resize(*ph);
                     }
                     WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,

@@ -43,8 +43,8 @@ use structopt::StructOpt;
 )]
 pub struct Opt {
     /// Remote host address, defaults to local server
-    #[structopt(short, long, default_value = "127.0.0.1:5031")]
-    pub connect: String,
+    #[structopt(short, long)]
+    pub connect: Option<String>,
 
     /// Whether to use VR
     #[structopt(long)]
