@@ -3,7 +3,7 @@ use crate::{Client, Opt};
 use anyhow::Result;
 use cimvr_common::glam::Mat4;
 use cimvr_engine::interface::system::Stage;
-use egui::DragValue;
+use egui::{DragValue, Label, RichText, Color32};
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
 use std::sync::Arc;
@@ -38,6 +38,7 @@ pub fn mainloop(args: Opt) -> Result<()> {
     let mut input_username = "Anon".to_string();
     let mut input_port = 5031;
     let mut input_addr = "127.0.0.1".to_string();
+    let mut err_text = "".to_string();
 
     // Run event loop
     event_loop.run(move |event, _, control_flow| {
@@ -71,10 +72,13 @@ pub fn mainloop(args: Opt) -> Result<()> {
                             if ui.button("Connect").clicked() {
                                 let full_addr = format!("{input_addr}:{input_port}");
                                 log::info!("Logging into {} as {}", full_addr, input_username);
-                                let c = Client::new(gl.clone(), full_addr, input_username.clone())
-                                    .expect("Failed to create client");
-                                client = Some(c);
+                                let c = Client::new(gl.clone(), full_addr, input_username.clone());
+                                match c {
+                                    Ok(c) => client = Some(c),
+                                    Err(e) => err_text = format!("Error: {:#}", e),
+                                }
                             }
+                            ui.label(RichText::new(&err_text).color(Color32::RED));
                         });
                     });
                 }
