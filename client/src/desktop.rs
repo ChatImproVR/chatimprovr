@@ -1,11 +1,13 @@
 use crate::desktop_input::DesktopInputHandler;
-use crate::{Client, Opt};
+use crate::{project_dirs, Client, Opt};
 use anyhow::Result;
 use cimvr_common::glam::Mat4;
 use cimvr_engine::interface::system::Stage;
-use egui::{DragValue, Label, RichText, Color32};
+use directories::ProjectDirs;
+use egui::{Color32, DragValue, Label, RichText};
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 pub fn mainloop(args: Opt) -> Result<()> {
@@ -35,9 +37,7 @@ pub fn mainloop(args: Opt) -> Result<()> {
 
     // Setup client code
     let mut client: Option<Client> = None;
-    let mut input_username = "Anon".to_string();
-    let mut input_port = 5031;
-    let mut input_addr = "127.0.0.1".to_string();
+    let mut login_info = LoginInfo::load()?;
     let mut err_text = "".to_string();
 
     // Run event loop
@@ -56,9 +56,9 @@ pub fn mainloop(args: Opt) -> Result<()> {
 
                             ui.horizontal(|ui| {
                                 ui.label("Address: ");
-                                ui.text_edit_singleline(&mut input_addr);
+                                ui.text_edit_singleline(&mut login_info.address);
                                 ui.add(
-                                    DragValue::new(&mut input_port)
+                                    DragValue::new(&mut login_info.port)
                                         .prefix("Port: ")
                                         .clamp_range(1..=u16::MAX as _),
                                 );
@@ -66,15 +66,20 @@ pub fn mainloop(args: Opt) -> Result<()> {
 
                             ui.horizontal(|ui| {
                                 ui.label("Username: ");
-                                ui.text_edit_singleline(&mut input_username);
+                                ui.text_edit_singleline(&mut login_info.username);
                             });
 
                             if ui.button("Connect").clicked() {
-                                let full_addr = format!("{input_addr}:{input_port}");
-                                log::info!("Logging into {} as {}", full_addr, input_username);
-                                let c = Client::new(gl.clone(), full_addr, input_username.clone());
+                                let full_addr =
+                                    format!("{}:{}", login_info.address, login_info.port);
+                                log::info!("Logging into {} as {}", full_addr, login_info.username);
+                                let c =
+                                    Client::new(gl.clone(), full_addr, login_info.username.clone());
                                 match c {
-                                    Ok(c) => client = Some(c),
+                                    Ok(c) => {
+                                        client = Some(c);
+                                        login_info.save();
+                                    }
                                     Err(e) => err_text = format!("Error: {:#}", e),
                                 }
                             }
@@ -151,4 +156,55 @@ pub fn mainloop(args: Opt) -> Result<()> {
             _ => (),
         }
     })
+}
+
+struct LoginInfo {
+    address: String,
+    port: u16,
+    username: String,
+}
+
+impl LoginInfo {
+    fn config_path() -> PathBuf {
+        let proj = project_dirs();
+        if !proj.config_dir().is_dir() {
+            std::fs::create_dir_all(proj.config_dir()).unwrap();
+        }
+        proj.config_dir().join("login.conf")
+    }
+
+    pub fn load() -> Result<Self> {
+        let config_path = Self::config_path();
+        if !config_path.is_file() {
+            Ok(Self::default())
+        } else {
+            let text = std::fs::read_to_string(config_path)?;
+            let mut lines = text.lines();
+            Ok(Self {
+                address: lines.next().unwrap().to_string(),
+                port: lines.next().unwrap().parse().unwrap(),
+                username: lines.next().unwrap().to_string(),
+            })
+        }
+    }
+
+    pub fn save(&self) -> Result<()> {
+        use std::fmt::Write;
+        let mut s = String::new();
+        writeln!(s, "{}", self.address)?;
+        writeln!(s, "{}", self.port)?;
+        writeln!(s, "{}", self.username)?;
+        std::fs::write(Self::config_path(), s)?;
+        Ok(())
+    }
+}
+
+impl Default for LoginInfo {
+    fn default() -> Self {
+        Self {
+            address: "127.0.0.1".to_string(),
+            port: 5031,
+            username: "Anon".to_string(),
+        }
+    }
 }

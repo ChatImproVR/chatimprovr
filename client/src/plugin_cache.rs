@@ -18,11 +18,7 @@ pub struct FileCache {
 
 impl FileCache {
     /// Load the file cache (cheap)
-    pub fn new() -> Result<Self> {
-        let proj_dirs = ProjectDirs::from("com", "ChatImproVR", "ChatImproVR")
-            .ok_or(format_err!("Failed to determine cache dir"))?;
-        let root = proj_dirs.cache_dir().to_path_buf();
-
+    pub fn new(root: PathBuf) -> Result<Self> {
         let manifest = read_manifest(&root)?;
 
         Ok(Self { root, manifest })

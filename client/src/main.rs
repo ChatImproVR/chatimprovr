@@ -15,6 +15,7 @@ use cimvr_engine::network::{
 };
 use cimvr_engine::{Config, calculate_digest};
 use cimvr_engine::Engine;
+use directories::ProjectDirs;
 use gamepad::GamepadPlugin;
 use plugin_cache::FileCache;
 use render::RenderPlugin;
@@ -90,7 +91,7 @@ fn main() -> Result<()> {
 impl Client {
     pub fn new(gl: Arc<gl::Context>, addr: String, username: String) -> Result<Self> {
         // Set up plugin cache
-        let mut plugin_cache = FileCache::new()?;
+        let mut plugin_cache = FileCache::new(project_dirs().cache_dir().into())?;
 
         // Request connection to remote host
         let mut conn = TcpStream::connect(addr)?;
@@ -229,6 +230,11 @@ impl Client {
     fn engine(&mut self) -> &mut Engine {
         &mut self.engine
     }
+}
+
+fn project_dirs() -> ProjectDirs {
+    ProjectDirs::from("com", "ChatImproVR", "ChatImproVR")
+        .expect("Failed to determine project dirs")
 }
 
 fn random_number() -> u64 {
