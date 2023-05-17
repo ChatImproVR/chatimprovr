@@ -29,34 +29,13 @@ fn x_positive_line() -> Mesh {
 
 fn x_negative_dotted_line() -> Mesh {
 
-    let vertices = vec![
-        Vertex::new([-0.05, 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([-0.1, 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([-0.15, 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([-0.2, 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([-0.25, 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([-0.3, 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([-0.35, 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([-0.4, 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([-0.45, 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([-0.5, 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([-0.55, 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([-0.6, 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([-0.65, 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([-0.7, 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([-0.75, 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([-0.8, 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([-0.85, 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([-0.9, 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([-0.95, 0., 0.], [1.0, 0.0, 0.0]),
-        Vertex::new([-1., 0., 0.], [1.0, 0.0, 0.0]),
-    ];
+    let iteration = (LENGTH * 20.) as u32;
 
-    let indices = vec![
-        0,1,2,3,4,5,6,7,8,9,10,11, 12,13,14,15,16,17,18,19
-    ];
+    let vertices = (0..iteration).map(|i| Vertex::new([-0.05 * i as f32, 0., 0.], [1.0, 0.0, 0.0])).collect::<Vec<Vertex>>();
 
-    Mesh { vertices, indices }
+    let indices = (0..iteration).collect();
+
+    Mesh { vertices, indices}
 
 }
 
@@ -78,34 +57,13 @@ fn y_positive_line() -> Mesh {
 
 fn y_negative_dotted_line() -> Mesh {
 
-    let vertices = vec![
-        Vertex::new([0., -0.05, 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., -0.1, 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., -0.15, 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., -0.2, 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., -0.25, 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., -0.3, 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., -0.35, 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., -0.4, 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., -0.45, 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., -0.5, 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., -0.55, 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., -0.6, 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., -0.65, 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., -0.7, 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., -0.75, 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., -0.8, 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., -0.85, 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., -0.9, 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., -0.95, 0.], [0.0, 1.0, 0.0]),
-        Vertex::new([0., -1., 0.], [0.0, 1.0, 0.0]),
-    ];
+    let iteration = (LENGTH * 20.) as u32;
 
-    let indices = vec![
-        0,1,2,3,4,5,6,7,8,9,10,11, 12,13,14,15,16,17,18,19
-    ];
+    let vertices = (0..iteration).map(|i| Vertex::new([0., -0.05 * i as f32, 0.], [0.0, 1.0, 0.0])).collect::<Vec<Vertex>>();
 
-    Mesh { vertices, indices }
+    let indices = (0..iteration).collect();
+
+    Mesh { vertices, indices}
 }
 
 fn z_positive_line() -> Mesh {
@@ -126,34 +84,13 @@ fn z_positive_line() -> Mesh {
 
 fn z_negative_dotted_line() -> Mesh {
 
-    let vertices = vec![
-        Vertex::new([0., 0., -0.05], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., -0.1], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., -0.15], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., -0.2], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., -0.25], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., -0.3], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., -0.35], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., -0.4], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., -0.45], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., -0.5], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., -0.55], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., -0.6], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., -0.65], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., -0.7], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., -0.75], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., -0.8], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., -0.85], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., -0.9], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., -0.95], [0.0, 0.0, 1.0]),
-        Vertex::new([0., 0., -1.], [0.0, 0.0, 1.0]),
-    ];
+    let iteration = (LENGTH * 20.) as u32;
 
-    let indices = vec![
-        0,1,2,3,4,5,6,7,8,9,10,11, 12,13,14,15,16,17,18,19
-    ];
+    let vertices = (0..iteration).map(|i| Vertex::new([0., 0., -0.05 * i as f32], [0.0, 0.0, 1.0])).collect::<Vec<Vertex>>();
 
-    Mesh { vertices, indices }
+    let indices = (0..iteration).collect();
+
+    Mesh { vertices, indices}
 }
 
 /// This handle uniquely identifies the mesh data between all clients, and the server.
