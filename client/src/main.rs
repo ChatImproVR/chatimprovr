@@ -40,7 +40,7 @@ use structopt::StructOpt;
 pub struct Opt {
     /// Remote host address, defaults to local server
     #[structopt(short, long, default_value = "127.0.0.1:5031")]
-    pub connect: SocketAddr,
+    pub connect: String,
 
     /// Plugins
     pub plugins: Vec<PathBuf>,
@@ -91,7 +91,7 @@ impl Client {
     pub fn new(
         gl: Arc<gl::Context>,
         plugins: &[PathBuf],
-        addr: SocketAddr,
+        addr: String,
         username: String,
     ) -> Result<Self> {
         // Connect to remote host
