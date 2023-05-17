@@ -34,7 +34,7 @@ pub fn mainloop(args: Opt) -> Result<()> {
     let mut input = DesktopInputHandler::new();
 
     // Setup client code
-    let mut client: Option<Client> = None; //Client::new(gl, args.connect, args.username.unwrap())?;
+    let mut client: Option<Client> = None;
     let mut input_username = "Anon".to_string();
     let mut input_port = 5031;
     let mut input_addr = "127.0.0.1".to_string();
@@ -101,6 +101,8 @@ pub fn mainloop(args: Opt) -> Result<()> {
                             if ui.button("Connect").clicked() {
                                 let full_addr = format!("{input_addr}:{input_port}");
                                 log::info!("Logging into {} as {}", full_addr, input_username);
+                                let c = Client::new(gl.clone(), full_addr, input_username.clone())                                   .expect("Failed to create client");
+                                client = Some(c);
                             }
                         });
                     });
