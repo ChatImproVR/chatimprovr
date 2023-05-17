@@ -81,12 +81,27 @@ pub fn mainloop(args: Opt) -> Result<()> {
                 if client.is_none() {
                     egui_glow.run(glutin_ctx.window(), |ctx| {
                         egui::CentralPanel::default().show(ctx, |ui| {
-                            ui.label("Among us");
+                            ui.label("ChatImproVR login:");
+
+                            ui.horizontal(|ui| {
+                                ui.label("Address: ");
+                                ui.text_edit_singleline(&mut input_addr);
+                                ui.add(
+                                    DragValue::new(&mut input_port)
+                                        .prefix("Port: ")
+                                        .clamp_range(1..=u16::MAX as _),
+                                );
+                            });
+
+                            ui.horizontal(|ui| {
+                                ui.label("Username: ");
+                                ui.text_edit_singleline(&mut input_username);
+                            });
+
                             if ui.button("Connect").clicked() {
                                 let full_addr = format!("{input_addr}:{input_port}");
                                 log::info!("Logging into {} as {}", full_addr, input_username);
                             }
-                            ui.add(DragValue::new(&mut input_port).clamp_range(1..=u16::MAX as _));
                         });
                     });
                 }
