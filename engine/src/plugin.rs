@@ -47,10 +47,10 @@ impl Plugin {
 
         for imp in module.imports() {
             match (imp.name(), imp.ty()) {
-                ("_print", wasmtime::ExternType::Func(_)) => {
+                ("_cimvr_print", wasmtime::ExternType::Func(_)) => {
                     imports.push(print_fn.into());
                 }
-                ("_random", wasmtime::ExternType::Func(_)) => {
+                ("_cimvr_random", wasmtime::ExternType::Func(_)) => {
                     imports.push(random_fn.into());
                 }
                 (other, wasmtime::ExternType::Func(ty)) => {
@@ -68,9 +68,9 @@ impl Plugin {
         let mem = instance.get_memory(&mut store, "memory").unwrap();
 
         let dispatch_fn = instance
-            .get_typed_func::<(), u32>(&mut store, "_dispatch")
+            .get_typed_func::<(), u32>(&mut store, "_cimvr_dispatch")
             .context("Getting dispatch function. Did you forget to use make_app_state!()? RTFM!")?;
-        let reserve_fn = instance.get_typed_func::<u32, u32>(&mut store, "_reserve")?;
+        let reserve_fn = instance.get_typed_func::<u32, u32>(&mut store, "_cimvr_reserve")?;
 
         Ok(Self {
             random_fn,

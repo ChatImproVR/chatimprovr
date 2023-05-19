@@ -83,14 +83,14 @@ macro_rules! make_app_state {
 
             /// Reserve internal memory for external writes
             #[no_mangle]
-            fn _reserve(bytes: u32) -> *mut u8 {
+            fn _cimvr_reserve(bytes: u32) -> u32 {
                 // TODO: What if we fail?
-                CTX.lock().unwrap().reserve(bytes)
+                CTX.lock().unwrap().reserve(bytes) as _
             }
 
             /// Run internal code, returning pointer to the output buffer
             #[no_mangle]
-            fn _dispatch() -> *mut u8 {
+            fn _cimvr_dispatch() -> *mut u8 {
                 CTX.lock().unwrap().dispatch()
             }
         }
@@ -219,7 +219,7 @@ impl<U: UserState> PluginState<U> {
 impl<C: UserState, S: UserState> Context<C, S> {
     /// Creates context, but don't set up usercode yet since we're not in _dispatch(),
     /// and that means that the engine would never see our output.
-    /// Called from _reserve() oddly enough, because this structure manages memory.
+    /// Called from _cimvr_reserve() oddly enough, because this structure manages memory.
     pub fn new() -> Self {
         setup_panic();
 

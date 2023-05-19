@@ -1,12 +1,12 @@
 extern "C" {
     #[cfg(target_family = "wasm")]
-    fn _print(ptr: *const u8, len: usize);
+    fn _cimvr_print(ptr: *const u8, len: usize);
 }
 
 pub fn _print_str(s: &str) {
     #[cfg(target_family = "wasm")]
     unsafe {
-        _print(s.as_ptr(), s.len());
+        _cimvr_print(s.as_ptr(), s.len());
     }
 
     #[cfg(not(target_family = "wasm"))]
