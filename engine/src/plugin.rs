@@ -44,6 +44,7 @@ impl Plugin {
         let mut imports: Vec<Extern> = vec![];
         let warn = "Did you try to use an IO function from outside the sandbox like File::open()?\n\
                     You may only use io functions supplied by the host! Maybe you want include_bytes!()";
+
         for imp in module.imports() {
             match (imp.name(), imp.ty()) {
                 ("_print", wasmtime::ExternType::Func(_)) => {
@@ -52,7 +53,13 @@ impl Plugin {
                 ("_random", wasmtime::ExternType::Func(_)) => {
                     imports.push(random_fn.into());
                 }
-                _ => log::warn!("{}\nUnhandled import {:#?}", warn, imp),
+                (other, wasmtime::ExternType::Func(ty)) => {
+                    log::info!("Faking {other}");
+                    let func = Func::new(&mut store, ty, |_, _, _| Ok(()));
+                    imports.push(func.into());
+                }
+                _ => panic!("{:?}", imp), //log::warn!("{}\nUnhandled import {:#?}", warn, imp),
+                                          //_ => todo!(),
             }
         }
 
