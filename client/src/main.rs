@@ -29,6 +29,7 @@ mod desktop_input;
 mod gamepad;
 mod render;
 mod ui;
+mod glutin_window_ctx;
 
 use structopt::StructOpt;
 

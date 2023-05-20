@@ -3,14 +3,15 @@ use crate::{Client, Opt};
 use anyhow::Result;
 use cimvr_common::glam::Mat4;
 use cimvr_engine::interface::system::Stage;
-use glutin::event::{Event, WindowEvent};
-use glutin::event_loop::ControlFlow;
+use egui_winit::winit;
+use winit::event::{Event, WindowEvent};
+use winit::event_loop::ControlFlow;
 use std::sync::Arc;
 
 pub fn mainloop(args: Opt) -> Result<()> {
     // Set up window
-    let event_loop = glutin::event_loop::EventLoop::new();
-    let window_builder = glutin::window::WindowBuilder::new().with_title("ChatImproVR");
+    let event_loop = winit::event_loop::EventLoop::new();
+    let window_builder = winit::window::WindowBuilder::new().with_title("ChatImproVR");
 
     // Set up OpenGL
     let glutin_ctx = unsafe {
@@ -20,6 +21,17 @@ pub fn mainloop(args: Opt) -> Result<()> {
             .make_current()
             .unwrap()
     };
+
+     let glutin_window_context = unsafe { GlutinWindowContext::new(event_loop) };
+    let gl = unsafe {
+        glow::Context::from_loader_function(|s| {
+            let s = std::ffi::CString::new(s)
+                .expect("failed to construct C string from string for gl proc address");
+
+            glutin_window_context.get_proc_address(&s)
+        })
+    };
+
 
     let gl = unsafe {
         gl::Context::from_loader_function(|s| glutin_ctx.get_proc_address(s) as *const _)

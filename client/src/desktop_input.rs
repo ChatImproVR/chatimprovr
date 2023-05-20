@@ -1,5 +1,6 @@
 use cimvr_common::desktop::*;
 use cimvr_engine::Engine;
+use egui_winit::winit;
 
 /// Input handler for Desktop platform
 pub struct DesktopInputHandler {
@@ -21,11 +22,11 @@ impl DesktopInputHandler {
     }
 
     /// Handle a Winit event
-    pub fn handle_winit_event(&mut self, event: &glutin::event::WindowEvent) {
+    pub fn handle_winit_event(&mut self, event: &winit::event::WindowEvent) {
         match event {
             #[allow(deprecated)] // lol
-            glutin::event::WindowEvent::KeyboardInput { input, .. } => {
-                if let glutin::event::KeyboardInput {
+            winit::event::WindowEvent::KeyboardInput { input, .. } => {
+                if let winit::event::KeyboardInput {
                     state,
                     virtual_keycode: Some(key),
                     ..
@@ -38,24 +39,24 @@ impl DesktopInputHandler {
                     self.events.push(InputEvent::Keyboard(event));
                 }
             }
-            glutin::event::WindowEvent::ModifiersChanged(modifiers) => {
+            winit::event::WindowEvent::ModifiersChanged(modifiers) => {
                 self.events
                     .push(InputEvent::Keyboard(KeyboardEvent::Modifiers(
                         map_modifiers(*modifiers),
                     )))
             }
-            glutin::event::WindowEvent::CursorMoved { position, .. } => {
+            winit::event::WindowEvent::CursorMoved { position, .. } => {
                 let event = MouseEvent::Moved(position.x as f32, position.y as f32);
                 self.events.push(InputEvent::Mouse(event));
             }
-            glutin::event::WindowEvent::CursorEntered { .. } => {
+            winit::event::WindowEvent::CursorEntered { .. } => {
                 self.events.push(InputEvent::Mouse(MouseEvent::Entered))
             }
-            glutin::event::WindowEvent::CursorLeft { .. } => {
+            winit::event::WindowEvent::CursorLeft { .. } => {
                 self.events.push(InputEvent::Mouse(MouseEvent::Exited))
             }
             #[allow(deprecated)] // lol, uwu
-            glutin::event::WindowEvent::MouseInput {
+            winit::event::WindowEvent::MouseInput {
                 state,
                 button,
                 modifiers,
@@ -68,17 +69,17 @@ impl DesktopInputHandler {
                 );
                 self.events.push(InputEvent::Mouse(event));
             }
-            glutin::event::WindowEvent::MouseWheel { delta, .. } => match *delta {
-                glutin::event::MouseScrollDelta::LineDelta(x, y) => self
+            winit::event::WindowEvent::MouseWheel { delta, .. } => match *delta {
+                winit::event::MouseScrollDelta::LineDelta(x, y) => self
                     .events
                     .push(InputEvent::Mouse(MouseEvent::Scrolled(x, y))),
-                glutin::event::MouseScrollDelta::PixelDelta(physical_pos) => {
+                winit::event::MouseScrollDelta::PixelDelta(physical_pos) => {
                     let (x, y) = physical_pos.into();
                     self.events
                         .push(InputEvent::Mouse(MouseEvent::Scrolled(x, y)));
                 }
             },
-            glutin::event::WindowEvent::Resized(sz) => {
+            winit::event::WindowEvent::Resized(sz) => {
                 self.events.push(InputEvent::Window(WindowEvent::Resized {
                     width: sz.width,
                     height: sz.height,
@@ -89,8 +90,8 @@ impl DesktopInputHandler {
     }
 }
 
-fn map_mouse_button(button: glutin::event::MouseButton) -> MouseButton {
-    use glutin::event::MouseButton as Gm;
+fn map_mouse_button(button: winit::event::MouseButton) -> MouseButton {
+    use winit::event::MouseButton as Gm;
     match button {
         Gm::Left => MouseButton::Left,
         Gm::Middle => MouseButton::Middle,
@@ -99,7 +100,7 @@ fn map_mouse_button(button: glutin::event::MouseButton) -> MouseButton {
     }
 }
 
-fn map_modifiers(state: glutin::event::ModifiersState) -> ModifiersState {
+fn map_modifiers(state: winit::event::ModifiersState) -> ModifiersState {
     ModifiersState {
         shift: state.shift(),
         ctrl: state.ctrl(),
@@ -108,15 +109,15 @@ fn map_modifiers(state: glutin::event::ModifiersState) -> ModifiersState {
     }
 }
 
-fn map_elem_state(state: glutin::event::ElementState) -> ElementState {
+fn map_elem_state(state: winit::event::ElementState) -> ElementState {
     match state {
-        glutin::event::ElementState::Pressed => ElementState::Pressed,
-        glutin::event::ElementState::Released => ElementState::Released,
+        winit::event::ElementState::Pressed => ElementState::Pressed,
+        winit::event::ElementState::Released => ElementState::Released,
     }
 }
 
-fn map_keycode(key: glutin::event::VirtualKeyCode) -> KeyCode {
-    use glutin::event::VirtualKeyCode as Gk;
+fn map_keycode(key: winit::event::VirtualKeyCode) -> KeyCode {
+    use winit::event::VirtualKeyCode as Gk;
     match key {
         Gk::Key1 => KeyCode::Key1,
         Gk::Key2 => KeyCode::Key2,
