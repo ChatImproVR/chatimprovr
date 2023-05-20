@@ -115,11 +115,11 @@ impl GlutinWindowContext {
         }
     }
 
-    fn window(&self) -> &winit::window::Window {
+    pub fn window(&self) -> &winit::window::Window {
         &self.window
     }
 
-    fn resize(&self, physical_size: winit::dpi::PhysicalSize<u32>) {
+    pub fn resize(&self, physical_size: winit::dpi::PhysicalSize<u32>) {
         use glutin::surface::GlSurface;
         self.gl_surface.resize(
             &self.gl_context,
@@ -128,18 +128,18 @@ impl GlutinWindowContext {
         );
     }
 
-    fn swap_buffers(&self) -> glutin::error::Result<()> {
+    pub fn swap_buffers(&self) -> glutin::error::Result<()> {
         use glutin::surface::GlSurface;
         self.gl_surface.swap_buffers(&self.gl_context)
     }
 
-    fn get_proc_address(&self, addr: &std::ffi::CStr) -> *const std::ffi::c_void {
+    pub fn get_proc_address(&self, addr: &std::ffi::CStr) -> *const std::ffi::c_void {
         use glutin::display::GlDisplay;
         self.gl_display.get_proc_address(addr)
     }
 }
 
-fn create_display(
+pub fn create_display(
     event_loop: &winit::event_loop::EventLoopWindowTarget<()>,
 ) -> (GlutinWindowContext, glow::Context) {
     let glutin_window_context = unsafe { GlutinWindowContext::new(event_loop) };
