@@ -10,7 +10,7 @@ use cimvr_engine::{
     },
     Engine,
 };
-use egui::{Context, DragValue, ScrollArea, Ui, WidgetText};
+use egui::{Context, DragValue, ScrollArea, Ui, WidgetText, RichText};
 use std::collections::{HashMap, HashSet};
 
 pub struct ComponentUi {
@@ -39,7 +39,13 @@ impl ComponentUi {
             for id in &sorted_keys {
                 let has_id = self.selected.contains(id);
                 let marker = if has_id { "[-] " } else { "" };
-                let button = ui.button(format!("{}{}", marker, id.id));
+
+                let mut button_text = RichText::new(format!("{}{}", marker, id.id));
+                if has_id {
+                    button_text = button_text.strong();
+                }
+
+                let button = ui.button(button_text );
 
                 if button.clicked() {
                     if has_id {
