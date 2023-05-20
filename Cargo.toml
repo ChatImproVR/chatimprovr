@@ -21,6 +21,7 @@ members = [
     "example_plugins/chat",
     "example_plugins/vr-teleport",
     "obj_loader",
+    "example_plugins/dyn_edit_perms",
     "example_plugins/multiple_queries",
     "example_plugins/camera2d",
     "example_plugins/parenting",

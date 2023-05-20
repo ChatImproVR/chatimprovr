@@ -9,11 +9,10 @@ struct ClientState;
 
 make_app_state!(ClientState, ServerState);
 
-const POSITIVE_LENGTH : f32 = 5.0;
+const POSITIVE_LENGTH: f32 = 5.0;
 const NEGATIVE_LENGTH: f32 = 2.0;
 
 fn x_positive_line() -> Mesh {
-
     // List of vertex positions and colors
     let vertices = vec![
         Vertex::new([0., 0., 0.], [1.0, 0.0, 0.0]),
@@ -21,27 +20,24 @@ fn x_positive_line() -> Mesh {
     ];
 
     // Each 2 indices (indexing into vertices) define a line
-    let indices = vec![
-        0,1
-    ];
+    let indices = vec![0, 1];
 
     Mesh { vertices, indices }
 }
 
 fn x_negative_dotted_line() -> Mesh {
-
     let iteration = (NEGATIVE_LENGTH * 20.) as u32;
 
-    let vertices = (0..iteration).map(|i| Vertex::new([-0.05 * i as f32, 0., 0.], [1.0, 0.0, 0.0])).collect::<Vec<Vertex>>();
+    let vertices = (0..iteration)
+        .map(|i| Vertex::new([-0.05 * i as f32, 0., 0.], [1.0, 0.0, 0.0]))
+        .collect::<Vec<Vertex>>();
 
     let indices = (0..iteration).collect();
 
-    Mesh { vertices, indices}
-
+    Mesh { vertices, indices }
 }
 
 fn y_positive_line() -> Mesh {
-
     // List of vertex positions and colors
     let vertices = vec![
         Vertex::new([0., 0., 0.], [0.0, 1.0, 0.0]),
@@ -49,26 +45,24 @@ fn y_positive_line() -> Mesh {
     ];
 
     // Each 2 indices (indexing into vertices) define a line
-    let indices = vec![
-        0,1
-    ];
+    let indices = vec![0, 1];
 
     Mesh { vertices, indices }
 }
 
 fn y_negative_dotted_line() -> Mesh {
-
     let iteration = (NEGATIVE_LENGTH * 20.) as u32;
 
-    let vertices = (0..iteration).map(|i| Vertex::new([0., -0.05 * i as f32, 0.], [0.0, 1.0, 0.0])).collect::<Vec<Vertex>>();
+    let vertices = (0..iteration)
+        .map(|i| Vertex::new([0., -0.05 * i as f32, 0.], [0.0, 1.0, 0.0]))
+        .collect::<Vec<Vertex>>();
 
     let indices = (0..iteration).collect();
 
-    Mesh { vertices, indices}
+    Mesh { vertices, indices }
 }
 
 fn z_positive_line() -> Mesh {
-
     // List of vertex positions and colors
     let vertices = vec![
         Vertex::new([0., 0., 0.], [0.0, 0.0, 1.0]),
@@ -76,22 +70,21 @@ fn z_positive_line() -> Mesh {
     ];
 
     // Each 2 indices (indexing into vertices) define a line
-    let indices = vec![
-        0,1
-    ];
+    let indices = vec![0, 1];
 
     Mesh { vertices, indices }
 }
 
 fn z_negative_dotted_line() -> Mesh {
-
     let iteration = (NEGATIVE_LENGTH * 20.) as u32;
 
-    let vertices = (0..iteration).map(|i| Vertex::new([0., 0., -0.05 * i as f32], [0.0, 0.0, 1.0])).collect::<Vec<Vertex>>();
+    let vertices = (0..iteration)
+        .map(|i| Vertex::new([0., 0., -0.05 * i as f32], [0.0, 0.0, 1.0]))
+        .collect::<Vec<Vertex>>();
 
     let indices = (0..iteration).collect();
 
-    Mesh { vertices, indices}
+    Mesh { vertices, indices }
 }
 
 /// This handle uniquely identifies the mesh data between all clients, and the server.
@@ -104,7 +97,6 @@ const Y_POSITIVE: MeshHandle = MeshHandle::new(pkg_namespace!("Y_positive"));
 const Y_NEGATIVE: MeshHandle = MeshHandle::new(pkg_namespace!("Y_negative"));
 const Z_POSITIVE: MeshHandle = MeshHandle::new(pkg_namespace!("Z_positive"));
 const Z_NEGATIVE: MeshHandle = MeshHandle::new(pkg_namespace!("Z_negative"));
-
 
 impl UserState for ClientState {
     fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {

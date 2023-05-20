@@ -275,6 +275,7 @@ version = "0.1.0"
 dependencies = [
  "bincode",
  "cimvr_derive_macros",
+ "kobble",
  "log",
  "once_cell",
  "serde",
@@ -1407,6 +1408,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 
 [[package]]
+name = "kobble"
+version = "0.1.0"
+source = "git+https://github.com/ChatImproVR/Kobble.git#51c168dac16348f000c56b985cdcfe281c3074b8"
+dependencies = [
+ "once_cell",
+ "serde",
+]
+
+[[package]]
 name = "kqueue"
 version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1931,9 +1941,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.56"
+version = "1.0.58"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b63bdb0cd06f1f4dedf69b254734f9b45af66e4a031e42a7480257d9898b435"
+checksum = "fa1fb82fc0c281dd9671101b66b771ebbe1eaf967b96ac8740dcba4b70005ca8"
 dependencies = [
  "unicode-ident",
 ]

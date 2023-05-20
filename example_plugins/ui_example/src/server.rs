@@ -30,7 +30,6 @@ impl ServerState {
                 // The default shader uses RenderExtra to set the color
                 let mut extra = [0.; 4 * 4];
                 extra[..3].copy_from_slice(&rgb);
-                // This value must be 1 to get the color to show. See the default vertex shader!
                 extra[3] = 1.;
                 io.add_component(entity, RenderExtra(extra));
             }

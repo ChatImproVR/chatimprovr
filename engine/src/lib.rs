@@ -1,8 +1,10 @@
+pub mod dyn_edit;
 pub mod ecs;
 pub mod hotload;
 pub mod network;
 pub mod plugin;
 pub mod timing;
+use dyn_edit::DynamicEditor;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::PathBuf};
 use timing::Timing;
@@ -43,6 +45,8 @@ pub struct Engine {
     cfg: Config,
     /// Manages FrameTime
     time: Timing,
+    /// Dynamic value synchronization
+    dyn_edit: DynamicEditor,
 }
 
 /// Plugin management structure
@@ -98,7 +102,8 @@ impl Engine {
 
         let ecs = Ecs::new();
 
-        Ok(Self {
+        let mut inst = Self {
+            dyn_edit: DynamicEditor,
             time,
             wasm,
             indices: HashMap::new(),
@@ -107,7 +112,11 @@ impl Engine {
             external_inbox: HashMap::new(),
             network_inbox: vec![],
             cfg,
-        })
+        };
+
+        DynamicEditor::sub(&mut inst);
+
+        Ok(inst)
     }
 
     /// Initialize plugin code. Must be called at least once!
@@ -180,6 +189,11 @@ impl Engine {
         for i in 0..self.plugins.len() {
             self.dispatch_plugin(stage, i)?;
         }
+
+        // TODO: ditto responsibility of something else
+        // OOP sucks why do I use it
+        // Synchronize dynamic edits
+        DynamicEditor::update(self);
 
         // Distribute messages
         self.propagate();
