@@ -4,7 +4,7 @@ use anyhow::Result;
 use cimvr_common::glam::Mat4;
 use cimvr_engine::interface::system::Stage;
 use directories::ProjectDirs;
-use egui::{Color32, DragValue, Label, RichText};
+use egui::{Color32, DragValue, Label, RichText, Ui};
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
 use std::path::PathBuf;
@@ -37,8 +37,7 @@ pub fn mainloop(args: Opt) -> Result<()> {
 
     // Setup client code
     let mut client: Option<Client> = None;
-    let mut login_info = LoginInfo::load()?;
-    let mut err_text = "".to_string();
+    let mut login_screen = LoginScreen::new()?;
 
     // Run event loop
     event_loop.run(move |event, _, control_flow| {
@@ -52,38 +51,9 @@ pub fn mainloop(args: Opt) -> Result<()> {
                 if client.is_none() {
                     egui_glow.run(glutin_ctx.window(), |ctx| {
                         egui::CentralPanel::default().show(ctx, |ui| {
-                            ui.label("ChatImproVR login:");
-
-                            ui.horizontal(|ui| {
-                                ui.label("Address: ");
-                                ui.text_edit_singleline(&mut login_info.address);
-                                ui.add(
-                                    DragValue::new(&mut login_info.port)
-                                        .prefix("Port: ")
-                                        .clamp_range(1..=u16::MAX as _),
-                                );
-                            });
-
-                            ui.horizontal(|ui| {
-                                ui.label("Username: ");
-                                ui.text_edit_singleline(&mut login_info.username);
-                            });
-
-                            if ui.button("Connect").clicked() {
-                                let full_addr =
-                                    format!("{}:{}", login_info.address, login_info.port);
-                                log::info!("Logging into {} as {}", full_addr, login_info.username);
-                                let c =
-                                    Client::new(gl.clone(), full_addr, login_info.username.clone());
-                                match c {
-                                    Ok(c) => {
-                                        client = Some(c);
-                                        login_info.save();
-                                    }
-                                    Err(e) => err_text = format!("Error: {:#}", e),
-                                }
+                            if let Some(c) = login_screen.show(ui, &gl) {
+                                client = Some(c);
                             }
-                            ui.label(RichText::new(&err_text).color(Color32::RED));
                         });
                     });
                 }
@@ -206,5 +176,58 @@ impl Default for LoginInfo {
             port: 5031,
             username: "Anon".to_string(),
         }
+    }
+}
+
+#[derive(Default)]
+struct LoginScreen {
+    login_info: LoginInfo,
+    err_text: String,
+}
+
+impl LoginScreen {
+    pub fn new() -> Result<Self> {
+        Ok(Self {
+            login_info: LoginInfo::load()?,
+            err_text: "".into(),
+        })
+    }
+
+    /// Returns true if a login with the given login_info has been requested
+    /// Takes gl as an argument in order to create client instance (nothing else!)
+    pub fn show(&mut self, ui: &mut Ui, gl: &Arc<gl::Context>) -> Option<Client> {
+        ui.label("ChatImproVR login:");
+
+        ui.horizontal(|ui| {
+            ui.label("Address: ");
+            ui.text_edit_singleline(&mut self.login_info.address);
+            ui.add(
+                DragValue::new(&mut self.login_info.port)
+                    .prefix("Port: ")
+                    .clamp_range(1..=u16::MAX as _),
+            );
+        });
+
+        ui.horizontal(|ui| {
+            ui.label("Username: ");
+            ui.text_edit_singleline(&mut self.login_info.username);
+        });
+
+        let mut ret = None;
+        if ui.button("Connect").clicked() {
+            let full_addr = format!("{}:{}", self.login_info.address, self.login_info.port);
+            log::info!("Logging into {} as {}", full_addr, self.login_info.username);
+            let c = Client::new(gl.clone(), full_addr, self.login_info.username.clone());
+            match c {
+                Ok(c) => {
+                    self.login_info.save();
+                    ret = Some(c);
+                }
+                Err(e) => self.err_text = format!("Error: {:#}", e),
+            }
+        }
+        ui.label(RichText::new(&self.err_text).color(Color32::RED));
+
+        ret
     }
 }
