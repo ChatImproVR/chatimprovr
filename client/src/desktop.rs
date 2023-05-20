@@ -65,6 +65,9 @@ pub fn mainloop(args: Opt) -> Result<()> {
                 // Render UI
                 egui_glow.paint(glutin_ctx.window());
 
+                // Show the window on first draw 
+                glutin_ctx.window().set_visible(true);
+
                 // Post update stage
                 client
                     .engine()
