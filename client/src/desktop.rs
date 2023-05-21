@@ -120,6 +120,14 @@ pub fn mainloop(mut args: Opt) -> Result<()> {
                     client.upload().expect("Message upload");
                 }
 
+                // Check for travel requests
+                if let Some(travel_request) = client.as_mut().and_then(|c| c.travel_request()) {
+                    // TODO: Handle port here?
+                    login_screen.login_info.address = travel_request.address;
+                    // TODO: This doesn't report errors
+                    client = login_screen.login(&gl);
+                }
+
                 glutin_ctx.swap_buffers().unwrap();
             }
             Event::WindowEvent { ref event, .. } => {
@@ -222,9 +230,7 @@ impl LoginScreen {
         log::info!("Logging into {} as {}", self.login_info.addr_with_port(), self.login_info.username);
         let c = Client::new(gl.clone(), self.login_info.addr_with_port(), self.login_info.username.clone());
         match c {
-            Ok(c) => {
-                Some(c)
-            }
+            Ok(c) => Some(c),
             Err(e) => {
                 self.err_text = format!("Error: {:#}", e);
                 None

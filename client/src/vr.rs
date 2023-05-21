@@ -64,6 +64,7 @@ struct MainLoop {
     _glutin_ctx: glutin::ContextWrapper<glutin::PossiblyCurrent, ()>,
     _glutin_window: glutin::window::Window,
     plugin_interface: PluginVrInterfacing,
+    username: String,
 }
 
 impl MainLoop {
@@ -141,7 +142,7 @@ impl MainLoop {
             glutin_openxr_opengl_helper::session_create_info(&glutin_ctx, &glutin_window)?;
 
         // Setup client code
-        let client = Client::new(gl.clone(), connect, username)?;
+        let client = Client::new(gl.clone(), connect, username.clone())?;
 
         // Create session
         let (xr_session, xr_frame_waiter, xr_frame_stream) =
@@ -227,6 +228,7 @@ impl MainLoop {
 
         let inst = Self {
             client,
+            username,
             gl,
             gl_framebuffers,
             xr_frame_stream,
@@ -427,6 +429,13 @@ impl MainLoop {
 
         // Upload messages to server
         self.client.upload().expect("Message upload");
+
+        // Check for travel requests
+        if let Some(travel_request) = self.client.travel_request() {
+            if let Ok(c) = Client::new(self.gl.clone(), travel_request.address, self.username.clone()) {
+                self.client = c;
+            }
+        }
 
         Ok(true)
     }

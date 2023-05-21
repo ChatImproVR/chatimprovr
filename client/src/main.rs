@@ -4,6 +4,7 @@ extern crate glow as gl;
 extern crate openxr as xr;
 
 use anyhow::{bail, Context, Result};
+use cimvr_common::InterdimensionalTravelRequest;
 use cimvr_common::glam::Mat4;
 use cimvr_engine::hotload::Hotloader;
 use cimvr_engine::interface::prelude::{
@@ -151,6 +152,9 @@ impl Client {
 
         let gamepad = GamepadPlugin::new()?;
 
+        // Set up interdimensional travel
+        engine.subscribe::<InterdimensionalTravelRequest>();
+
         // Initialize plugins AFTER we set up our plugins
         engine.init_plugins()?;
 
@@ -229,6 +233,10 @@ impl Client {
 
     fn engine(&mut self) -> &mut Engine {
         &mut self.engine
+    }
+
+    fn travel_request(&mut self) -> Option<InterdimensionalTravelRequest> {
+        self.engine().inbox().next()
     }
 }
 
