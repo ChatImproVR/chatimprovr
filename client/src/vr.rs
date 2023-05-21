@@ -20,7 +20,7 @@ const VR_DEPTH_FORMAT: u32 = gl::DEPTH_COMPONENT24;
 
 pub fn mainloop(args: Opt) -> Result<()> {
     // Set up VR mainloop
-    let (mut main, event_loop) = MainLoop::new(args.connect, args.username.unwrap())?;
+    let (mut main, event_loop) = MainLoop::new(args.connect.unwrap_or("127.0.0.1:5031".into()), args.username.unwrap())?;
 
     // Set up desktop input
     let mut input = DesktopInputHandler::new();
@@ -68,7 +68,7 @@ struct MainLoop {
 
 impl MainLoop {
     pub fn new(
-        connect: SocketAddr,
+        connect: String,
         username: String,
     ) -> Result<(Self, EventLoop<()>)> {
         // Load OpenXR from platform-specific location
