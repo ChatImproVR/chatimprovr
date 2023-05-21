@@ -35,6 +35,7 @@ mod gamepad;
 mod plugin_cache;
 mod render;
 mod ui;
+mod glutin_window_ctx;
 
 use structopt::StructOpt;
 

@@ -1,36 +1,25 @@
 use crate::desktop_input::DesktopInputHandler;
-use crate::{project_dirs, Client, LoginFile, LoginInfo, Opt};
+use crate::{Client, LoginFile, LoginInfo, Opt};
+use crate::glutin_window_ctx::create_display;
+use egui::{RichText, Ui, Color32};
 use anyhow::Result;
 use cimvr_common::glam::Mat4;
 use cimvr_engine::interface::system::Stage;
-use directories::ProjectDirs;
-use egui::{Color32, DragValue, Label, RichText, Ui};
-use glutin::event::{Event, WindowEvent};
-use glutin::event_loop::ControlFlow;
-use std::path::PathBuf;
+use egui_winit::winit;
+use winit::event::{Event, WindowEvent};
+use winit::event_loop::ControlFlow;
 use std::sync::Arc;
 
 pub fn mainloop(mut args: Opt) -> Result<()> {
     // Set up window
-    let event_loop = glutin::event_loop::EventLoop::new();
-    let window_builder = glutin::window::WindowBuilder::new().with_title("ChatImproVR");
+    let event_loop = winit::event_loop::EventLoop::new();
 
     // Set up OpenGL
-    let glutin_ctx = unsafe {
-        glutin::ContextBuilder::new()
-            .with_vsync(true)
-            .build_windowed(window_builder, &event_loop)?
-            .make_current()
-            .unwrap()
-    };
-
-    let gl = unsafe {
-        gl::Context::from_loader_function(|s| glutin_ctx.get_proc_address(s) as *const _)
-    };
+    let (glutin_ctx, gl) = create_display(&event_loop);
     let gl = Arc::new(gl);
 
     // Set up egui
-    let mut egui_glow = egui_glow::EguiGlow::new(&event_loop, gl.clone());
+    let mut egui_glow = egui_glow::EguiGlow::new(&event_loop, gl.clone(), None);
 
     // Set up desktop input
     let mut input = DesktopInputHandler::new();
@@ -113,7 +102,7 @@ pub fn mainloop(mut args: Opt) -> Result<()> {
                 glutin_ctx.swap_buffers().unwrap();
             }
             Event::WindowEvent { ref event, .. } => {
-                if !egui_glow.on_event(&event) {
+                if !egui_glow.on_event(&event).consumed {
                     input.handle_winit_event(event);
                 }
 
