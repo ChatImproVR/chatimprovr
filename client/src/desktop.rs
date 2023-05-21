@@ -10,7 +10,7 @@ use glutin::event_loop::ControlFlow;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-pub fn mainloop(args: Opt) -> Result<()> {
+pub fn mainloop(mut args: Opt) -> Result<()> {
     // Set up window
     let event_loop = glutin::event_loop::EventLoop::new();
     let window_builder = glutin::window::WindowBuilder::new().with_title("ChatImproVR");
@@ -38,6 +38,13 @@ pub fn mainloop(args: Opt) -> Result<()> {
     // Setup client code
     let mut client: Option<Client> = None;
     let mut login_screen = LoginScreen::new()?;
+    if let Some(user) = &args.username {
+        login_screen.login_info.username = user.clone();
+    }
+
+    if let Some(addr) = &args.connect {
+        login_screen.login_info.address = addr.clone();
+    }
 
     // Run event loop
     event_loop.run(move |event, _, control_flow| {
@@ -49,10 +56,21 @@ pub fn mainloop(args: Opt) -> Result<()> {
             Event::RedrawRequested(_) => {
                 // Login page
                 if client.is_none() {
+                    // Attempt to login via command line arg
+                    if args.connect.is_some() {
+                        client = login_screen.login(&gl);
+                        // Don't loop
+                        args.connect = None;
+                    }
+
+                    // Otherwise, use the GUI to login
                     egui_glow.run(glutin_ctx.window(), |ctx| {
                         egui::CentralPanel::default().show(ctx, |ui| {
-                            if let Some(c) = login_screen.show(ui, &gl) {
-                                client = Some(c);
+                            if login_screen.show(ui) {
+                                client = login_screen.login(&gl);
+                                if client.is_some() {
+                                    login_screen.login_info.save().unwrap();
+                                }
                             }
                         });
                     });
@@ -193,9 +211,24 @@ impl LoginScreen {
         })
     }
 
-    /// Returns true if a login with the given login_info has been requested
     /// Takes gl as an argument in order to create client instance (nothing else!)
-    pub fn show(&mut self, ui: &mut Ui, gl: &Arc<gl::Context>) -> Option<Client> {
+    pub fn login(&mut self, gl: &Arc<gl::Context>) -> Option<Client> {
+        let full_addr = format!("{}:{}", self.login_info.address, self.login_info.port);
+        log::info!("Logging into {} as {}", full_addr, self.login_info.username);
+        let c = Client::new(gl.clone(), full_addr, self.login_info.username.clone());
+        match c {
+            Ok(c) => {
+                Some(c)
+            }
+            Err(e) => {
+                self.err_text = format!("Error: {:#}", e);
+                None
+            }
+        }
+    }
+
+    /// Returns true if a login with the given login_info has been requested
+    pub fn show(&mut self, ui: &mut Ui) -> bool {
         ui.label("ChatImproVR login:");
 
         ui.horizontal(|ui| {
@@ -213,19 +246,7 @@ impl LoginScreen {
             ui.text_edit_singleline(&mut self.login_info.username);
         });
 
-        let mut ret = None;
-        if ui.button("Connect").clicked() {
-            let full_addr = format!("{}:{}", self.login_info.address, self.login_info.port);
-            log::info!("Logging into {} as {}", full_addr, self.login_info.username);
-            let c = Client::new(gl.clone(), full_addr, self.login_info.username.clone());
-            match c {
-                Ok(c) => {
-                    self.login_info.save();
-                    ret = Some(c);
-                }
-                Err(e) => self.err_text = format!("Error: {:#}", e),
-            }
-        }
+        let ret = ui.button("Connect").clicked();
         ui.label(RichText::new(&self.err_text).color(Color32::RED));
 
         ret
