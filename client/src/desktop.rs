@@ -190,20 +190,38 @@ impl LoginScreen {
     pub fn show(&mut self, ui: &mut Ui) -> bool {
         ui.label("ChatImproVR login:");
 
-        /*
-        ui.horizontal(|ui| {
-            ui.label("Address: ");
-            ui.text_edit_singleline(&mut self.login_info.address);
-        });
-
         ui.horizontal(|ui| {
             ui.label("Username: ");
-            ui.text_edit_singleline(&mut self.login_info.username);
+            ui.text_edit_singleline(&mut self.login_file.username);
         });
-        */
 
-        let ret = ui.button("Connect").clicked();
+        // Error text
         ui.label(RichText::new(&self.err_text).color(Color32::RED));
+
+        self.login_file.addresses.sort();
+
+        let mut ret = false;
+
+        let mut dup = None;
+        let mut del = None;
+        let mut add = None;
+        for (idx, addr) in self.login_file.addresses.iter_mut().enumerate() {
+            ui.horizontal(|ui| {
+                ui.text_edit_singleline(addr);
+                if ui.button(" + ").clicked() {
+                    dup = Some(idx);
+                }
+                if ui.button(" - ").clicked() {
+                    del = Some(idx);
+                }
+
+                if ui.button("Connect").clicked() {
+                    self.address = addr.clone();
+                    addr = Some(addr.to_string());
+                    ret = true;
+                }
+            });
+        }
 
         ret
     }
