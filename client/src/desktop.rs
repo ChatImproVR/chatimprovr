@@ -61,10 +61,6 @@ pub fn mainloop(mut args: Opt) -> Result<()> {
                         egui::CentralPanel::default().show(ctx, |ui| {
                             if login_screen.show(ui) {
                                 client = login_screen.login(&gl);
-                                if client.is_some() {
-                                    let addr = login_screen.address.clone();
-                                    login_screen.login_file.save(addr).unwrap();
-                                }
                             }
                         });
                     });
@@ -143,7 +139,6 @@ pub fn mainloop(mut args: Opt) -> Result<()> {
 #[derive(Default)]
 struct LoginScreen {
     login_file: LoginFile,
-    address: String,
     err_text: String,
 }
 
@@ -158,7 +153,6 @@ impl LoginScreen {
         }
 
         Ok(Self {
-            address: login_file.last_login_address.clone(),
             login_file,
             err_text: "".into(),
         })
@@ -170,6 +164,14 @@ impl LoginScreen {
             username: self.login_file.username.clone(),
             address: self.login_file.last_login_address.clone(),
         };
+
+        // Add to saved logins if not present
+        if !self.login_file.addresses.contains(&login_info.address) {
+            self.login_file.addresses.push(login_info.address.clone());
+        }
+
+        // Save login file
+        self.login_file.save().unwrap();
 
         log::info!(
             "Logging into {} as {}",
@@ -195,16 +197,25 @@ impl LoginScreen {
             ui.text_edit_singleline(&mut self.login_file.username);
         });
 
+        let mut ret = false;
+
+        ui.horizontal(|ui| {
+            ui.label("Address: ");
+            ui.text_edit_singleline(&mut self.login_file.last_login_address);
+            ret |= ui.button("Connect").clicked();
+        });
+
         // Error text
         ui.label(RichText::new(&self.err_text).color(Color32::RED));
 
         self.login_file.addresses.sort();
 
-        let mut ret = false;
+        ui.separator();
+        ui.label("Saved logins:");
 
+        // Login editor
         let mut dup = None;
         let mut del = None;
-        let mut add = None;
         for (idx, addr) in self.login_file.addresses.iter_mut().enumerate() {
             ui.horizontal(|ui| {
                 ui.text_edit_singleline(addr);
@@ -216,11 +227,20 @@ impl LoginScreen {
                 }
 
                 if ui.button("Connect").clicked() {
-                    self.address = addr.clone();
-                    addr = Some(addr.to_string());
+                    // Move this into the address bar
+                    self.login_file.last_login_address = addr.clone();
                     ret = true;
                 }
             });
+        }
+
+        if let Some(del) = del {
+            self.login_file.addresses.remove(del);
+        }
+
+        if let Some(dup) = dup {
+            let entry = self.login_file.addresses[dup].clone();
+            self.login_file.addresses.insert(dup, entry);
         }
 
         ret

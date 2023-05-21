@@ -278,14 +278,16 @@ impl LoginFile {
         proj.config_dir().join("login.conf")
     }
 
-    pub fn save(&self, last_login_addr: String) -> Result<()> {
+    pub fn save(&mut self) -> Result<()> {
         use std::fmt::Write;
         let mut s = String::new();
         writeln!(s, "{}", self.username)?;
-        writeln!(s, "{}", last_login_addr)?;
+        writeln!(s, "{}", self.last_login_address)?;
+
         for addr in &self.addresses {
             writeln!(s, "{}", addr)?;
         }
+
         std::fs::write(Self::config_path(), s)?;
         Ok(())
     }
@@ -305,6 +307,10 @@ impl LoginFile {
 
         if let Some(username) = lines.next() {
             inst.username = username;
+        }
+
+        if let Some(last_login_addr) = lines.next() {
+            inst.last_login_address = last_login_addr;
         }
 
         for line in lines {
