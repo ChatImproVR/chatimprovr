@@ -171,6 +171,7 @@ impl LoginScreen {
         }
 
         // Save login file
+        self.login_file.addresses.sort();
         self.login_file.save().unwrap();
 
         log::info!(
@@ -207,8 +208,6 @@ impl LoginScreen {
 
         // Error text
         ui.label(RichText::new(&self.err_text).color(Color32::RED));
-
-        self.login_file.addresses.sort();
 
         ui.separator();
         ui.label("Saved logins:");
