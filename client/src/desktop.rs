@@ -148,7 +148,6 @@ pub fn mainloop(mut args: Opt) -> Result<()> {
 
 struct LoginInfo {
     address: String,
-    port: u16,
     username: String,
 }
 
@@ -170,9 +169,18 @@ impl LoginInfo {
             let mut lines = text.lines();
             Ok(Self {
                 address: lines.next().unwrap().to_string(),
-                port: lines.next().unwrap().parse().unwrap(),
                 username: lines.next().unwrap().to_string(),
             })
+        }
+    }
+
+    /// Returns the address assigned, with the default port appended if not present
+    pub fn addr_with_port(&self) -> String {
+        let addr = self.address.clone();
+        if addr.contains(':') {
+            addr
+        } else {
+            addr + ":5031"
         }
     }
 
@@ -180,7 +188,6 @@ impl LoginInfo {
         use std::fmt::Write;
         let mut s = String::new();
         writeln!(s, "{}", self.address)?;
-        writeln!(s, "{}", self.port)?;
         writeln!(s, "{}", self.username)?;
         std::fs::write(Self::config_path(), s)?;
         Ok(())
@@ -191,7 +198,6 @@ impl Default for LoginInfo {
     fn default() -> Self {
         Self {
             address: "127.0.0.1".to_string(),
-            port: 5031,
             username: "Anon".to_string(),
         }
     }
@@ -213,9 +219,8 @@ impl LoginScreen {
 
     /// Takes gl as an argument in order to create client instance (nothing else!)
     pub fn login(&mut self, gl: &Arc<gl::Context>) -> Option<Client> {
-        let full_addr = format!("{}:{}", self.login_info.address, self.login_info.port);
-        log::info!("Logging into {} as {}", full_addr, self.login_info.username);
-        let c = Client::new(gl.clone(), full_addr, self.login_info.username.clone());
+        log::info!("Logging into {} as {}", self.login_info.addr_with_port(), self.login_info.username);
+        let c = Client::new(gl.clone(), self.login_info.addr_with_port(), self.login_info.username.clone());
         match c {
             Ok(c) => {
                 Some(c)
@@ -234,11 +239,6 @@ impl LoginScreen {
         ui.horizontal(|ui| {
             ui.label("Address: ");
             ui.text_edit_singleline(&mut self.login_info.address);
-            ui.add(
-                DragValue::new(&mut self.login_info.port)
-                    .prefix("Port: ")
-                    .clamp_range(1..=u16::MAX as _),
-            );
         });
 
         ui.horizontal(|ui| {
