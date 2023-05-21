@@ -750,6 +750,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "interdimensional"
+version = "0.1.0"
+dependencies = [
+ "cimvr_common",
+ "cimvr_engine_interface",
+ "serde",
+]
+
+[[package]]
 name = "io-lifetimes"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
