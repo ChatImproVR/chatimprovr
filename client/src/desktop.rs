@@ -149,7 +149,14 @@ struct LoginScreen {
 
 impl LoginScreen {
     pub fn new(args: Opt) -> Result<Self> {
-        let login_file = LoginFile::load()?;
+        let mut login_file = LoginFile::load()?;
+        if let Some(addr) = args.connect {
+            login_file.last_login_address = addr;
+        }
+        if let Some(user) = args.username {
+            login_file.username = user;
+        }
+
         Ok(Self {
             address: login_file.last_login_address.clone(),
             login_file,
