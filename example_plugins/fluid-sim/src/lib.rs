@@ -23,17 +23,17 @@ struct ClientState {
 const FLUID_VEL_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Fluid velocity"));
 const CUBE_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
 
-const FLUID_POS: Vec3 = Vec3::new(0., 1., 0.);
+const FLUID_POS: Vec3 = Vec3::new(0., 1.2, 0.);
 
 struct ServerState;
 
 impl UserState for ServerState {
     fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
         // Fluid lines mesh
-        let fluid_vel_rdr = Render::new(FLUID_VEL_ID).primitive(Primitive::Points);
+        let fluid_vel_rdr = Render::new(FLUID_VEL_ID).primitive(Primitive::Lines);
 
         io.create_entity()
-            .add_component(Transform::default())
+            .add_component(Transform::default().with_position(FLUID_POS))
             .add_component(fluid_vel_rdr)
             .add_component(Synchronized)
             .build();
@@ -41,7 +41,7 @@ impl UserState for ServerState {
         let cube_rdr = Render::new(CUBE_ID).primitive(Primitive::Lines);
 
         io.create_entity()
-            .add_component(Transform::default())
+            .add_component(Transform::default().with_position(FLUID_POS))
             .add_component(cube_rdr)
             .add_component(Synchronized)
             .build();
@@ -52,7 +52,7 @@ impl UserState for ServerState {
 
 impl UserState for ClientState {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
-        let s = 25;
+        let s = 15;
         let fluid_sim = FluidSim::new(s, s, s);
 
         let mut line_mesh = Mesh::default();
@@ -130,7 +130,7 @@ impl ClientState {
         for hand in [&self.tracking.left, &self.tracking.right] {
             if let Some(grip_pos) = hand.grip_pos {
                 let pos = grip_pos + vr_space_transf.pos - FLUID_POS;
-                push_fluid(&mut self.fluid_sim, 1, pos, hand.vel);
+                push_fluid(&mut self.fluid_sim, 0, pos, hand.vel);
             }
         }
 
@@ -145,9 +145,9 @@ impl ClientState {
     }
 
     fn fluid_update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
-        let dt = 0.5;
-        self.fluid_sim.step(dt, 1.9, 5);
-        self.particles.step(self.fluid_sim.uvw(), io, dt * 2.);
+        let dt = 1.;
+        self.fluid_sim.step(dt, 1.9, 20);
+        self.particles.step(self.fluid_sim.uvw(), io, dt);
 
         io.send(&self.particles.render);
 
@@ -190,10 +190,14 @@ impl ParticleState {
             if Self::bounds(u, after) && Self::bounds(u, before) {
                 let w = u.width() as f32;
                 let downscale = |i| (i / w) * 2. - 1.;
+
+                let beforer = Vec3::from(before) + (Vec3::from(before) - Vec3::from(after)) * 4.;
+                let beforer: [f32; 3] = beforer.into();
+
                 let x = self
                     .render
                     .mesh
-                    .push_vertex(Vertex::new(before.map(downscale), [1.; 3]));
+                    .push_vertex(Vertex::new(beforer.map(downscale), [1.; 3]));
                 let y = self
                     .render
                     .mesh
@@ -619,7 +623,7 @@ impl VrTracking {
             (right_controller, &mut self.right),
         ] {
             if let Some(aim) = controller.aim {
-                last.vel = last.aim_pos.map(|p| p - aim.pos).unwrap_or(Vec3::ZERO);
+                last.vel = last.aim_pos.map(|p| aim.pos - p).unwrap_or(Vec3::ZERO);
                 last.aim_pos = Some(aim.pos);
             }
 
