@@ -1,5 +1,8 @@
-use cimvr_common::ui::{Schema, State, UiHandle, UiStateHelper, UiUpdate};
-use cimvr_engine_interface::{dbg, prelude::*};
+use cimvr_common::{
+    ui::{Schema, State, UiHandle, UiStateHelper, UiUpdate},
+    InterdimensionalTravelRequest,
+};
+use cimvr_engine_interface::{dbg, make_app_state, prelude::*};
 
 pub struct ClientState {
     ui: UiStateHelper,
@@ -42,7 +45,12 @@ impl ClientState {
 
         let ret = self.ui.read(self.test_element);
         if ret[1] == (State::Button { clicked: true }) {
-            dbg!(ret);
+            let State::TextInput { text } = &ret[0] else { panic!() };
+            io.send(&InterdimensionalTravelRequest {
+                address: text.into(),
+            })
         }
     }
 }
+
+make_app_state!(ClientState, DummyUserState);

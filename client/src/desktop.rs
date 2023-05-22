@@ -99,6 +99,14 @@ pub fn mainloop(mut args: Opt) -> Result<()> {
                 // Render UI
                 egui_glow.paint(glutin_ctx.window());
 
+                // Check for travel requests
+                if let Some(travel_request) = client.as_mut().and_then(|c| c.travel_request()) {
+                    // TODO: Handle port here?
+                    login_screen.login_file.last_login_address = travel_request.address;
+                    // TODO: This doesn't report errors
+                    client = login_screen.login(&gl);
+                }
+
                 if let Some(client) = &mut client {
                     // Post update stage
                     client
@@ -108,14 +116,6 @@ pub fn mainloop(mut args: Opt) -> Result<()> {
 
                     // Upload messages to server
                     client.upload().expect("Message upload");
-                }
-
-                // Check for travel requests
-                if let Some(travel_request) = client.as_mut().and_then(|c| c.travel_request()) {
-                    // TODO: Handle port here?
-                    login_screen.login_file.last_login_address = travel_request.address;
-                    // TODO: This doesn't report errors
-                    client = login_screen.login(&gl);
                 }
 
                 glutin_ctx.swap_buffers().unwrap();
