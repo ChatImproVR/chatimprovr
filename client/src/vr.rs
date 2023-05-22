@@ -1,5 +1,5 @@
 use crate::desktop_input::DesktopInputHandler;
-use crate::{Client, Opt};
+use crate::{Client, Opt, LoginInfo};
 use anyhow::{format_err, Result};
 use cimvr_common::glam::{Quat, Vec3};
 use cimvr_common::vr::{
@@ -20,7 +20,7 @@ const VR_DEPTH_FORMAT: u32 = gl::DEPTH_COMPONENT24;
 
 pub fn mainloop(args: Opt) -> Result<()> {
     // Set up VR mainloop
-    let (mut main, event_loop) = MainLoop::new(args.connect.unwrap_or("127.0.0.1:5031".into()), args.username.unwrap())?;
+    let (mut main, event_loop) = MainLoop::new(args)?;
 
     // Set up desktop input
     let mut input = DesktopInputHandler::new();
@@ -64,14 +64,15 @@ struct MainLoop {
     _glutin_ctx: glutin::ContextWrapper<glutin::PossiblyCurrent, ()>,
     _glutin_window: glutin::window::Window,
     plugin_interface: PluginVrInterfacing,
-    username: String,
+    login_info: LoginInfo,
 }
 
 impl MainLoop {
     pub fn new(
-        connect: String,
-        username: String,
+        args: Opt,
     ) -> Result<(Self, EventLoop<()>)> {
+        let login_info = args.login_info()?;
+
         // Load OpenXR from platform-specific location
         #[cfg(target_os = "linux")]
         let entry = unsafe { xr::Entry::load()? };
@@ -142,7 +143,7 @@ impl MainLoop {
             glutin_openxr_opengl_helper::session_create_info(&glutin_ctx, &glutin_window)?;
 
         // Setup client code
-        let client = Client::new(gl.clone(), connect, username.clone())?;
+        let client = Client::new(gl.clone(), login_info.clone())?;
 
         // Create session
         let (xr_session, xr_frame_waiter, xr_frame_stream) =
@@ -228,7 +229,7 @@ impl MainLoop {
 
         let inst = Self {
             client,
-            username,
+            login_info,
             gl,
             gl_framebuffers,
             xr_frame_stream,
@@ -432,9 +433,8 @@ impl MainLoop {
 
         // Check for travel requests
         if let Some(travel_request) = self.client.travel_request() {
-            if let Ok(c) = Client::new(self.gl.clone(), travel_request.address, self.username.clone()) {
-                self.client = c;
-            }
+            self.login_info.address = travel_request.address;
+            self.client = Client::new(self.gl.clone(), self.login_info.clone())?;
         }
 
         Ok(true)
