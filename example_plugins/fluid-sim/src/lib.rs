@@ -16,7 +16,6 @@ struct ClientState {
 }
 
 //const VEL_Z: f32 = 0.5;
-const FLUID_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Fluid"));
 const FLUID_VEL_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Fluid velocity"));
 const CUBE_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
 
@@ -48,29 +47,10 @@ impl UserState for ServerState {
 impl UserState for ClientState {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
         let s = 25;
-        let mut fluid_sim = FluidSim::new(s, s, s);
-
-        let smoke = fluid_sim.smoke_mut();
-
-        for z in s / 5..4 * s / 5 {
-            for y in s / 5..4 * s / 5 {
-                for x in s / 5..=2 * s / 5 {
-                    smoke[(x, y, z)] = 5.;
-                }
-            }
-        }
-
-        let mut grid_mesh = Mesh::default();
-        draw_density(&mut grid_mesh, fluid_sim.smoke_mut(), 0.);
+        let fluid_sim = FluidSim::new(s, s, s);
 
         let mut line_mesh = Mesh::default();
         draw_velocity_lines(&mut line_mesh, fluid_sim.uvw(), 0.);
-
-        let fluid_render_buf = UploadMesh {
-            id: FLUID_ID,
-            mesh: grid_mesh,
-        };
-        io.send(&fluid_render_buf);
 
         let fluid_vel_render_buf = UploadMesh {
             id: FLUID_VEL_ID,
@@ -151,21 +131,6 @@ impl ClientState {
         let dt = 0.5;
         self.fluid_sim.step(dt, 1.9, 20);
         self.particles.step(self.fluid_sim.uvw(), io, dt * 2.);
-
-        /*
-        draw_density(
-        &mut self.fluid_render_buf.mesh,
-        self.fluid_sim.smoke_mut(),
-        0.,
-        );
-        io.send(&self.fluid_render_buf);
-        */
-
-        /*draw_velocity_lines(
-        &mut self.fluid_vel_render_buf.mesh,
-        self.fluid_sim.uvw(),
-        VEL_Z,
-        );*/
 
         io.send(&self.particles.render);
 
@@ -265,7 +230,6 @@ pub struct FluidState {
     u: Array3D<f32>,
     v: Array3D<f32>,
     w: Array3D<f32>,
-    smoke: Array3D<f32>,
 }
 
 pub struct FluidSim {
@@ -303,7 +267,6 @@ impl FluidSim {
             u: Array3D::new(k, k, k),
             v: Array3D::new(k, k, k),
             w: Array3D::new(k, k, k),
-            smoke: Array3D::new(width, height, length),
         };
 
         Self {
@@ -404,27 +367,6 @@ impl FluidSim {
         std::mem::swap(&mut self.read.u, &mut self.write.u);
         std::mem::swap(&mut self.read.v, &mut self.write.v);
         std::mem::swap(&mut self.read.w, &mut self.write.w);
-
-        // Advect smoke
-        for z in 1..self.read.v.height() - 2 {
-            for y in 1..self.read.v.height() - 2 {
-                for x in 1..self.read.v.width() - 2 {
-                    let (px, py, pz) = advect(
-                        &self.read.u,
-                        &self.read.v,
-                        &self.read.w,
-                        x as f32 + 0.5,
-                        y as f32 + 0.5,
-                        z as f32 + 0.5,
-                        dt,
-                    );
-                    self.write.smoke[(x, y, z)] =
-                        interp(&self.read.smoke, px - 0.5, py - 0.5, pz - 0.5);
-                }
-            }
-        }
-
-        std::mem::swap(&mut self.read.smoke, &mut self.write.smoke);
     }
 
     pub fn uvw(&self) -> (&Array3D<f32>, &Array3D<f32>, &Array3D<f32>) {
@@ -433,10 +375,6 @@ impl FluidSim {
 
     pub fn uv_mut(&mut self) -> (&mut Array3D<f32>, &mut Array3D<f32>, &mut Array3D<f32>) {
         (&mut self.read.u, &mut self.read.v, &mut self.read.w)
-    }
-
-    pub fn smoke_mut(&mut self) -> &mut Array3D<f32> {
-        &mut self.read.smoke
     }
 
     pub fn width(&self) -> usize {
@@ -564,35 +502,6 @@ impl<T> std::ops::IndexMut<Index3D> for Array3D<T> {
     fn index_mut(&mut self, pos: Index3D) -> &mut T {
         let idx = self.calc_index(pos);
         &mut self.data[idx]
-    }
-}
-
-fn draw_density(mesh: &mut Mesh, smoke: &Array3D<f32>, _y: f32) {
-    mesh.indices.clear();
-    mesh.vertices.clear();
-
-    //let cell_width = 2. / smoke.width() as f32;
-    //let cell_height = 2. / smoke.height() as f32;
-
-    for i in (0..smoke.width()).step_by(1) {
-        let i_frac = (i as f32 / smoke.width() as f32) * 2. - 1.;
-        for j in (0..smoke.height()).step_by(1) {
-            let j_frac = (j as f32 / smoke.height() as f32) * 2. - 1.;
-
-            for k in (0..smoke.length()).step_by(1) {
-                let k_frac = (k as f32 / smoke.length() as f32) * 2. - 1.;
-
-                let sm = smoke[(i, j, k)];
-                let color = [sm; 3];
-
-                //let base = mesh.vertices.len() as u32;
-
-                let _w = smoke.width() as f32;
-                mesh.indices.push(mesh.vertices.len() as u32);
-                mesh.vertices
-                    .push(Vertex::new([i_frac, j_frac, k_frac], color));
-            }
-        }
     }
 }
 
