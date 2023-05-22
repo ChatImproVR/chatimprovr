@@ -100,12 +100,7 @@ pub fn mainloop(mut args: Opt) -> Result<()> {
                 egui_glow.paint(glutin_ctx.window());
 
                 // Check for travel requests
-                if let Some(travel_request) = client.as_mut().and_then(|c| c.travel_request()) {
-                    // TODO: Handle port here?
-                    login_screen.login_file.last_login_address = travel_request.address;
-                    // TODO: This doesn't report errors
-                    client = login_screen.login(&gl);
-                }
+                let travel_request = client.as_mut().and_then(|c| c.travel_request());
 
                 if let Some(client) = &mut client {
                     // Post update stage
@@ -119,6 +114,12 @@ pub fn mainloop(mut args: Opt) -> Result<()> {
                 }
 
                 glutin_ctx.swap_buffers().unwrap();
+
+                // Check for travel requests
+                if let Some(travel_request) = travel_request {
+                    login_screen.login_file.last_login_address = travel_request.address;
+                    client = login_screen.login(&gl);
+                }
             }
             Event::WindowEvent { ref event, .. } => {
                 if !egui_glow.on_event(&event) {
