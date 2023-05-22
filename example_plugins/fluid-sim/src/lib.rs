@@ -62,15 +62,6 @@ impl UserState for ClientState {
         // Schedule the system
         schedule.add_system(Self::fluid_move).build();
 
-        /*
-        schedule.add_system(
-        Self::camera_move,
-        SystemDescriptor::new(Stage::Update)
-        .query::<Transform>(Access::Write)
-        .query::<CameraComponent>(Access::Read),
-        );
-        */
-
         let particles = ParticleState::new(20_000, io, fluid_sim.uvw().0);
 
         Self {
@@ -136,28 +127,6 @@ impl ClientState {
 
         self.frame += 1;
     }
-
-    /*
-    fn camera_move(&mut self, _io: &mut EngineIo, query: &mut QueryResult) {
-        // Set camera position
-        let pos = self.particles.particles[0];
-
-        let v = Vec3::from(pos) - Vec3::from(self.last);
-
-        let orient = Quat::from_rotation_arc(-Vec3::Z, v);
-
-        let transf = Transform {
-            pos: pos.into(),
-            orient,
-        };
-
-        self.last = pos;
-
-        for key in query.iter() {
-            query.write::<Transform>(key, &transf);
-        }
-    }
-    */
 }
 
 pub struct ParticleState {
