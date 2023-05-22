@@ -27,7 +27,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use ui::OverlayUi;
 
-//#[cfg(feature = "vr")]
+#[cfg(feature = "vr")]
 mod vr;
 
 mod desktop;
