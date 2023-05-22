@@ -14,26 +14,26 @@ cimvr_engine = { path = "../engine" }
 cimvr_common = { path = "../common" }
 anyhow = "1"
 bytemuck = "1.12.3"
-glutin = "0.29.0"
-glow = "0.11.2"
+glutin = "0.30.8"
+glow = "0.12"
 env_logger = "0.10.0"
 log = "0.4.17"
 structopt = { version = "0.3", default-features = false }
 #egui_glow = { version = "0.19.0", features = ["winit"] }
 #egui = { version = "0.19.0", default-features = false, features = [
-egui = { version = "0.19.0", default-features = false, features = [
+egui = { version = "0.21.0", default-features = false, features = [
     "bytemuck",
     "default_fonts", # Embed the default egui fonts.
-], git = "https://github.com/Masterchef365/egui.git", branch = "fix-glow-winit-dpi" }
-egui_glow = { version = "0.19.0", features = ["winit"], git = "https://github.com/Masterchef365/egui.git", branch = "fix-glow-winit-dpi" }
-egui-winit = { version = "0.19.0", default-features = false }
+] }
+egui_glow = { version = "0.21.0", features = ["winit"] }
+egui-winit = { version = "0.21.1" }
 raw-window-handle = "0.5.0"
 gilrs = { version = "0.10.2", default-features = false, features = ["xinput"] }
+glutin-openxr-opengl-helper = { git = "https://github.com/ChatImproVR/rust-opengl-openxr-example.git", rev = "c56b2dc" }
+glutin-winit = "0.3.0"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 openxr = { version = "0.17.1", optional = true, features = ["loaded"] }
-glutin-openxr-opengl-helper = { git = "https://github.com/ChatImproVR/rust-opengl-openxr-example.git", rev = "c56b2dc" }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 openxr = { version = "0.17.1", optional = true, features = ["static"] }
-glutin-openxr-opengl-helper = { git = "https://github.com/ChatImproVR/rust-opengl-openxr-example.git", rev = "c56b2dc" }
