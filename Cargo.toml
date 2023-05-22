@@ -13,7 +13,6 @@ members = [
     "example_plugins/hello",
     "example_plugins/ui_example",
     "example_plugins/fluid-sim",
-    "example_plugins/particle-life",
     "example_plugins/shader",
     "example_plugins/randomly_moving_cube",
     "example_plugins/gamepad",
