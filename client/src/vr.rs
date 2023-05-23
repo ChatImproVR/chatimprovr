@@ -20,7 +20,7 @@ const VR_DEPTH_FORMAT: u32 = gl::DEPTH_COMPONENT24;
 
 pub fn mainloop(args: Opt) -> Result<()> {
     // Set up VR mainloop
-    let (mut main, event_loop) = MainLoop::new(args.plugins, args.connect, args.username.unwrap())?;
+    let (mut main, event_loop) = MainLoop::new(args)?;
 
     // Set up desktop input
     let mut input = DesktopInputHandler::new();
@@ -68,9 +68,7 @@ struct MainLoop {
 
 impl MainLoop {
     pub fn new(
-        plugins: Vec<PathBuf>,
-        connect: SocketAddr,
-        username: String,
+        args: Opt,
     ) -> Result<(Self, EventLoop<()>)> {
         // Load OpenXR from platform-specific location
         #[cfg(target_os = "linux")]
@@ -142,7 +140,7 @@ impl MainLoop {
             glutin_openxr_opengl_helper::session_create_info(&glutin_ctx, &glutin_window)?;
 
         // Setup client code
-        let client = Client::new(gl.clone(), &plugins, connect, username)?;
+        let client = Client::new(gl.clone(), args.login_info()?)?;
 
         // Create session
         let (xr_session, xr_frame_waiter, xr_frame_stream) =

@@ -13,6 +13,8 @@ pub struct ServerToClient {
     /// All ECS data with an associated `Synchronized` component attached
     pub ecs: EcsMap,
     pub messages: Vec<MessageData>,
+    /// Hotload the plugin with this name (String) using the given bytecode (Vec<u8>)
+    pub hotload: Vec<(String, Vec<u8>)>,
 }
 
 /// Message packet sent from client to server

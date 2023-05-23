@@ -3,7 +3,7 @@ use cimvr_engine_interface::serial::{
     deserialize, serialize_into, serialized_size, ReceiveBuf, SendBuf,
 };
 use rand::prelude::*;
-use std::{io::Cursor, path::Path};
+use std::io::Cursor;
 use wasmtime::{Caller, Extern, Func, Instance, Memory, Module, Store, TypedFunc};
 
 #[allow(dead_code)]
@@ -20,9 +20,8 @@ pub struct Plugin {
 
 impl Plugin {
     /// Load the plugin in an uninitialized state
-    pub fn new(wt: &wasmtime::Engine, plugin_path: impl AsRef<Path>) -> Result<Self> {
-        let bytes = std::fs::read(plugin_path)?;
-        let module = Module::new(wt, &bytes)?;
+    pub fn new(wt: &wasmtime::Engine, code: &[u8]) -> Result<Self> {
+        let module = Module::new(wt, &code)?;
         let mut store = Store::new(wt, ());
 
         // Basic printing functionality
