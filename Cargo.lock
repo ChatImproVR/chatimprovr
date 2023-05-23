@@ -1017,16 +1017,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "particle-life"
-version = "0.1.0"
-dependencies = [
- "cimvr_common",
- "cimvr_engine_interface",
- "serde",
- "zwohash",
-]
-
-[[package]]
 name = "paste"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1958,9 +1948,3 @@ dependencies = [
  "cc",
  "libc",
 ]
-
-[[package]]
-name = "zwohash"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "beaf63e0740cea93ca85de39611a8bc8262a50adacd6321cd209a123676d0447"
