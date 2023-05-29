@@ -198,6 +198,7 @@ dependencies = [
  "rand",
  "serde",
  "wasmtime",
+ "xxhash-rust",
 ]
 
 [[package]]
@@ -634,6 +635,7 @@ version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e4afd9ad95555081e109fe1d21f2a30c691b5f0919c67dfa690a2e1eb6bd51c"
 dependencies = [
+ "bytemuck",
  "serde",
 ]
 
@@ -1012,16 +1014,6 @@ dependencies = [
  "cimvr_engine_interface",
  "parenting",
  "serde",
-]
-
-[[package]]
-name = "particle-life"
-version = "0.1.0"
-dependencies = [
- "cimvr_common",
- "cimvr_engine_interface",
- "serde",
- "zwohash",
 ]
 
 [[package]]
@@ -1914,6 +1906,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "xxhash-rust"
+version = "0.8.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "735a71d46c4d68d71d4b24d03fdc2b98e38cea81730595801db779c04fe80d70"
+
+[[package]]
 name = "xyz_reference"
 version = "0.1.0"
 dependencies = [
@@ -1950,9 +1948,3 @@ dependencies = [
  "cc",
  "libc",
 ]
-
-[[package]]
-name = "zwohash"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "beaf63e0740cea93ca85de39611a8bc8262a50adacd6321cd209a123676d0447"
