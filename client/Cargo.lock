@@ -264,6 +264,7 @@ dependencies = [
  "anyhow",
  "cimvr_engine_interface",
  "log",
+ "miniz_oxide 0.7.1",
  "notify",
  "rand",
  "serde",

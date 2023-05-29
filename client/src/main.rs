@@ -135,8 +135,9 @@ impl Client {
                 }
                 PluginData::Download(data) => {
                     log::info!("Downloaded {}, saving...", name);
-                    plugin_cache.add_file(&name, &data)?;
-                    bytecode = data;
+                    let decompressed = cimvr_engine::decompress(&data).context("Decompressing wasm")?;
+                    plugin_cache.add_file(&name, &decompressed)?;
+                    bytecode = decompressed;
                 }
             }
 
@@ -188,6 +189,7 @@ impl Client {
                     // Load hotloaded plugins
                     for (name, bytecode) in recv.hotload {
                         log::info!("Reloading {}", name);
+                        let bytecode = cimvr_engine::decompress(&bytecode).context("Decompressing wasm")?;
                         self.engine.reload(name, &bytecode)?;
                     }
 
