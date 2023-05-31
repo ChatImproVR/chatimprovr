@@ -171,7 +171,7 @@ impl RenderEngine {
         }
     }
 
-    /// Upload shader data
+    // Upload shader data
     pub fn upload_shader(&mut self, gl: &gl::Context, data: &ShaderSource) -> Result<()> {
         // TODO: Unload old shader
         let shader = GpuShader::new(gl, &data.fragment_src, &data.vertex_src)?;
@@ -218,7 +218,7 @@ impl RenderEngine {
         Ok(())
     }
 
-    /// Set the current shader
+    // Set the current shader
     pub fn set_shader(
         &mut self,
         gl: &gl::Context,
