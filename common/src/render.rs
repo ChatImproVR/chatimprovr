@@ -32,6 +32,11 @@ make_handle!(MeshHandle);
 pub struct ShaderHandle(GenericHandle);
 make_handle!(ShaderHandle);
 
+/// Unique identifier for a texture program
+#[derive(Serialize, Deserialize, Default, Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub struct TextureHandle(GenericHandle);
+make_handle!(TextureHandle);
+
 /// Component denotes a camera
 /// The Transform on the entity this is attached to will correspond to:
 /// * VR: The position and orientation of the floor
@@ -193,3 +198,4 @@ impl Default for CameraComponent {
         }
     }
 }
+
