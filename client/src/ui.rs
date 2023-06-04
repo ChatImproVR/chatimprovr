@@ -134,6 +134,9 @@ fn show(ui: &mut Ui, schema: &Schema, state: &mut State) -> bool {
         (Schema::ColorPicker, State::ColorPicker { rgb }) => {
             color_edit_button_rgb(ui, rgb).changed()
         }
+        (Schema::CheckBox { text }, State::CheckBox { checked }) => {
+            ui.checkbox(checked, text).changed()
+        }
         (schema, state) => {
             log::error!(
                 "Invalid UI schema and state combo: {:?} {:?}",
