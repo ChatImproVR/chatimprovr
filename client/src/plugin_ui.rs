@@ -119,6 +119,9 @@ fn show(ui: &mut Ui, schema: &Schema, state: &mut State) -> bool {
         (Schema::TextInput, State::TextInput { text }) => {
             ui.add(TextEdit::singleline(text)).changed()
         }
+        (Schema::TextBox, State::TextBox { text }) => {
+            ui.add(TextEdit::multiline(text).code_editor().desired_width(f32::INFINITY)).changed()
+        }
         (Schema::Button { text }, State::Button { clicked }) => {
             *clicked = ui.button(text).clicked();
             *clicked
@@ -131,6 +134,9 @@ fn show(ui: &mut Ui, schema: &Schema, state: &mut State) -> bool {
         (Schema::ColorPicker, State::ColorPicker { rgb }) => {
             color_edit_button_rgb(ui, rgb).changed()
         }
+        (Schema::CheckBox { text }, State::CheckBox { checked }) => {
+            ui.checkbox(checked, text).changed()
+        }
         (schema, state) => {
             log::error!(
                 "Invalid UI schema and state combo: {:?} {:?}",
@@ -141,4 +147,3 @@ fn show(ui: &mut Ui, schema: &Schema, state: &mut State) -> bool {
         }
     }
 }
-
