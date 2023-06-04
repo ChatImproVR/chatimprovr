@@ -1,5 +1,5 @@
 [package]
-name = "particle-life"
+name = "multiple_queries"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,4 +10,3 @@ crate-type = ["cdylib"]
 cimvr_common = { path = "../../common" }
 cimvr_engine_interface = { path = "../../engine_interface" }
 serde = { version = "1", features = ["derive"] }
-zwohash = "0.1.2"

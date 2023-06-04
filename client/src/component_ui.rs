@@ -4,7 +4,7 @@ use cimvr_engine::{
         component_id,
         dyn_edit::{DynamicEditCommand, DynamicEditRequest},
         kobble::{DynamicValue, Schema, SchemaDeserializer},
-        prelude::{Access, Component, ComponentId, EntityId, QueryComponent, Synchronized},
+        prelude::{Access, Component, ComponentId, EntityId, Query, QueryComponent, Synchronized},
         serial::{deserialize, serialize, serialize_into},
         ComponentSchema,
     },
@@ -61,7 +61,7 @@ impl ComponentUi {
             // TODO: Actually update each frame? Just sort the ids.
             // Might get a bit jittery with lots of plugins adding/removing entities...
             if needs_update {
-                let query: Vec<QueryComponent> = self
+                let intersect: Vec<QueryComponent> = self
                     .selected
                     .iter()
                     .map(|id| QueryComponent {
@@ -70,7 +70,7 @@ impl ComponentUi {
                     })
                     .collect();
 
-                self.display = engine.ecs().query(&query).into_iter().collect();
+                self.display = engine.ecs().query(&Query { intersect }).into_iter().collect();
             }
 
             // Component editor

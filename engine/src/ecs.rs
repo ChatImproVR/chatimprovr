@@ -1,4 +1,4 @@
-use ahash::{HashMap, HashMapExt, HashSet, HashSetExt};
+use ahash::{HashSet, HashSetExt};
 use anyhow::Result;
 use cimvr_engine_interface::{
     component_id,
@@ -6,6 +6,7 @@ use cimvr_engine_interface::{
     serial::{deserialize, serialize, EcsData},
 };
 use rand::prelude::*;
+use std::collections::HashMap;
 
 use crate::PluginIndex;
 
@@ -32,9 +33,9 @@ impl Ecs {
     /// Returns the list of relevant entities
     /// Empty queries panic.
     /// If a component requested does not exist, panic.
-    pub fn query(&mut self, query: &[QueryComponent]) -> HashSet<EntityId> {
+    pub fn query(&mut self, query: &Query) -> HashSet<EntityId> {
         //let (init, rest) = q.split_first().expect("Empty query");
-        let Some((init, rest)) = query.split_first() else { return HashSet::new() };
+        let Some((init, rest)) = query.intersect.split_first() else { return HashSet::new() };
 
         // Initialize to the entities in the first term..
         // TODO: Pick smallest?
@@ -57,6 +58,7 @@ impl Ecs {
         entities
     }
 
+    /*
     /// Returns a semi-random entity matching the given query, if any
     pub fn find(&mut self, query: &[ComponentId]) -> Option<EntityId> {
         // TODO: Optimize me
@@ -70,6 +72,7 @@ impl Ecs {
 
         self.query(&query).drain().next()
     }
+    */
 
     /// Import an entity ID from elsewhere
     pub fn import_entity(&mut self, id: EntityId) {
@@ -244,7 +247,7 @@ impl Ecs {
             .filter_map(move |(comp, entities)| Some((comp, entities.get(&entity)?.as_slice())))
     }
 
-    pub fn export(&mut self, query: &[QueryComponent]) -> EcsMap {
+    pub fn export(&mut self, query: &Query) -> EcsMap {
         let entities: Vec<EntityId> = self.query(query).into_iter().collect();
 
         let mut exp = EcsMap::new();
@@ -260,7 +263,7 @@ impl Ecs {
         exp
     }
 
-    pub fn import(&mut self, query: &[QueryComponent], imported: EcsMap) {
+    pub fn import(&mut self, query: &Query, imported: EcsMap) {
         // Remove existing entities in the given query
         let entities: Vec<EntityId> = self.query(query).into_iter().collect();
         for id in entities {
@@ -279,22 +282,24 @@ impl Ecs {
 }
 
 /// Query the given ECS and serialize into ECSData
-pub fn query_ecs_data(ecs: &mut Ecs, query: &Query) -> Result<EcsData> {
-    let entities = ecs.query(query).into_iter().collect();
-    let mut components = vec![vec![]; query.len()];
+pub fn query_ecs_data(ecs: &mut Ecs, queries: &HashMap<String, Query>) -> Result<EcsData> {
+    let mut map: EcsData = HashMap::new();
 
-    for &entity in &entities {
-        for (term, comp) in query.iter().zip(&mut components) {
-            if let Some(v) = ecs.get_raw(entity, &term.component) {
-                comp.extend_from_slice(v);
+    for (_, query) in queries {
+        let entities = ecs.query(query).into_iter().collect::<Vec<_>>();
+        for &entity in &entities {
+            for query_component in &query.intersect {
+                if let Some(data) = ecs.get_raw(entity, &query_component.component) {
+                    map.entry(query_component.component.clone())
+                        .or_default()
+                        .entry(entity)
+                        .or_insert_with(|| data.to_vec());
+                }
             }
         }
     }
 
-    Ok(EcsData {
-        entities,
-        components,
-    })
+    Ok(map)
 }
 
 /// Apply the given commands to the given ecs
@@ -307,10 +312,12 @@ pub fn apply_ecs_commands(
     for command in commands {
         // TODO: Throw error on modification of non-queried data...
         match command {
-            EcsCommand::Create(id) => ecs.import_entity(*id),
+            EcsCommand::Create(id) => {
+                ecs.import_entity(*id);
+                ecs.add_component(*id, &plugin_idx);
+            }
             EcsCommand::Delete(id) => ecs.remove_entity(*id),
             EcsCommand::AddComponent(entity, component, data) => {
-                ecs.add_component(*entity, &plugin_idx);
                 ecs.add_component_raw(*entity, component, data)
             }
         }

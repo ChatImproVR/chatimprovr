@@ -1,5 +1,6 @@
 //! Types used for communication with the engine
 use std::{
+    collections::HashMap,
     fmt::Debug,
     io::{Read, Write},
 };
@@ -36,13 +37,7 @@ pub fn deserialize<R: Read, T: DeserializeOwned>(r: R) -> bincode::Result<T> {
 // (TODO: Make this just a header containing references to a dense buffer
 /// Plugin-local ECS data
 /// Represents the data returned by a query
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct EcsData {
-    /// Entity IDs aligned with components
-    pub entities: Vec<EntityId>,
-    /// Component data SoA, with components in the same order as the query terms
-    pub components: Vec<Vec<u8>>,
-}
+pub type EcsData = HashMap<ComponentId, HashMap<EntityId, Vec<u8>>>;
 
 /// Data transferred from Host to Plugin
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -55,10 +50,6 @@ pub struct ReceiveBuf {
     pub inbox: Inbox,
     /// True if plugin is server-side
     pub is_server: bool,
-    /*
-    /// Message buffers, in the same order as the subscribed channels
-    pub messages: Vec<Vec<Message>>,
-    */
 }
 
 /// Data transferred from Plugin to Host

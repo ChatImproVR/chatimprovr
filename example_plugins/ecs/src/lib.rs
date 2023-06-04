@@ -34,7 +34,10 @@ impl UserState for ServerState {
         // Queries all entities with MyComponent attached, and allows us to write to them
         sched
             .add_system(Self::update)
-            .query::<MyComponent>(Access::Write)
+            .query(
+                "My Query Name",
+                Query::new().intersect::<MyComponent>(Access::Write),
+            )
             .build();
 
         Self { increment: 0 }
@@ -44,9 +47,10 @@ impl UserState for ServerState {
 impl ServerState {
     fn update(&mut self, _io: &mut EngineIo, query: &mut QueryResult) {
         // Update MyComponent, which is then automatically Sychronized with the connected clients
-        for key in query.iter() {
+        // Note that we re-use the string "My Query Name" to refer to the query we
+        for entity in query.iter("My Query Name") {
             query.write(
-                key,
+                entity,
                 &MyComponent {
                     a: self.increment,
                     b: self.increment as f32,
@@ -65,7 +69,10 @@ impl UserState for ClientState {
         // querying all entities with the MyComponent component attached
         sched
             .add_system(Self::update)
-            .query::<MyComponent>(Access::Read)
+            .query(
+                "My other query",
+                Query::new().intersect::<MyComponent>(Access::Read),
+            )
             .build();
 
         Self
@@ -75,8 +82,8 @@ impl UserState for ClientState {
 impl ClientState {
     fn update(&mut self, _io: &mut EngineIo, query: &mut QueryResult) {
         // Write all MyComponents to the console
-        for key in query.iter() {
-            dbg!(query.read::<MyComponent>(key));
+        for entity in query.iter("My other query") {
+            dbg!(query.read::<MyComponent>(entity));
         }
     }
 }

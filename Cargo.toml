@@ -13,13 +13,20 @@ members = [
     "example_plugins/hello",
     "example_plugins/ui_example",
     "example_plugins/fluid-sim",
-    "example_plugins/particle-life",
     "example_plugins/shader",
     "example_plugins/randomly_moving_cube",
     "example_plugins/gamepad",
     "example_plugins/keyboard",
     "example_plugins/chat",
     "example_plugins/dyn_edit_perms",
+    "example_plugins/vr-teleport",
+    "obj_loader",
+    "example_plugins/multiple_queries",
+    "example_plugins/camera2d",
+    "example_plugins/parenting",
+    "example_plugins/parenting_demo",
+    "example_plugins/xyz_reference",
+    "example_plugins/obj-axes",
 ]
 
 # Causes a build issue with OpenXR if included in workspace

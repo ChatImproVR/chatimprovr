@@ -2,10 +2,11 @@ use anyhow::Result;
 
 use cimvr_engine::hotload::Hotloader;
 use cimvr_engine::interface::prelude::{
-    Access, ClientId, ConnectionRequest, Connections, QueryComponent, Synchronized,
+    Access, ClientId, ConnectionRequest, ConnectionResponse, Connections, Digest, PluginData,
+    Query, Synchronized,
 };
-use cimvr_engine::interface::serial::deserialize;
-use cimvr_engine::Config;
+use cimvr_engine::interface::serial::{deserialize, serialize, serialize_into};
+use cimvr_engine::{calculate_digest, Config};
 use cimvr_engine::{interface::system::Stage, network::*, Engine};
 
 use std::time::Instant;
@@ -16,7 +17,7 @@ use std::{
     time::Duration,
 };
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -44,14 +45,25 @@ fn main() -> Result<()> {
 
     // Set up engine and initialize plugins
     let hotload = Hotloader::new(&args.plugins)?;
-    let mut engine = Engine::new(&args.plugins, Config { is_server: true })?;
+
+    let plugins: Vec<(String, Vec<u8>)> = args
+        .plugins
+        .iter()
+        .map(|path| {
+            let name = path_to_plugin_name(&path);
+            let bytecode = std::fs::read(path)?;
+            Ok((name, bytecode))
+        })
+        .collect::<Result<_>>()?;
+
+    let mut engine = Engine::new(&plugins, Config { is_server: true })?;
     engine.init_plugins()?;
 
     // Create a new thread for the connection listener
     let (conn_tx, conn_rx) = mpsc::channel();
     std::thread::spawn(move || connection_listener(bind_addr, conn_tx));
 
-    let mut server = Server::new(conn_rx, engine, hotload);
+    let mut server = Server::new(conn_rx, engine, hotload, plugins);
     let target = Duration::from_millis(15);
 
     loop {
@@ -67,7 +79,10 @@ fn main() -> Result<()> {
 
 /// Thread which listens for new connections and sends them to the given MPSC channel
 /// Technically we could use a non-blocking connection accepter, but it was easier not to for now
-fn connection_listener(addr: SocketAddr, conn_tx: Sender<(TcpStream, String)>) -> Result<()> {
+fn connection_listener(
+    addr: SocketAddr,
+    conn_tx: Sender<(TcpStream, ConnectionRequest)>,
+) -> Result<()> {
     let listener = TcpListener::bind(addr)?;
     loop {
         let (mut stream, addr) = listener.accept()?;
@@ -76,7 +91,9 @@ fn connection_listener(addr: SocketAddr, conn_tx: Sender<(TcpStream, String)>) -
             continue;
         };
 
-        conn_tx.send((stream, req.username)).unwrap();
+        if req.validate() {
+            conn_tx.send((stream, req)).unwrap();
+        }
     }
 }
 
@@ -98,19 +115,32 @@ struct Connection {
 struct Server {
     /// ChatImproVR engine
     engine: Engine,
-    /// Incoming connections (Socket, Username)
-    conn_rx: Receiver<(TcpStream, String)>,
+    /// Incoming connections
+    conn_rx: Receiver<(TcpStream, ConnectionRequest)>,
     /// Existing connections
     conns: Vec<Connection>,
     /// Code hotloading
     hotload: Hotloader,
     /// Client ID increment
     id_counter: u32,
+    /// Currently loaded plugin bytecode. Can change during runtime,
+    /// so we keep this in order to send it to new clients
+    bytecode: Vec<(Digest, String, Vec<u8>)>,
 }
 
 impl Server {
-    fn new(conn_rx: Receiver<(TcpStream, String)>, engine: Engine, hotload: Hotloader) -> Self {
+    fn new(
+        conn_rx: Receiver<(TcpStream, ConnectionRequest)>,
+        engine: Engine,
+        hotload: Hotloader,
+        bytecode: Vec<(String, Vec<u8>)>,
+    ) -> Self {
+        let bytecode = bytecode
+            .into_iter()
+            .map(|(name, code)| (calculate_digest(&code), name, code))
+            .collect();
         Self {
+            bytecode,
             hotload,
             engine,
             conn_rx,
@@ -121,25 +151,68 @@ impl Server {
 
     fn update(&mut self) -> Result<()> {
         // Check for hotloaded plugins
+        let mut hotloaded = vec![];
         for path in self.hotload.hotload()? {
             log::info!("Reloading {}", path.display());
-            self.engine.reload(path)?;
+            let name = path_to_plugin_name(&path);
+            let bytecode = std::fs::read(path)?;
+            self.engine.reload(name.clone(), &bytecode)?;
+
+            // Update bytecode on our side so that newly connected clients will have the current code
+            let (entry_digest, entry_bytecode) = self
+                .bytecode
+                .iter_mut()
+                .find_map(|(digest, plugin_name, code)| {
+                    (plugin_name == &name).then(|| (digest, code))
+                })
+                .unwrap();
+            *entry_digest = calculate_digest(&bytecode);
+            *entry_bytecode = bytecode.clone();
+
+            // Remember which plugins were hotloaded, so that we can send code to
+            // the clients!
+            hotloaded.push((name, bytecode));
         }
 
         let mut conns_tmp = vec![];
 
         // Check for new connections
-        for (stream, username) in self.conn_rx.try_iter() {
-            stream.set_nonblocking(true)?;
+        for (mut stream, req) in self.conn_rx.try_iter() {
             let addr = stream.peer_addr()?;
-            log::info!("{} Connected from {}", username, addr);
-            self.conns.push(Connection {
-                msg_buf: AsyncBufferedReceiver::new(),
-                stream,
-                username,
-                id: ClientId(self.id_counter),
-            });
-            self.id_counter += 1;
+
+            // Create connection on our side
+            log::info!("{} Connected from {}", req.username, addr);
+
+            // Send plugins to client
+            let mut response_plugins = vec![];
+            for (digest, name, code) in &self.bytecode {
+                // Only send plugin code that a given client does not already have!
+                if req.plugin_manifest.contains(&digest) {
+                    response_plugins.push((name.clone(), PluginData::Cached(*digest)));
+                } else {
+                    response_plugins.push((name.clone(), PluginData::Download(code.clone())));
+                }
+            }
+
+            let resp = ConnectionResponse {
+                plugins: response_plugins,
+            };
+
+            // Write response
+            // TODO: Make this async - blocks whole server just to upload plugin data!
+            if let Err(e) = length_delimit_message(&resp, &mut stream) {
+                log::error!("Client connection failed; {:#}", e);
+            } else {
+                stream.set_nonblocking(true)?;
+                // Remember connection on our side
+                self.conns.push(Connection {
+                    msg_buf: AsyncBufferedReceiver::new(),
+                    stream,
+                    username: req.username,
+                    id: ClientId(self.id_counter),
+                });
+                self.id_counter += 1;
+            }
         }
 
         // Read client messages
@@ -197,8 +270,9 @@ impl Server {
             ecs: self
                 .engine
                 .ecs()
-                .export(&[QueryComponent::new::<Synchronized>(Access::Read)]),
+                .export(&Query::new().intersect::<Synchronized>(Access::Read)),
             messages: self.engine.network_inbox(),
+            hotload: hotloaded,
         };
 
         // Write header and serialize message
@@ -226,4 +300,8 @@ impl Server {
 
         Ok(())
     }
+}
+
+fn path_to_plugin_name(path: &Path) -> String {
+    path.file_name().unwrap().to_str().unwrap().to_string()
 }

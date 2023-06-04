@@ -171,7 +171,7 @@ pub struct SystemBuilder<'sched, U> {
     callback: Callback<U>,
 }
 
-impl<U> SystemBuilder<'_, U> {
+impl<'a, U> SystemBuilder<'a, U> {
     /// Run the system during the specified Stage
     pub fn stage(mut self, stage: Stage) -> Self {
         self.desc.stage = stage;
@@ -179,8 +179,8 @@ impl<U> SystemBuilder<'_, U> {
     }
 
     /// Query the given component and provide an access level to it.
-    pub fn query<T: Component>(mut self, access: Access) -> Self {
-        self.desc.query.push(QueryComponent::new::<T>(access));
+    pub fn query(mut self, name: &'static str, query: Query) -> Self {
+        self.desc.queries.insert(name.to_string(), query);
         self
     }
 
@@ -203,7 +203,7 @@ impl<U: UserState> PluginState<U> {
         let system = self.sched.callbacks[system_idx];
 
         // Get query results
-        let query = self.sched.systems[system_idx].query.clone();
+        let query = self.sched.systems[system_idx].queries.clone();
         let mut query_result = QueryResult::new(ecs, query);
 
         // Run the user's system

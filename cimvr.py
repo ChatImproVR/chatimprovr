@@ -98,12 +98,17 @@ def main():
         cmds += [cmd]
 
     if args.client:
-        cmd = [client_exe] + plugins
+        cmd = [client_exe]
         if args.vr:
             cmd.append("--vr")
         if args.remote:
             cmd.append("--connect")
             cmd.append(args.remote)
+        elif args.server:
+            # Attempt to log into the server we just created
+            cmd.append("--connect")
+            cmd.append("127.0.0.1")
+
         if args.username:
             cmd.append("--username")
             cmd.append(args.username)

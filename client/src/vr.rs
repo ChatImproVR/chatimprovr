@@ -2,23 +2,25 @@ use crate::desktop_input::DesktopInputHandler;
 use crate::{Client, Opt};
 use anyhow::{format_err, Result};
 use cimvr_common::glam::{Quat, Vec3};
-use cimvr_common::vr::{VrFov, VrUpdate, HeadsetState, ViewState, ControllerState, ControllerEvent};
+use cimvr_common::vr::{
+    ControllerEvent, ControllerState, HeadsetState, ViewState, VrFov, VrUpdate,
+};
 use cimvr_common::Transform;
 use cimvr_engine::interface::system::Stage;
 use gl::HasContext;
+use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
 use glutin::event_loop::EventLoop;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
 use xr::View;
-use glutin::event::{Event, WindowEvent};
 
 const VR_DEPTH_FORMAT: u32 = gl::DEPTH_COMPONENT24;
 
 pub fn mainloop(args: Opt) -> Result<()> {
     // Set up VR mainloop
-    let (mut main, event_loop) = MainLoop::new(args.plugins, args.connect, args.username.unwrap())?;
+    let (mut main, event_loop) = MainLoop::new(args)?;
 
     // Set up desktop input
     let mut input = DesktopInputHandler::new();
@@ -65,7 +67,9 @@ struct MainLoop {
 }
 
 impl MainLoop {
-    pub fn new(plugins: Vec<PathBuf>, connect: SocketAddr, username: String) -> Result<(Self, EventLoop<()>)> {
+    pub fn new(
+        args: Opt,
+    ) -> Result<(Self, EventLoop<()>)> {
         // Load OpenXR from platform-specific location
         #[cfg(target_os = "linux")]
         let entry = unsafe { xr::Entry::load()? };
@@ -136,7 +140,7 @@ impl MainLoop {
             glutin_openxr_opengl_helper::session_create_info(&glutin_ctx, &glutin_window)?;
 
         // Setup client code
-        let client = Client::new(gl.clone(), &plugins, connect, username)?;
+        let client = Client::new(gl.clone(), args.login_info()?)?;
 
         // Create session
         let (xr_session, xr_frame_waiter, xr_frame_stream) =
@@ -512,19 +516,14 @@ impl PluginVrInterfacing {
         let aim_right_action =
             action_set.create_action::<xr::Posef>("aim_right", "aim_right", &[])?;
 
-        let trigger_left =
-            action_set.create_action::<bool>("trigger_left", "trigger_left", &[])?;
+        let trigger_left = action_set.create_action::<bool>("trigger_left", "trigger_left", &[])?;
 
-        let menu_left =
-            action_set.create_action::<bool>("menu_left", "menu_left", &[])?;
+        let menu_left = action_set.create_action::<bool>("menu_left", "menu_left", &[])?;
 
         let trigger_right =
             action_set.create_action::<bool>("trigger_right", "trigger_right", &[])?;
 
-        let menu_right =
-            action_set.create_action::<bool>("menu_right", "menu_right", &[])?;
-
-
+        let menu_right = action_set.create_action::<bool>("menu_right", "menu_right", &[])?;
 
         xr_instance
             .suggest_interaction_profile_bindings(
@@ -683,7 +682,6 @@ impl PluginVrInterfacing {
         if menu_left.changed_since_last_sync {
             left_events.push(ControllerEvent::Menu(menu_left.current_state.into()));
         }
-
 
         let mut right_events = vec![];
         let trigger_right = self.trigger_right.state(xr_session, xr::Path::NULL)?;

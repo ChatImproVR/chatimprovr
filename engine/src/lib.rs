@@ -4,6 +4,7 @@ pub mod hotload;
 pub mod network;
 pub mod plugin;
 pub mod timing;
+use cimvr_engine_interface::network::Digest;
 use dyn_edit::DynamicEditor;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::PathBuf};
@@ -51,8 +52,8 @@ pub struct Engine {
 
 /// Plugin management structure
 struct PluginState {
-    /// Path to this plugin's source code
-    path: PathBuf,
+    /// Unique name of this plugin
+    name: String,
     /// Plugin code and interface
     code: Plugin,
     /// Systems on this plugin
@@ -69,10 +70,10 @@ struct PluginState {
 pub struct PluginIndex(usize);
 
 impl PluginState {
-    pub fn new(path: PathBuf, wasm: &wasmtime::Engine) -> Result<Self> {
-        let code = Plugin::new(wasm, &path)?;
+    pub fn new(name: String, bytecode: &[u8], wasm: &wasmtime::Engine) -> Result<Self> {
+        let code = Plugin::new(wasm, bytecode)?;
         Ok(PluginState {
-            path,
+            name,
             code,
             outbox: vec![],
             systems: vec![],
@@ -80,23 +81,23 @@ impl PluginState {
         })
     }
 
-    pub fn name(&self) -> String {
-        self.path.file_name().unwrap().to_str().unwrap().to_string()
+    pub fn name(&self) -> &str {
+        &self.name
     }
 }
 
 impl Engine {
     /// Load plugins at the given paths
-    pub fn new(plugins: &[PathBuf], cfg: Config) -> Result<Self> {
+    pub fn new(plugins: &[(String, Vec<u8>)], cfg: Config) -> Result<Self> {
         let time = Timing::init();
 
         let wasm = wasmtime::Engine::new(&Default::default())?;
 
         let plugins: Vec<PluginState> = plugins
             .iter()
-            .map(|p| {
-                PluginState::new(p.clone(), &wasm)
-                    .with_context(|| format_err!("Initializing plugin {}", p.display()))
+            .map(|(name, bytecode)| {
+                PluginState::new(name.clone(), bytecode, &wasm)
+                    .with_context(|| format_err!("Initializing plugin {}", name))
             })
             .collect::<Result<_>>()?;
 
@@ -125,7 +126,7 @@ impl Engine {
     pub fn init_plugins(&mut self) -> Result<()> {
         // Dispatch all plugins
         for plugin_idx in 0..self.plugins.len() {
-            let name = self.plugins[plugin_idx].name();
+            let name = self.plugins[plugin_idx].name().to_string();
             self.init_plugin(plugin_idx)
                 .with_context(|| format_err!("Plugin {}", name))?;
         }
@@ -220,7 +221,7 @@ impl Engine {
             }
 
             // Query ECS
-            let ecs_data = query_ecs_data(&mut self.ecs, &system.query).context("ECS query")?;
+            let ecs_data = query_ecs_data(&mut self.ecs, &system.queries).context("ECS query")?;
 
             // Write input data
             let recv_buf = ReceiveBuf {
@@ -231,7 +232,7 @@ impl Engine {
             };
 
             // Run plugin
-            let name = plugin.name();
+            let name = plugin.name().to_string();
             let ret = plugin
                 .code
                 .dispatch(&recv_buf)
@@ -323,24 +324,23 @@ impl Engine {
     }
 
     /// Reload the plugin at the given path
-    pub fn reload(&mut self, path: PathBuf) -> Result<()> {
+    pub fn reload(&mut self, name: String, code: &[u8]) -> Result<()> {
         // Find old plugin
         let i = self
             .plugins
             .iter_mut()
-            .position(|p| p.path.canonicalize().unwrap() == path.canonicalize().unwrap())
+            .position(|p| p.name() == name)
             .expect("Requested plugin is not loaded");
 
         // Replace old plugin
-        let new_plugin = PluginState::new(path.clone(), &self.wasm)?;
-        let name = new_plugin.name();
+        let new_plugin = PluginState::new(name.clone(), code, &self.wasm)?;
 
         self.plugins[i] = new_plugin;
 
         // Delete all unsaved entities from that plugin
         let indices = self
             .ecs
-            .query(&[QueryComponent::new::<PluginIndex>(Access::Read)]);
+            .query(&Query::new().intersect::<PluginIndex>(Access::Read));
         for ent in indices {
             if let Some(PluginIndex(idx)) = self.ecs().get::<PluginIndex>(ent) {
                 // Only those from the plugin that have no Saved component
@@ -366,4 +366,9 @@ impl Engine {
         // Run PostInit stage
         self.dispatch_plugin(Stage::PostInit, i)
     }
+}
+
+/// Calculate the hash of a particular peice of data
+pub fn calculate_digest(data: &[u8]) -> Digest {
+    Digest(xxhash_rust::xxh3::xxh3_128(data))
 }
