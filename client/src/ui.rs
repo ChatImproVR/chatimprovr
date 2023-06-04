@@ -120,7 +120,7 @@ fn show(ui: &mut Ui, schema: &Schema, state: &mut State) -> bool {
             ui.add(TextEdit::singleline(text)).changed()
         }
         (Schema::TextBox, State::TextBox { text }) => {
-            ui.add(TextEdit::multiline(text).code_editor()).changed()
+            ui.add(TextEdit::multiline(text).code_editor().desired_width(f32::INFINITY)).changed()
         }
         (Schema::Button { text }, State::Button { clicked }) => {
             *clicked = ui.button(text).clicked();
