@@ -21,6 +21,7 @@ pub enum Schema {
     TextInput,
     DragValue { min: Option<f32>, max: Option<f32> },
     ColorPicker,
+    TextBox,
 }
 
 /// UI element state
@@ -31,6 +32,7 @@ pub enum State {
     TextInput { text: String },
     DragValue { value: f32 },
     ColorPicker { rgb: [f32; 3] },
+    TextBox { text: String },
 }
 
 /// UI update message sent from plugins
