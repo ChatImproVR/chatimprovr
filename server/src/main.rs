@@ -123,6 +123,7 @@ struct Server {
     hotload: Hotloader,
     /// Client ID increment
     id_counter: u32,
+
     /// Currently loaded plugin bytecode. Can change during runtime,
     /// so we keep this in order to send it to new clients
     bytecode: Vec<(Digest, String, Vec<u8>)>,

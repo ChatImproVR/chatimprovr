@@ -5,10 +5,10 @@
 //! `engine_interface`.
 
 pub use glam;
-
 pub mod desktop;
 pub mod gamepad;
 mod generic_handle;
+pub mod physics;
 pub mod render;
 mod transform;
 pub mod ui;
