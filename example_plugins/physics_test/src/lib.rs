@@ -1,5 +1,6 @@
 use cimvr_common::{
-    physics::{Physics, RigidBodyType},
+    glam::vec3,
+    physics::{ColliderHandle, ColliderShape, LocalColliderMsg, Physics, RigidBody, RigidBodyType},
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
@@ -25,27 +26,26 @@ impl UserState for ClientState {
             mesh: cube(),
             id: CUBE_HANDLE,
         });
-        io.send(&LocalColliderMsg {
-            shape: ColliderShape::Cube(4),
-            // ColliderShape::Pill(4,5)
-            // ColliderShape::Prism(3,4,5)
-            handle: CUBE_HANDLE,
-        });
+
         Self
     }
 }
 
 impl UserState for ServerState {
     fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
+        io.send(&LocalColliderMsg {
+            shape: ColliderShape::Cube(4.),
+            // ColliderShape::Pill(4,5)
+            // ColliderShape::Prism(3,4,5)
+            handle: CUBE_COLLIDER,
+        });
+
         // Create an entity
         for _ in 1..=5 {
             io.create_entity()
                 // Attach a Transform component (which defaults to the origin)
                 .add_component(Transform::default())
-                .add_component(RigidBody::new(
-                    RigidBodyType::DynamicRigidBody,
-                    CUBE_COLLIDER,
-                ))
+                .add_component(RigidBody::new(RigidBodyType::Dynamic, CUBE_COLLIDER))
                 // Attach the Render component, which details how the object should be drawn
                 // Note that we use CUBE_HANDLE here, to tell the rendering engine to draw the cube
                 .add_component(Render::new(CUBE_HANDLE).primitive(Primitive::Triangles))
@@ -70,7 +70,7 @@ impl UserState for ServerState {
 }
 
 impl ServerState {
-    fn foo(io: &mut EngineIo, query: &mut QueryResult) {
+    fn foo(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         // Check for movement commands
         for entity in query.iter("Cubes")
         //      _: RigidBody.body_type: DynamicRigidBody    x: &EntityId
@@ -79,17 +79,23 @@ impl ServerState {
         {
             // bar: RigidBody
             let bar = query.read::<RigidBody>(entity);
-            // Filter for Dynamic bodies w/ if statement cuz above comment does fuckery w/
+            // Filter for Dynamic bodies w/ if statement cuz above idea does fuckery w/
             // ownership D:
-            if bar.body_type.eq(RigidBodyType::Dynamic) {
+            if bar.body_type.eq(&RigidBodyType::Dynamic) {
                 // Stuff in here will all be Dynamic bodies, cuz I wanna hit cubes UwU
-                query.modify::<RigidBody>(entity, |x: RigidBody| {
-                    x.add_force(vector![0.0, 1000.0, 0.0], true)
-                });
-            }
+                /* Set the gravity scale after the rigid-body creation. */
+                // rigid_body_handle comes from when the rigidbody gets built, or
+                // somethin idk.
+                let rigid_body = rigid_body_set.get_mut(rigid_body_handle).unwrap();
+                // io.physics_manager.add_force(entity, )
+                //
+                // The `true` argument makes sure the rigid-body is awake.
+                // x.add_force(vec3(0.0, 1000.0, 0.0), true);
+            };
         }
     }
 }
+
 /// Defines the mesh data fro a cube
 fn cube() -> Mesh {
     // Size of the cube mesh

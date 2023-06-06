@@ -12,11 +12,12 @@ pub fn component_derive(input: TokenStream) -> TokenStream {
 
     // Generate the implementation of the `Component` trait
     let gen = quote::quote! {
-         impl Component for #name {
-             // Define a constant `ID` that identifies the component type
-             // Use the namespace of the current crate and the name of the struct
-             const ID: &'static str = pkg_namespace!(stringify!(#name));
-         }
+
+        impl Component for #name {
+            // Define a constant `ID` that identifies the component type
+            // Use the namespace of the current crate and the name of the struct
+            const ID: &'static str = cimvr_engine_interface::pkg_namespace!(stringify!(#name));
+        }
     };
 
     // Convert the generated code back into tokens and return them

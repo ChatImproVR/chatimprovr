@@ -6,7 +6,7 @@
 
 /// Code specific to WASM plugins
 pub mod plugin;
-
+extern crate self as cimvr_engine_interface;
 use std::{cell::RefCell, collections::HashMap};
 mod component_validate_error;
 pub mod component_validation;

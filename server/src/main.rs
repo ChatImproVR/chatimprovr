@@ -16,7 +16,7 @@ use std::{
     sync::mpsc::{self, Receiver, Sender},
     time::Duration,
 };
-
+mod physics_manager;
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
@@ -264,6 +264,10 @@ impl Server {
         // Execute update steps
         self.engine.dispatch(Stage::PreUpdate)?;
         self.engine.dispatch(Stage::Update)?;
+
+        // Putting physics pipeline steps after the update, UwU.
+        // TODO: Insert physics pipeline.step shit here.
+
         self.engine.dispatch(Stage::PostUpdate)?;
 
         // Gather current synchronized state
