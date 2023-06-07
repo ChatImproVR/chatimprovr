@@ -538,3 +538,4 @@ impl Texture {
         self.bind();
     }
 }
+
