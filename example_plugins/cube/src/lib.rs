@@ -61,7 +61,7 @@ fn cube() -> Mesh {
         Vertex::new([-size, -size, size], [1.0, 0.0, 1.0]),
         Vertex::new([size, -size, size], [1.0, 1.0, 0.0]),
         Vertex::new([size, size, size], [0.0, 1.0, 1.0]),
-        Vertex::new([-size * 100., size, size], [1.0, 0.0, 1.0]),
+        Vertex::new([-size, size, size], [1.0, 0.0, 1.0]),
     ];
 
     // Each 3 indices (indexing into vertices) define a triangle
