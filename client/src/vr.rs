@@ -1,5 +1,5 @@
 use crate::desktop_input::DesktopInputHandler;
-use crate::{Client, Opt};
+use crate::{Client, Opt, LoginInfo};
 use anyhow::{format_err, Result};
 use cimvr_common::glam::{Quat, Vec3};
 use cimvr_common::vr::{
@@ -64,12 +64,15 @@ struct MainLoop {
     _glutin_ctx: glutin::ContextWrapper<glutin::PossiblyCurrent, ()>,
     _glutin_window: glutin::window::Window,
     plugin_interface: PluginVrInterfacing,
+    login_info: LoginInfo,
 }
 
 impl MainLoop {
     pub fn new(
         args: Opt,
     ) -> Result<(Self, EventLoop<()>)> {
+        let login_info = args.login_info()?;
+
         // Load OpenXR from platform-specific location
         #[cfg(target_os = "linux")]
         let entry = unsafe { xr::Entry::load()? };
@@ -140,7 +143,7 @@ impl MainLoop {
             glutin_openxr_opengl_helper::session_create_info(&glutin_ctx, &glutin_window)?;
 
         // Setup client code
-        let client = Client::new(gl.clone(), args.login_info()?)?;
+        let client = Client::new(gl.clone(), login_info.clone())?;
 
         // Create session
         let (xr_session, xr_frame_waiter, xr_frame_stream) =
@@ -226,6 +229,7 @@ impl MainLoop {
 
         let inst = Self {
             client,
+            login_info,
             gl,
             gl_framebuffers,
             xr_frame_stream,
@@ -426,6 +430,12 @@ impl MainLoop {
 
         // Upload messages to server
         self.client.upload().expect("Message upload");
+
+        // Check for travel requests
+        if let Some(travel_request) = self.client.travel_request() {
+            self.login_info.address = travel_request.address;
+            self.client = Client::new(self.gl.clone(), self.login_info.clone())?;
+        }
 
         Ok(true)
     }
