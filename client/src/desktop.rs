@@ -1,4 +1,4 @@
-use crate::desktop_input::DesktopInputHandler;
+use crate::desktop_input::{DesktopInputHandler, WindowController};
 use crate::{project_dirs, Client, LoginFile, LoginInfo, Opt};
 use anyhow::Result;
 use cimvr_common::glam::Mat4;
@@ -34,6 +34,7 @@ pub fn mainloop(mut args: Opt) -> Result<()> {
 
     // Set up desktop input
     let mut input = DesktopInputHandler::new();
+    let mut window_control = None;
 
     // Setup client code
     let mut client: Option<Client> = None;
@@ -67,6 +68,10 @@ pub fn mainloop(mut args: Opt) -> Result<()> {
                 }
 
                 if let Some(client) = &mut client {
+                    if window_control.is_none() {
+                        window_control = Some(WindowController::new(client.engine()));
+                    }
+
                     // Download messages from server
                     client.download().expect("Message download");
 
@@ -86,6 +91,10 @@ pub fn mainloop(mut args: Opt) -> Result<()> {
                         .engine()
                         .dispatch(Stage::Update)
                         .expect("Frame udpate");
+
+                    window_control
+                        .get_or_insert_with(|| WindowController::new(client.engine()))
+                        .update(client.engine(), glutin_ctx.window());
 
                     // Collect UI input
                     egui_glow.run(glutin_ctx.window(), |ctx| client.update_ui(ctx));

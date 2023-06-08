@@ -27,6 +27,8 @@ members = [
     "example_plugins/xyz_reference",
     "example_plugins/obj-axes",
     "example_plugins/interdimensional",
+    "example_plugins/fullscreen_shader",
+    "example_plugins/mouse-capture",
 ]
 
 # Causes a build issue with OpenXR if included in workspace
