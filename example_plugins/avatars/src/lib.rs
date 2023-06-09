@@ -5,7 +5,7 @@ use cimvr_common::{
     vr::VrUpdate,
     Transform,
 };
-use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
+use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, FrameTime};
 
 use serde::{Deserialize, Serialize};
 
@@ -13,17 +13,20 @@ struct ServerState {
     tracker: ClientTracker,
 }
 
-struct ClientState;
+struct ClientState {
+    animation: SkeletonAnimator,
+}
 
 make_app_state!(ClientState, ServerState);
 
 const CUBE_HANDLE: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
+const SKELETON_HANDLE: MeshHandle = MeshHandle::new(pkg_namespace!("Skeleton"));
 
 /// Request a server-side update to an avatar from the client side
 #[derive(Message, Serialize, Deserialize, Clone)]
 #[locality("Remote")]
 pub struct AvatarUpdate {
-    pub head: Transform,
+    pub skeleton: Skeleton,
 }
 
 /// Informs a client which ID it has
@@ -42,6 +45,11 @@ impl UserState for ClientState {
             id: CUBE_HANDLE,
         });
 
+        io.create_entity()
+            .add_component(Render::new(SKELETON_HANDLE).primitive(Primitive::Lines))
+            .add_component(Transform::new())
+            .build();
+
         sched
             .add_system(Self::update)
             .subscribe::<VrUpdate>()
@@ -58,25 +66,38 @@ impl UserState for ClientState {
             )
             .build();
 
-        Self
+        Self {
+            animation: SkeletonAnimator::new(),
+        }
     }
 }
 
 impl ClientState {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        let Some(FrameTime { delta, .. }) = io.inbox_first() else { return };
+
         // Get the camera position
         let Some(camera_entity) = query.iter("Camera").next() else { return };
 
-        let mut camera_tf = query.read::<Transform>(camera_entity);
+        let mut eyeball = query.read::<Transform>(camera_entity);
 
         // Or, if in VR mode, the camera component's position corresponds to the floor.
         // Use this and the VR update to find the world position of the headset
         if let Some(update) = io.inbox_first::<VrUpdate>() {
-            camera_tf = update.headset.left.transf * camera_tf;
+            eyeball = update.headset.left.transf * eyeball;
         }
 
+        let skele_input = SkeletonAnimatorInputs {
+            eyeball,
+            left_hand: None,
+            right_hand: None,
+            speed: 0.,
+            dt: delta,
+        };
+        let skeleton = self.animation.update(&skele_input);
+
         // Send to server
-        io.send(&AvatarUpdate { head: camera_tf });
+        io.send(&AvatarUpdate { skeleton });
 
         // Delete our own avatar from the scene...
         if let Some(ClientIdMessage(client_id)) = io.inbox_first() {
@@ -87,6 +108,19 @@ impl ClientState {
                 }
             }
         }
+    }
+
+    fn animation(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        /*
+        let input = SkeletonAnimatorInputs {
+            eyeball:
+        };
+
+        io.send(&UploadMesh {
+            mesh: skeleton_mesh(&self.animation.update(&skele_input), [1.; 3]),
+            id: SKELETON_HANDLE,
+        });
+        */
     }
 }
 
@@ -146,7 +180,7 @@ impl ServerState {
             // Update properties of the client
             if let Some(entity) = entity {
                 // TODO: Avatar colors!!
-                io.add_component(entity, update.head);
+                io.add_component(entity, update.skeleton.head);
             }
 
             // Inform the client which one it is
@@ -195,6 +229,7 @@ struct SkeletonAnimator {
     animation_phase: f32,
 }
 
+#[derive(Serialize, Deserialize, Clone)]
 struct Skeleton {
     head: Transform,
     shoulders: Vec3,
@@ -221,7 +256,7 @@ impl SkeletonAnimator {
 impl Default for Skeleton {
     fn default() -> Self {
         Self {
-            head: Transform::new(),
+            head: Transform::new().with_position(Vec3::new(0., 1.8, 0.)),
             shoulders: Vec3::new(0., 1.52, 0.),
             left_hand: Vec3::new(0.5, 1.52, -0.5),
             right_hand: Vec3::new(-0.5, 1.52, -0.5),
