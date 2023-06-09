@@ -1,5 +1,4 @@
 use anyhow::Result;
-
 use cimvr_engine::hotload::Hotloader;
 use cimvr_engine::interface::prelude::{
     Access, ClientId, ConnectionRequest, ConnectionResponse, Connections, Digest, PluginData,
@@ -8,6 +7,10 @@ use cimvr_engine::interface::prelude::{
 use cimvr_engine::interface::serial::{deserialize, serialize, serialize_into};
 use cimvr_engine::{calculate_digest, Config};
 use cimvr_engine::{interface::system::Stage, network::*, Engine};
+use physics_setup::PhysSimulation;
+use rapier3d::prelude::*;
+
+use rapier3d::math::Vector;
 
 use std::time::Instant;
 use std::{
@@ -17,6 +20,7 @@ use std::{
     time::Duration,
 };
 mod physics_manager;
+mod physics_setup;
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
@@ -123,7 +127,9 @@ struct Server {
     hotload: Hotloader,
     /// Client ID increment
     id_counter: u32,
-
+    /// Physics simulation state for the pipeline.
+    /// Query pipeline is also inside the physics simulation
+    phys_sim: PhysSimulation,
     /// Currently loaded plugin bytecode. Can change during runtime,
     /// so we keep this in order to send it to new clients
     bytecode: Vec<(Digest, String, Vec<u8>)>,
@@ -140,12 +146,16 @@ impl Server {
             .into_iter()
             .map(|(name, code)| (calculate_digest(&code), name, code))
             .collect();
+
+        // let gravity = vector![0.0, -9.81, 0.0];
+        let phys_sim = PhysSimulation::new();
         Self {
             bytecode,
             hotload,
             engine,
             conn_rx,
             conns: vec![],
+            phys_sim,
             id_counter: 0,
         }
     }
@@ -267,6 +277,11 @@ impl Server {
 
         // Putting physics pipeline steps after the update, UwU.
         // TODO: Insert physics pipeline.step shit here.
+        // let mut phys_sim = PhysSimulation::new();
+        self.phys_sim.pipeline_step();
+        self.phys_sim.query_pipeline_update();
+        // let query_pipeline = QueryPipeline::new();
+        // phys_sim.pipeline_step(&gravity);
 
         self.engine.dispatch(Stage::PostUpdate)?;
 

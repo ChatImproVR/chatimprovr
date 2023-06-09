@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
-use cimvr_common::physics::{RigidBody, RigidBodyBuilder};
+use cimvr_common::physics::{RigidBody as CimvrRb, RigidBodyBuilder as CimvrRbBuilder};
 use cimvr_engine::interface::prelude::EntityId;
-use rapier3d::prelude::Collider;
+use rapier3d::prelude::{Collider, RigidBody};
 /*
  * This PhysicsManager is composed of some builders that act as a middleman from
  * the plugins to the rapier engine which then modifies the transforms directly.
@@ -16,4 +16,8 @@ struct PhysicsManager {
     cimvr_collider_set: HashMap<EntityId, Collider>,
 }
 
-impl PhysicsManager {}
+impl PhysicsManager {
+    pub fn new() -> Self {
+        todo!()
+    }
+}
