@@ -4,7 +4,10 @@
 //! implementations provided alongside ChatimproVR. This library is always used in conjunction with
 //! `engine_interface`.
 
+use cimvr_engine_interface::pkg_namespace;
+use cimvr_engine_interface::prelude::*;
 pub use glam;
+use serde::{Deserialize, Serialize};
 
 pub mod desktop;
 pub mod gamepad;
@@ -17,3 +20,10 @@ pub mod vr;
 
 pub use generic_handle::GenericHandle;
 pub use transform::Transform;
+
+/// Requests that the client disconnect from the current server in favor of this new server
+#[derive(Message, Serialize, Deserialize, Clone, Debug)]
+#[locality("Local")]
+pub struct InterdimensionalTravelRequest {
+    pub address: String,
+}

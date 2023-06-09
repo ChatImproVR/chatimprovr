@@ -1,0 +1,6 @@
+# Written by new.py
+[build]
+target = "wasm32-unknown-unknown"
+
+[alias]
+test_pc = "test --target=x86_64-unknown-linux-gnu"

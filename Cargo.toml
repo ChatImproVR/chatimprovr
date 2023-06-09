@@ -18,7 +18,6 @@ members = [
     "example_plugins/gamepad",
     "example_plugins/keyboard",
     "example_plugins/chat",
-    "example_plugins/vr-teleport",
     "obj_loader",
     "example_plugins/multiple_queries",
     "example_plugins/camera2d",
@@ -26,6 +25,11 @@ members = [
     "example_plugins/parenting_demo",
     "example_plugins/xyz_reference",
     "example_plugins/obj-axes",
+    "example_plugins/interdimensional",
+    "example_plugins/fullscreen_shader",
+    "example_plugins/mouse-capture",
+    "example_plugins/first-person",
+    "example_plugins/vr-teleport",
 ]
 
 # Causes a build issue with OpenXR if included in workspace

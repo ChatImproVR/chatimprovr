@@ -14,6 +14,16 @@ pub enum InputEvent {
     Window(WindowEvent),
 }
 
+/// Plugin control of the window
+#[derive(Message, Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[locality("Local")]
+pub enum WindowControl {
+    /// Begin capturing the mouse position
+    MouseCapture,
+    /// Release the mouse capture
+    MouseRelease,
+}
+
 impl InputEvent {
     fn get_key_events(&self) -> Option<&KeyboardEvent> {
         match self {
