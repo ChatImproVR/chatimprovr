@@ -1,8 +1,10 @@
 use cimvr_common::{
-    render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
+    glam::Vec3,
+    render::{CameraComponent, Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
+    vr::VrUpdate,
     Transform,
 };
-use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
+use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, println};
 
 make_app_state!(ClientState, ServerState);
 
@@ -12,13 +14,16 @@ struct ClientState {
     fluid_sim: FluidSim,
     particles: ParticleState,
     frame: usize,
+    tracking: VrTracking,
+    is_vr: bool,
     //last: [f32; 3],
 }
 
 //const VEL_Z: f32 = 0.5;
-const FLUID_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Fluid"));
 const FLUID_VEL_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Fluid velocity"));
 const CUBE_ID: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
+
+const FLUID_POS: Vec3 = Vec3::new(0., 1.2, 0.);
 
 struct ServerState;
 
@@ -28,7 +33,7 @@ impl UserState for ServerState {
         let fluid_vel_rdr = Render::new(FLUID_VEL_ID).primitive(Primitive::Lines);
 
         io.create_entity()
-            .add_component(Transform::default())
+            .add_component(Transform::default().with_position(FLUID_POS))
             .add_component(fluid_vel_rdr)
             .add_component(Synchronized)
             .build();
@@ -36,7 +41,7 @@ impl UserState for ServerState {
         let cube_rdr = Render::new(CUBE_ID).primitive(Primitive::Lines);
 
         io.create_entity()
-            .add_component(Transform::default())
+            .add_component(Transform::default().with_position(FLUID_POS))
             .add_component(cube_rdr)
             .add_component(Synchronized)
             .build();
@@ -47,30 +52,11 @@ impl UserState for ServerState {
 
 impl UserState for ClientState {
     fn new(io: &mut EngineIo, schedule: &mut EngineSchedule<Self>) -> Self {
-        let s = 25;
-        let mut fluid_sim = FluidSim::new(s, s, s);
-
-        let smoke = fluid_sim.smoke_mut();
-
-        for z in s / 5..4 * s / 5 {
-            for y in s / 5..4 * s / 5 {
-                for x in s / 5..=2 * s / 5 {
-                    smoke[(x, y, z)] = 5.;
-                }
-            }
-        }
-
-        let mut grid_mesh = Mesh::default();
-        draw_density(&mut grid_mesh, fluid_sim.smoke_mut(), 0.);
+        let s = 15;
+        let fluid_sim = FluidSim::new(s, s, s);
 
         let mut line_mesh = Mesh::default();
         draw_velocity_lines(&mut line_mesh, fluid_sim.uvw(), 0.);
-
-        let fluid_render_buf = UploadMesh {
-            id: FLUID_ID,
-            mesh: grid_mesh,
-        };
-        io.send(&fluid_render_buf);
 
         let fluid_vel_render_buf = UploadMesh {
             id: FLUID_VEL_ID,
@@ -79,21 +65,25 @@ impl UserState for ClientState {
         io.send(&fluid_vel_render_buf);
         io.send(&cube(1.));
 
-        // Schedule the system
-        schedule.add_system(Self::fluid_move).build();
+        // Schedule the systems
+        schedule
+            .add_system(Self::vr_interaction)
+            .subscribe::<VrUpdate>()
+            .query(
+                "Camera",
+                Query::new()
+                    .intersect::<Transform>(Access::Read)
+                    .intersect::<CameraComponent>(Access::Read),
+            )
+            .build();
 
-        /*
-        schedule.add_system(
-        Self::camera_move,
-        SystemDescriptor::new(Stage::Update)
-        .query::<Transform>(Access::Write)
-        .query::<CameraComponent>(Access::Read),
-        );
-        */
+        schedule.add_system(Self::fluid_update).build();
 
         let particles = ParticleState::new(20_000, io, fluid_sim.uvw().0);
 
         Self {
+            tracking: VrTracking::new(),
+            is_vr: false,
             //fluid_vel_render_buf,
             //fluid_render_buf,
             fluid_sim,
@@ -126,73 +116,43 @@ fn cube(s: f32) -> UploadMesh {
 }
 
 impl ClientState {
-    fn fluid_move(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
-        let (u, v, w) = self.fluid_sim.uv_mut();
-        let (wi, h) = (u.width(), u.height());
+    fn vr_interaction(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        if let Some(update) = io.inbox_first() {
+            self.tracking.update(&update);
+            self.is_vr = true;
+        }
 
-        let t = self.frame as f32 / (60. * 3.);
-        let k = 1.;
+        let mut vr_space_transf = Transform::identity();
+        for entity in query.iter("Camera") {
+            vr_space_transf = query.read::<Transform>(entity);
+        }
 
-        let cx = wi / 2;
-        let cy = h / 2;
-
-        let m = 1;
-
-        for x in cx - m..=cx + m {
-            for y in cy - m..=cy + m {
-                for z in cy - m..=cy + m {
-                    u[(x, y, z)] = t.cos() * k;
-                    v[(x, y, z)] = t.sin() * k;
-                    w[(x, y, z)] = t.sin() * t.cos() * k;
-                }
+        for hand in [&self.tracking.left, &self.tracking.right] {
+            if let Some(grip_pos) = hand.grip_pos {
+                let pos = grip_pos + vr_space_transf.pos - FLUID_POS;
+                push_fluid(&mut self.fluid_sim, 0, pos, hand.vel);
             }
         }
 
-        let dt = 0.5;
+        if !self.is_vr {
+            push_fluid(
+                &mut self.fluid_sim,
+                1,
+                Vec3::ZERO,
+                Vec3::new(1., 2., -1.2) / 1e2,
+            );
+        }
+    }
+
+    fn fluid_update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
+        let dt = 1.;
         self.fluid_sim.step(dt, 1.9, 20);
-        self.particles.step(self.fluid_sim.uvw(), io, dt * 2.);
-
-        /*
-        draw_density(
-        &mut self.fluid_render_buf.mesh,
-        self.fluid_sim.smoke_mut(),
-        0.,
-        );
-        io.send(&self.fluid_render_buf);
-        */
-
-        /*draw_velocity_lines(
-        &mut self.fluid_vel_render_buf.mesh,
-        self.fluid_sim.uvw(),
-        VEL_Z,
-        );*/
+        self.particles.step(self.fluid_sim.uvw(), io, dt);
 
         io.send(&self.particles.render);
 
         self.frame += 1;
     }
-
-    /*
-    fn camera_move(&mut self, _io: &mut EngineIo, query: &mut QueryResult) {
-        // Set camera position
-        let pos = self.particles.particles[0];
-
-        let v = Vec3::from(pos) - Vec3::from(self.last);
-
-        let orient = Quat::from_rotation_arc(-Vec3::Z, v);
-
-        let transf = Transform {
-            pos: pos.into(),
-            orient,
-        };
-
-        self.last = pos;
-
-        for key in query.iter() {
-            query.write::<Transform>(key, &transf);
-        }
-    }
-    */
 }
 
 pub struct ParticleState {
@@ -230,10 +190,14 @@ impl ParticleState {
             if Self::bounds(u, after) && Self::bounds(u, before) {
                 let w = u.width() as f32;
                 let downscale = |i| (i / w) * 2. - 1.;
+
+                let beforer = Vec3::from(before) + (Vec3::from(before) - Vec3::from(after)) * 4.;
+                let beforer: [f32; 3] = beforer.into();
+
                 let x = self
                     .render
                     .mesh
-                    .push_vertex(Vertex::new(before.map(downscale), [1.; 3]));
+                    .push_vertex(Vertex::new(beforer.map(downscale), [1.; 3]));
                 let y = self
                     .render
                     .mesh
@@ -246,11 +210,12 @@ impl ParticleState {
     }
 
     fn random_vert(u: &Array3D<f32>, io: &mut EngineIo) -> [f32; 3] {
+        let margin = 1;
         let mut v = || io.random() as u64 as f32 / u64::MAX as f32;
         [
-            (u.width() - 1) as f32 * v(),
-            (u.height() - 1) as f32 * v(),
-            (u.length() - 1) as f32 * v(),
+            (u.width() - margin * 2 - 1) as f32 * v() + margin as f32,
+            (u.height() - margin * 2 - 1) as f32 * v() + margin as f32,
+            (u.length() - margin * 2 - 1) as f32 * v() + margin as f32,
         ]
     }
 
@@ -265,7 +230,6 @@ pub struct FluidState {
     u: Array3D<f32>,
     v: Array3D<f32>,
     w: Array3D<f32>,
-    smoke: Array3D<f32>,
 }
 
 pub struct FluidSim {
@@ -303,7 +267,6 @@ impl FluidSim {
             u: Array3D::new(k, k, k),
             v: Array3D::new(k, k, k),
             w: Array3D::new(k, k, k),
-            smoke: Array3D::new(width, height, length),
         };
 
         Self {
@@ -341,7 +304,7 @@ impl FluidSim {
                 .into_iter()
                 .enumerate()
             {
-                for (a, b) in [(l - 2, l - 3), (2, 1)] {
+                for (a, b) in [(l - 1, l - 2), (2, 1)] {
                     for u in 0..l {
                         for v in 0..l {
                             let mut pa = [a, u, v];
@@ -404,27 +367,6 @@ impl FluidSim {
         std::mem::swap(&mut self.read.u, &mut self.write.u);
         std::mem::swap(&mut self.read.v, &mut self.write.v);
         std::mem::swap(&mut self.read.w, &mut self.write.w);
-
-        // Advect smoke
-        for z in 1..self.read.v.height() - 2 {
-            for y in 1..self.read.v.height() - 2 {
-                for x in 1..self.read.v.width() - 2 {
-                    let (px, py, pz) = advect(
-                        &self.read.u,
-                        &self.read.v,
-                        &self.read.w,
-                        x as f32 + 0.5,
-                        y as f32 + 0.5,
-                        z as f32 + 0.5,
-                        dt,
-                    );
-                    self.write.smoke[(x, y, z)] =
-                        interp(&self.read.smoke, px - 0.5, py - 0.5, pz - 0.5);
-                }
-            }
-        }
-
-        std::mem::swap(&mut self.read.smoke, &mut self.write.smoke);
     }
 
     pub fn uvw(&self) -> (&Array3D<f32>, &Array3D<f32>, &Array3D<f32>) {
@@ -433,10 +375,6 @@ impl FluidSim {
 
     pub fn uv_mut(&mut self) -> (&mut Array3D<f32>, &mut Array3D<f32>, &mut Array3D<f32>) {
         (&mut self.read.u, &mut self.read.v, &mut self.read.w)
-    }
-
-    pub fn smoke_mut(&mut self) -> &mut Array3D<f32> {
-        &mut self.read.smoke
     }
 
     pub fn width(&self) -> usize {
@@ -567,35 +505,6 @@ impl<T> std::ops::IndexMut<Index3D> for Array3D<T> {
     }
 }
 
-fn draw_density(mesh: &mut Mesh, smoke: &Array3D<f32>, _y: f32) {
-    mesh.indices.clear();
-    mesh.vertices.clear();
-
-    //let cell_width = 2. / smoke.width() as f32;
-    //let cell_height = 2. / smoke.height() as f32;
-
-    for i in (0..smoke.width()).step_by(1) {
-        let i_frac = (i as f32 / smoke.width() as f32) * 2. - 1.;
-        for j in (0..smoke.height()).step_by(1) {
-            let j_frac = (j as f32 / smoke.height() as f32) * 2. - 1.;
-
-            for k in (0..smoke.length()).step_by(1) {
-                let k_frac = (k as f32 / smoke.length() as f32) * 2. - 1.;
-
-                let sm = smoke[(i, j, k)];
-                let color = [sm; 3];
-
-                //let base = mesh.vertices.len() as u32;
-
-                let _w = smoke.width() as f32;
-                mesh.indices.push(mesh.vertices.len() as u32);
-                mesh.vertices
-                    .push(Vertex::new([i_frac, j_frac, k_frac], color));
-            }
-        }
-    }
-}
-
 fn draw_velocity_lines(
     mesh: &mut Mesh,
     (u, v, w): (&Array3D<f32>, &Array3D<f32>, &Array3D<f32>),
@@ -642,6 +551,84 @@ fn draw_velocity_lines(
 
                 mesh.indices.push(tip);
                 mesh.indices.push(tail);
+            }
+        }
+    }
+}
+
+/// Push a fluid body give a relative velocity and position (assumes -1 to 1 fluid volume in world
+/// size, matching draw_velocity_lines & friends)
+fn push_fluid(state: &mut FluidSim, brush_size: isize, pos: Vec3, vel: Vec3) {
+    let (u, v, w) = state.uv_mut();
+    let width = u.width() as isize;
+
+    // Convert to fluid units
+    let vel = vel * width as f32 / 2.;
+    let pos = ((pos + 1.) / 2.) * width as f32;
+
+    let margin = 1;
+
+    let bounds = |pos| (pos > margin && pos < width - margin).then(|| pos as usize);
+    let cx = pos.x as isize;
+    let cy = pos.y as isize;
+    let cz = pos.z as isize;
+
+    // Size of the cube of force around the hand will have a width of 2m + 1
+    let m = brush_size;
+    for i in cx - m..=cx + m {
+        for j in cy - m..=cy + m {
+            for k in cz - m..=cz + m {
+                let Some(x) = bounds(i) else { continue };
+                let Some(y) = bounds(j) else { continue };
+                let Some(z) = bounds(k) else { continue };
+
+                u[(x, y, z)] = vel.x;
+                v[(x, y, z)] = vel.y;
+                w[(x, y, z)] = vel.z;
+            }
+        }
+    }
+}
+
+#[derive(Default)]
+struct HandMotion {
+    aim_pos: Option<Vec3>,
+    grip_pos: Option<Vec3>,
+    vel: Vec3,
+    // TODO: Angular velocity!
+}
+
+struct VrTracking {
+    left: HandMotion,
+    right: HandMotion,
+}
+
+impl VrTracking {
+    pub fn new() -> Self {
+        Self {
+            left: HandMotion::default(),
+            right: HandMotion::default(),
+        }
+    }
+
+    pub fn update(&mut self, update: &VrUpdate) {
+        let VrUpdate {
+            left_controller,
+            right_controller,
+            ..
+        } = update;
+
+        for (controller, last) in [
+            (left_controller, &mut self.left),
+            (right_controller, &mut self.right),
+        ] {
+            if let Some(aim) = controller.aim {
+                last.vel = last.aim_pos.map(|p| aim.pos - p).unwrap_or(Vec3::ZERO);
+                last.aim_pos = Some(aim.pos);
+            }
+
+            if let Some(grip) = controller.grip {
+                last.grip_pos = Some(grip.pos);
             }
         }
     }
