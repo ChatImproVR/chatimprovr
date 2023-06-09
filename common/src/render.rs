@@ -192,11 +192,21 @@ impl BoundingBox {
         self.max.z = self.max.z.max(point.z);
     }
 
-    fn get_size(&self) -> Pos {
+    fn get_min_bb(&self) -> Pos {
+        // minimum coords of bounding box
         Pos {
-            x: self.max.x - self.min.x,
-            y: self.max.y - self.min.y,
-            z: self.max.z - self.min.z,
+            x: self.min.x,
+            y: self.min.y,
+            z: self.min.z,
+         }
+    }
+
+    fn get_max_bb(&self) -> Pos {
+        // maximum coords of bounding box
+        Pos {
+            x: self.max.x,
+            y: self.max.y,
+            z: self.max.z,
          }
     }
 }
@@ -234,14 +244,15 @@ impl Mesh {
         self.vertices.iter_mut().for_each(|v| v.uvw = color);
     }
 
-    // Creates a bounding box from vertices given in a mesh
-    pub fn find_bb(&mut self) -> Pos {
+    // Creates a bounding box from vertices given in a mesh,
+    // returns a tuple of the min and max coords (min,max)
+    pub fn find_bb(&mut self) -> (Pos, Pos) {
         let mut bounding_box = BoundingBox::new();
         for p in &self.vertices {
             let point: Pos = Pos {x: p.pos[0], y: p.pos[1], z: p.pos[2]};
             bounding_box.calc_bb(&point);
         }
-        let size = bounding_box.get_size();
+        let size = (bounding_box.get_min_bb(), bounding_box.get_max_bb());
         size
     }
 }
