@@ -155,6 +155,52 @@ impl Render {
     }
 }
 
+// stuffs for bounding box
+pub struct Pos {
+    x: f32, 
+    y: f32,
+    z: f32
+}
+
+struct BoundingBox {
+    min: Pos,
+    max: Pos,
+}
+
+impl BoundingBox {
+    fn new() -> Self {
+        BoundingBox {
+            min: Pos {
+                x: f32::INFINITY,
+                y: f32::INFINITY,
+                z: f32::INFINITY,
+            },
+            max: Pos {
+                x: f32::NEG_INFINITY,
+                y: f32::NEG_INFINITY,
+                z: f32::NEG_INFINITY,
+            },
+        }
+    }
+
+    fn calc_bb(&mut self, point: &Pos) {
+        self.min.x = self.min.x.min(point.x);
+        self.min.y = self.min.y.min(point.y);
+        self.min.z = self.min.z.min(point.z);
+        self.max.x = self.max.x.max(point.x);
+        self.max.y = self.max.y.max(point.y);
+        self.max.z = self.max.z.max(point.z);
+    }
+
+    fn get_size(&self) -> Pos {
+        Pos {
+            x: self.max.x - self.min.x,
+            y: self.max.y - self.min.y,
+            z: self.max.z - self.min.z,
+         }
+    }
+}
+
 impl Mesh {
     /// Create a new mesh
     pub fn new() -> Self {
@@ -186,6 +232,17 @@ impl Mesh {
     /// Sets the uvw attribute of all vertices to the given color
     pub fn recolor(&mut self, color: [f32; 3]) {
         self.vertices.iter_mut().for_each(|v| v.uvw = color);
+    }
+
+    // Creates a bounding box from vertices given in a mesh
+    pub fn find_bb(&mut self) -> Pos {
+        let mut bounding_box = BoundingBox::new();
+        for p in &self.vertices {
+            let point: Pos = Pos {x: p.pos[0], y: p.pos[1], z: p.pos[2]};
+            bounding_box.calc_bb(&point);
+        }
+        let size = bounding_box.get_size();
+        size
     }
 }
 

@@ -19,7 +19,7 @@ pub fn obj_lines_to_mesh(obj: &str) -> Mesh {
             Some("v") => {
                 // Vertex
                 // Treat the line as two arrays of 3 elements (x, y, z) coords and perhaps (u, v, w)
-                let mut parts = [[0.; 3], [1.; 3]];
+                let mut parts = [[0.; 3], [0.; 3]];
 
                 for part in &mut parts {
                     // Get strings from the rest of the line
