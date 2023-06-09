@@ -30,6 +30,8 @@ members = [
     "example_plugins/mouse-capture",
     "example_plugins/first-person",
     "example_plugins/vr-teleport",
+    "example_plugins/avatars",
+    "example_plugins/grid",
 ]
 
 # Causes a build issue with OpenXR if included in workspace
