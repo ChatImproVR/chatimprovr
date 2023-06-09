@@ -65,26 +65,30 @@ impl UserState for ClientState {
 
 impl ClientState {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        // Get entity
+        let camera = query.iter("Camera").next().unwrap();
+
         // Handle updates only for VR projection
         let mut is_vr = false;
         for event in io.inbox::<VrUpdate>() {
             self.proj.handle_vr_update(&event);
             is_vr = true;
         }
+
+        // Handle projection matrices in windowed mode
+        if !is_vr {
+            self.input.handle_input_events(io);
+            for event in io.inbox::<InputEvent>() {
+                self.proj.handle_event(&event);
+            }
+        }
+
+        query.modify::<CameraComponent>(camera, |cam| cam.projection = self.proj.matrices());
+
         // Do nothing further if in VR mode
         if is_vr {
             return;
         }
-
-        // Get entity
-        let camera = query.iter("Camera").next().unwrap();
-
-        // Handle projection matrices
-        self.input.handle_input_events(io);
-        for event in io.inbox::<InputEvent>() {
-            self.proj.handle_event(&event);
-        }
-        query.modify::<CameraComponent>(camera, |cam| cam.projection = self.proj.matrices());
 
         // Handle mouse capturing
         if self.mouse_is_captured {
