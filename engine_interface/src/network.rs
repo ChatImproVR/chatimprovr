@@ -1,3 +1,5 @@
+use std::{fmt::Display, num::ParseIntError, str::FromStr};
+
 use crate::{pkg_namespace, prelude::*};
 use serde::{Deserialize, Serialize};
 
@@ -29,19 +31,37 @@ pub struct Connections {
 }
 
 /// Connection request from client to server
-#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ConnectionRequest {
     pub version: u32,
     pub username: String,
+    pub plugin_manifest: Vec<Digest>,
+}
+
+// TODO: Should this be part of `common`?
+/// Connection request from client to server
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ConnectionResponse {
+    /// Contains pairs of (name, code), corresponding to the plugins the server wants
+    pub plugins: Vec<(String, PluginData)>,
+}
+
+/// Connection data
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PluginData {
+    Cached(Digest),
+    // TODO: Send compressed data!
+    Download(Vec<u8>),
 }
 
 impl ConnectionRequest {
-    const PROTOCOL_VERSION: u32 = 1;
+    const PROTOCOL_VERSION: u32 = 2;
 
     /// Create a new connection request with the current protocol version
-    pub fn new(username: String) -> Self {
+    pub fn new(username: String, plugin_manifest: Vec<Digest>) -> Self {
         Self {
             version: Self::PROTOCOL_VERSION,
+            plugin_manifest,
             username,
         }
     }
@@ -51,6 +71,10 @@ impl ConnectionRequest {
         self.version == Self::PROTOCOL_VERSION
     }
 }
+
+/// Hash of a file (xxHash3)
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Digest(pub u128);
 
 /*
 TODO: Unreliable messaging
@@ -71,5 +95,19 @@ impl Default for Reliability {
 impl Default for ClientId {
     fn default() -> Self {
         ClientId(0xBADBADBA)
+    }
+}
+
+impl Display for Digest {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let Self(hash) = self;
+        write!(f, "{}", hash)
+    }
+}
+
+impl FromStr for Digest {
+    type Err = ParseIntError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        s.parse().map(Self)
     }
 }

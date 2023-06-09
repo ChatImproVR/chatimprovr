@@ -198,7 +198,7 @@ impl InputHelper {
     // held_shift(&self) -> bool
     // held_control(&self) -> bool
     pub fn held_shift(&self) -> bool {
-        return self.modifiers_state.alt;
+        return self.modifiers_state.shift;
     }
     pub fn held_ctrl(&self) -> bool {
         return self.modifiers_state.ctrl;

@@ -1,9 +1,44 @@
 use cimvr_common::desktop::*;
 use cimvr_engine::Engine;
+use glutin::{dpi::PhysicalPosition, window::CursorGrabMode};
 
 /// Input handler for Desktop platform
 pub struct DesktopInputHandler {
     events: Vec<InputEvent>,
+}
+
+pub struct WindowController {
+    is_capturing: bool,
+}
+
+impl WindowController {
+    pub fn new(engine: &mut Engine) -> Self {
+        engine.subscribe::<WindowControl>();
+
+        Self {
+            is_capturing: false,
+        }
+    }
+
+    pub fn update(&mut self, engine: &mut Engine, window: &glutin::window::Window) {
+        for msg in engine.inbox::<WindowControl>() {
+            match msg {
+                WindowControl::MouseCapture => self.is_capturing = true,
+                WindowControl::MouseRelease => self.is_capturing = false,
+            }
+        }
+
+        if self.is_capturing {
+            let center = window.inner_size();
+            let _ = window
+                .set_cursor_position(PhysicalPosition::new(center.width / 2, center.height / 2));
+            //window.set_cursor_grab(CursorGrabMode::Confined).unwrap();
+            window.set_cursor_visible(false);
+        } else {
+            //window.set_cursor_grab(CursorGrabMode::None).unwrap();
+            window.set_cursor_visible(true);
+        }
+    }
 }
 
 impl DesktopInputHandler {
