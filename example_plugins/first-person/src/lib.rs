@@ -57,8 +57,8 @@ impl UserState for ClientState {
             sensitivity_horiz: 8e-4,
             sensitivity_vert: 8e-4,
             last_resolution: None,
-            default_speed: 0.2,
-            sprint_speed: 1.,
+            default_speed: 0.05,
+            sprint_speed: 3.,
         }
     }
 }
