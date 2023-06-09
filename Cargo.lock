@@ -553,6 +553,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "first-person"
+version = "0.1.0"
+dependencies = [
+ "cimvr_common",
+ "cimvr_engine_interface",
+ "serde",
+]
+
+[[package]]
 name = "fluid-sim"
 version = "0.1.0"
 dependencies = [
