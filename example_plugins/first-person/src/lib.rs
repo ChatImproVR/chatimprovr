@@ -54,11 +54,11 @@ impl UserState for ClientState {
             proj: Perspective::new(),
             cam_vert_angle: 0.,
             cam_horiz_angle: 0.,
-            sensitivity_horiz: 8e-4,
-            sensitivity_vert: 8e-4,
+            sensitivity_horiz: 8e-5,
+            sensitivity_vert: 8e-5,
             last_resolution: None,
-            default_speed: 0.2,
-            sprint_speed: 1.,
+            default_speed: 0.025,
+            sprint_speed: 3.,
         }
     }
 }
