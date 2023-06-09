@@ -1,4 +1,5 @@
 use cimvr_common::{
+    glam::Vec3,
     render::{CameraComponent, Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     utils::client_tracker::{Action, ClientTracker},
     vr::VrUpdate,
@@ -175,4 +176,86 @@ fn cube() -> Mesh {
     ];
 
     Mesh { vertices, indices }
+}
+
+struct SkeletonAnimatorInputs {
+    /// Position of the user's eye
+    eyeball: Transform,
+    /// Position of the user's left hand
+    left_hand: Option<Transform>,
+    /// Position of the user's left hand
+    right_hand: Option<Transform>,
+    /// Speed in m/s
+    speed: f32,
+    /// Time step (seconds)
+    dt: f32,
+}
+
+struct SkeletonAnimator {
+    animation_phase: f32,
+}
+
+struct Skeleton {
+    head: Transform,
+    shoulders: Vec3,
+    left_hand: Vec3,
+    right_hand: Vec3,
+    butt: Vec3,
+    left_foot: Vec3,
+    right_foot: Vec3,
+}
+
+impl SkeletonAnimator {
+    pub fn new() -> Self {
+        Self {
+            animation_phase: 0.,
+        }
+    }
+
+    pub fn update(&mut self, input: &SkeletonAnimatorInputs) -> Skeleton {
+        self.animation_phase += input.speed * input.dt;
+        todo!()
+    }
+}
+
+impl Default for Skeleton {
+    fn default() -> Self {
+        Self {
+            head: Transform::new(),
+            shoulders: Vec3::new(0., 1.52, 0.),
+            left_hand: Vec3::new(0.5, 1.52, -0.5),
+            right_hand: Vec3::new(-0.5, 1.52, -0.5),
+            butt: Vec3::new(0., 0.91, 0.),
+            left_foot: Vec3::new(0.5, 0., 0.0),
+            right_foot: Vec3::new(-0.5, 0., 0.0),
+        }
+    }
+}
+
+fn skeleton_mesh(skele: &Skeleton, color: [f32; 3]) -> Mesh {
+    let mut mesh = Mesh::new();
+
+    let mut add = |pos: Vec3| mesh.push_vertex(Vertex::new(pos.into(), color));
+    let head = add(skele.head.pos);
+    let butt = add(skele.butt);
+    let shoulders = add(skele.shoulders);
+    let left_hand = add(skele.left_hand);
+    let right_hand = add(skele.right_hand);
+
+    let left_foot = add(skele.left_foot);
+    let right_foot = add(skele.right_foot);
+
+    mesh.push_indices(&[
+        // Spine
+        head, shoulders, //.
+        shoulders, butt, //.
+        // Arms
+        left_hand, shoulders, //.
+        right_hand, shoulders, //.
+        // Legs
+        left_foot, butt, //.
+        right_foot, butt, //.
+    ]);
+
+    mesh
 }
