@@ -20,13 +20,13 @@ struct ClientState {
 make_app_state!(ClientState, ServerState);
 
 const CUBE_HANDLE: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
-const SKELETON_HANDLE: MeshHandle = MeshHandle::new(pkg_namespace!("Skeleton"));
+const SKELETONS_HANDLE: MeshHandle = MeshHandle::new(pkg_namespace!("Skeletons"));
 
 /// Request a server-side update to an avatar from the client side
 #[derive(Message, Serialize, Deserialize, Clone)]
 #[locality("Remote")]
 pub struct AvatarUpdate {
-    pub skeleton: Skeleton,
+    skeleton: Skeleton,
 }
 
 /// Informs a client which ID it has
@@ -38,6 +38,14 @@ pub struct ClientIdMessage(ClientId);
 #[derive(Component, Serialize, Deserialize, Clone, Default, Copy)]
 pub struct AvatarComponent(ClientId);
 
+/// Data about a player's skeleton synchronized back to the client
+#[derive(Component, Serialize, Deserialize, Clone, Default, Copy)]
+pub struct AvatarSkeleton(Skeleton);
+
+/// Flag marking an avatar's head
+#[derive(Component, Serialize, Deserialize, Clone, Default, Copy)]
+pub struct AvatarHead;
+
 impl UserState for ClientState {
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         io.send(&UploadMesh {
@@ -45,15 +53,11 @@ impl UserState for ClientState {
             id: CUBE_HANDLE,
         });
 
-        io.create_entity()
-            .add_component(Render::new(SKELETON_HANDLE).primitive(Primitive::Lines))
-            .add_component(Transform::new())
-            .build();
-
         sched
             .add_system(Self::update)
             .subscribe::<VrUpdate>()
             .subscribe::<ClientIdMessage>()
+            .subscribe::<FrameTime>()
             .query(
                 "Camera",
                 Query::new()
@@ -62,7 +66,18 @@ impl UserState for ClientState {
             )
             .query(
                 "Avatars",
-                Query::new().intersect::<AvatarComponent>(Access::Read),
+                Query::new()
+                    .intersect::<AvatarSkeleton>(Access::Read)
+                    .intersect::<AvatarComponent>(Access::Read)
+                    .intersect::<AvatarHead>(Access::Read),
+            )
+            .build();
+
+        sched
+            .add_system(Self::skeletons_update)
+            .query(
+                "Skeletons",
+                Query::new().intersect::<AvatarSkeleton>(Access::Read),
             )
             .build();
 
@@ -89,6 +104,7 @@ impl ClientState {
 
         let skele_input = SkeletonAnimatorInputs {
             eyeball,
+            // TODO
             left_hand: None,
             right_hand: None,
             speed: 0.,
@@ -99,28 +115,27 @@ impl ClientState {
         // Send to server
         io.send(&AvatarUpdate { skeleton });
 
-        // Delete our own avatar from the scene...
+        // Delete our own avatar's head from the scene...
         if let Some(ClientIdMessage(client_id)) = io.inbox_first() {
             for entity in query.iter("Avatars") {
                 let AvatarComponent(other_client_id) = query.read(entity);
-                if other_client_id == client_id {
+                if other_client_id == client_id && query.has_component::<AvatarHead>(entity) {
                     io.remove_entity(entity);
                 }
             }
         }
     }
 
-    fn animation(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
-        /*
-        let input = SkeletonAnimatorInputs {
-            eyeball:
-        };
-
+    fn skeletons_update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        let mut mesh = Mesh::new();
+        for entity in query.iter("Skeletons") {
+            let AvatarSkeleton(skeleton) = query.read(entity);
+            skeleton_mesh(&mut mesh, &skeleton, [1.; 3]);
+        }
         io.send(&UploadMesh {
-            mesh: skeleton_mesh(&self.animation.update(&skele_input), [1.; 3]),
-            id: SKELETON_HANDLE,
+            mesh,
+            id: SKELETONS_HANDLE,
         });
-        */
     }
 }
 
@@ -132,7 +147,10 @@ impl UserState for ServerState {
             .subscribe::<AvatarUpdate>()
             .query(
                 "Clients",
-                Query::new().intersect::<AvatarComponent>(Access::Read),
+                Query::new()
+                    .intersect::<AvatarComponent>(Access::Read)
+                    .intersect::<AvatarHead>(Access::Read)
+                    .intersect::<AvatarSkeleton>(Access::Read),
             )
             .build();
 
@@ -151,8 +169,17 @@ impl ServerState {
                 Action::Connected => {
                     // Add new entity on connection
                     io.create_entity()
+                        .add_component(AvatarHead)
                         .add_component(Transform::default())
                         .add_component(Render::new(CUBE_HANDLE).primitive(Primitive::Triangles))
+                        .add_component(Synchronized)
+                        .add_component(AvatarComponent(conn.id))
+                        .build();
+
+                    io.create_entity()
+                        .add_component(AvatarSkeleton(Skeleton::default()))
+                        .add_component(Transform::new())
+                        .add_component(Render::new(SKELETONS_HANDLE).primitive(Primitive::Lines))
                         .add_component(Synchronized)
                         .add_component(AvatarComponent(conn.id))
                         .build();
@@ -172,15 +199,25 @@ impl ServerState {
         // Update avatar content
         for (client, update) in io.inbox_clients::<AvatarUpdate>().collect::<Vec<_>>() {
             // Find corresponding entity, if any
-            let entity = query.iter("Clients").find(|entity| {
+            let head_entity = query.iter("Clients").find(|entity| {
                 let AvatarComponent(other_client_id) = query.read(*entity);
-                other_client_id == client
+                other_client_id == client && query.has_component::<AvatarHead>(*entity)
             });
 
-            // Update properties of the client
-            if let Some(entity) = entity {
-                // TODO: Avatar colors!!
+            // Find corresponding entity, if any
+            let skeleton_entity = query.iter("Clients").find(|entity| {
+                let AvatarComponent(other_client_id) = query.read(*entity);
+                other_client_id == client && query.has_component::<AvatarSkeleton>(*entity)
+            });
+
+            // Set head position
+            if let Some(entity) = head_entity {
                 io.add_component(entity, update.skeleton.head);
+            }
+
+            // Set skeleton
+            if let Some(entity) = skeleton_entity {
+                io.add_component(entity, AvatarSkeleton(update.skeleton));
             }
 
             // Inform the client which one it is
@@ -190,7 +227,7 @@ impl ServerState {
 }
 
 fn cube() -> Mesh {
-    let size = 0.25;
+    let size = 0.10;
 
     let color = [1.; 3];
     let vertices = vec![
@@ -229,7 +266,7 @@ struct SkeletonAnimator {
     animation_phase: f32,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Copy)]
 struct Skeleton {
     head: Transform,
     shoulders: Vec3,
@@ -248,8 +285,10 @@ impl SkeletonAnimator {
     }
 
     pub fn update(&mut self, input: &SkeletonAnimatorInputs) -> Skeleton {
+        let mut skele = Skeleton::default();
+        skele.head = input.eyeball;
         self.animation_phase += input.speed * input.dt;
-        todo!()
+        skele
     }
 }
 
@@ -267,9 +306,7 @@ impl Default for Skeleton {
     }
 }
 
-fn skeleton_mesh(skele: &Skeleton, color: [f32; 3]) -> Mesh {
-    let mut mesh = Mesh::new();
-
+fn skeleton_mesh(mesh: &mut Mesh, skele: &Skeleton, color: [f32; 3]) {
     let mut add = |pos: Vec3| mesh.push_vertex(Vertex::new(pos.into(), color));
     let head = add(skele.head.pos);
     let butt = add(skele.butt);
@@ -291,6 +328,4 @@ fn skeleton_mesh(skele: &Skeleton, color: [f32; 3]) -> Mesh {
         left_foot, butt, //.
         right_foot, butt, //.
     ]);
-
-    mesh
 }
