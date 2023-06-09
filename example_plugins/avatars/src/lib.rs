@@ -1,5 +1,5 @@
 use cimvr_common::{
-    glam::Vec3,
+    glam::{EulerRot, Quat, Vec3},
     render::{CameraComponent, Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     utils::client_tracker::{Action, ClientTracker},
     vr::VrUpdate,
@@ -293,6 +293,21 @@ impl SkeletonAnimator {
     pub fn update(&mut self, input: &SkeletonAnimatorInputs) -> Skeleton {
         let mut skele = Skeleton::default();
         skele.head = input.eyeball;
+
+        for part in [
+            &mut skele.shoulders,
+            &mut skele.left_hand,
+            &mut skele.right_hand,
+            &mut skele.butt,
+            &mut skele.left_foot,
+            &mut skele.right_foot,
+        ] {
+            let (rot, _, _) = input.eyeball.orient.to_euler(EulerRot::YXZ);
+            *part = Quat::from_euler(EulerRot::YXZ, rot, 0., 0.) * *part;
+            part.x += input.eyeball.pos.x;
+            part.z += input.eyeball.pos.z;
+        }
+
         self.animation_phase += input.speed * input.dt;
         skele
     }
