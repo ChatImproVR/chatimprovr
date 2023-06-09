@@ -65,8 +65,14 @@ impl UserState for ClientState {
 
 impl ClientState {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
-        // Do nothing if in VR mode
-        if io.inbox::<VrUpdate>().next().is_some() {
+        // Handle updates only for VR projection
+        let mut is_vr = false;
+        for event in io.inbox::<VrUpdate>() {
+            self.proj.handle_vr_update(&event);
+            is_vr = true;
+        }
+        // Do nothing further if in VR mode
+        if is_vr {
             return;
         }
 
