@@ -5,7 +5,7 @@ use cimvr_common::{
     vr::VrUpdate,
     Transform,
 };
-use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, FrameTime};
+use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*, FrameTime};
 
 use serde::{Deserialize, Serialize};
 
@@ -146,11 +146,20 @@ impl UserState for ServerState {
             .subscribe::<Connections>()
             .subscribe::<AvatarUpdate>()
             .query(
-                "Clients",
+                "Avatars",
+                Query::new().intersect::<AvatarComponent>(Access::Read),
+            )
+            .query(
+                "Skeletons",
                 Query::new()
                     .intersect::<AvatarComponent>(Access::Read)
-                    .intersect::<AvatarHead>(Access::Read)
                     .intersect::<AvatarSkeleton>(Access::Read),
+            )
+            .query(
+                "Heads",
+                Query::new()
+                    .intersect::<AvatarComponent>(Access::Read)
+                    .intersect::<AvatarHead>(Access::Read),
             )
             .build();
 
@@ -167,7 +176,7 @@ impl ServerState {
         self.tracker.update(&conns, |conn, action| {
             match action {
                 Action::Connected => {
-                    // Add new entity on connection
+                    // Add new entities on connection
                     io.create_entity()
                         .add_component(AvatarHead)
                         .add_component(Transform::default())
@@ -186,7 +195,7 @@ impl ServerState {
                 }
                 Action::Disconnected => {
                     // Remove disconnected avatars
-                    for entity in query.iter("Clients") {
+                    for entity in query.iter("Avatars") {
                         let AvatarComponent(other_client_id) = query.read(entity);
                         if other_client_id == conn.id {
                             io.remove_entity(entity);
@@ -199,15 +208,15 @@ impl ServerState {
         // Update avatar content
         for (client, update) in io.inbox_clients::<AvatarUpdate>().collect::<Vec<_>>() {
             // Find corresponding entity, if any
-            let head_entity = query.iter("Clients").find(|entity| {
+            let head_entity = query.iter("Heads").find(|entity| {
                 let AvatarComponent(other_client_id) = query.read(*entity);
-                other_client_id == client && query.has_component::<AvatarHead>(*entity)
+                other_client_id == client
             });
 
             // Find corresponding entity, if any
-            let skeleton_entity = query.iter("Clients").find(|entity| {
+            let skeleton_entity = query.iter("Skeletons").find(|entity| {
                 let AvatarComponent(other_client_id) = query.read(*entity);
-                other_client_id == client && query.has_component::<AvatarSkeleton>(*entity)
+                other_client_id == client
             });
 
             // Set head position
@@ -266,7 +275,7 @@ struct SkeletonAnimator {
     animation_phase: f32,
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 struct Skeleton {
     head: Transform,
     shoulders: Vec3,
