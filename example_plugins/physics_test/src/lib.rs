@@ -1,6 +1,9 @@
 use cimvr_common::{
     glam::vec3,
-    physics::{ColliderHandle, ColliderShape, LocalColliderMsg, Physics, RigidBody, RigidBodyType},
+    physics::{
+        Action, ColliderHandle, ColliderShape, LocalColliderMsg, LocalRigidBodyMsg, Physics,
+        PhysicsAction, RigidBody, RigidBodyBuilder, RigidBodyType,
+    },
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
@@ -45,7 +48,7 @@ impl UserState for ServerState {
             io.create_entity()
                 // Attach a Transform component (which defaults to the origin)
                 .add_component(Transform::default())
-                .add_component(RigidBody::new(RigidBodyType::Dynamic, CUBE_COLLIDER))
+                .add_component(RigidBodyBuilder::new(RigidBodyType::Dynamic, CUBE_COLLIDER).build())
                 // Attach the Render component, which details how the object should be drawn
                 // Note that we use CUBE_HANDLE here, to tell the rendering engine to draw the cube
                 .add_component(Render::new(CUBE_HANDLE).primitive(Primitive::Triangles))
@@ -61,7 +64,7 @@ impl UserState for ServerState {
                 "Cubes",
                 Query::new()
                     // Do all rigidbodies and filter in the iter.
-                    .intersect::<RigidBody>(Access::Write)
+                    .intersect::<RigidBody>(Access::Read)
                     .intersect::<Transform>(Access::Write),
             )
             .build();
@@ -72,26 +75,17 @@ impl UserState for ServerState {
 impl ServerState {
     fn foo(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         // Check for movement commands
-        for entity in query.iter("Cubes")
-        //      _: RigidBody.body_type: DynamicRigidBody    x: &EntityId
-        //.filter(|x| query.read::<RigidBody>(x).body_type.eq(RigidBodyType::Dynamic))
+        for entity in query.iter("Cubes").filter(|x| {
+            query
+                .read::<RigidBody>(*x)
+                .body_type
+                .eq(&RigidBodyType::Dynamic)
+        })
         // ugly, fix later
         {
-            // bar: RigidBody
-            let bar = query.read::<RigidBody>(entity);
-            // Filter for Dynamic bodies w/ if statement cuz above idea does fuckery w/
-            // ownership D:
-            if bar.body_type.eq(&RigidBodyType::Dynamic) {
-                // Stuff in here will all be Dynamic bodies, cuz I wanna hit cubes UwU
-                /* Set the gravity scale after the rigid-body creation. */
-                // rigid_body_handle comes from when the rigidbody gets built, or
-                // somethin idk.
-                let rigid_body = rigid_body_set.get_mut(rigid_body_handle).unwrap();
-                // io.physics_manager.add_force(entity, )
-                //
-                // The `true` argument makes sure the rigid-body is awake.
-                // x.add_force(vec3(0.0, 1000.0, 0.0), true);
-            };
+            // Stuff in here will all be Dynamic bodies, cuz I wanna hit cubes UwU
+            let phys_action = PhysicsAction::new(entity, Action::Force(vec3(0.0, 1000.0, 0.0)));
+            io.send(&LocalRigidBodyMsg::new(phys_action));
         }
     }
 }
