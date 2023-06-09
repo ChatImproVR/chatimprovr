@@ -29,7 +29,7 @@ impl WindowController {
         }
 
         if self.is_capturing {
-            let center = window.outer_size();
+            let center = window.inner_size();
             let _ = window
                 .set_cursor_position(PhysicalPosition::new(center.width / 2, center.height / 2));
             //window.set_cursor_grab(CursorGrabMode::Confined).unwrap();
