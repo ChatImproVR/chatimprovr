@@ -66,10 +66,7 @@ impl UserState for ClientState {
             )
             .query(
                 "Avatars",
-                Query::new()
-                    .intersect::<AvatarSkeleton>(Access::Read)
-                    .intersect::<AvatarComponent>(Access::Read)
-                    .intersect::<AvatarHead>(Access::Read),
+                Query::new().intersect::<AvatarComponent>(Access::Read),
             )
             .build();
 
@@ -115,11 +112,11 @@ impl ClientState {
         // Send to server
         io.send(&AvatarUpdate { skeleton });
 
-        // Delete our own avatar's head from the scene...
+        // Delete our own avatar from the scene...
         if let Some(ClientIdMessage(client_id)) = io.inbox_first() {
             for entity in query.iter("Avatars") {
                 let AvatarComponent(other_client_id) = query.read(entity);
-                if other_client_id == client_id && query.has_component::<AvatarHead>(entity) {
+                if other_client_id == client_id {
                     io.remove_entity(entity);
                 }
             }
