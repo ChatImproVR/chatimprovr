@@ -18,12 +18,19 @@ make_app_state!(ClientState, ServerState);
 
 const CUBE_HANDLE: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
 
+/// Request a server-side update to an avatar from the client side
 #[derive(Message, Serialize, Deserialize, Clone)]
 #[locality("Remote")]
 pub struct AvatarUpdate {
     pub head: Transform,
 }
 
+/// Informs a client which ID it has
+#[derive(Message, Serialize, Deserialize, Clone)]
+#[locality("Remote")]
+pub struct ClientIdMessage(ClientId);
+
+/// Associates an entity server-side with a client ID
 #[derive(Component, Serialize, Deserialize, Clone, Default, Copy)]
 pub struct AvatarComponent(ClientId);
 
@@ -37,11 +44,16 @@ impl UserState for ClientState {
         sched
             .add_system(Self::update)
             .subscribe::<VrUpdate>()
+            .subscribe::<ClientIdMessage>()
             .query(
                 "Camera",
                 Query::new()
                     .intersect::<CameraComponent>(Access::Read)
                     .intersect::<Transform>(Access::Read),
+            )
+            .query(
+                "Avatars",
+                Query::new().intersect::<AvatarComponent>(Access::Read),
             )
             .build();
 
@@ -63,7 +75,17 @@ impl ClientState {
         }
 
         // Send to server
-        io.send(&AvatarUpdate { head: camera_tf })
+        io.send(&AvatarUpdate { head: camera_tf });
+
+        // Delete our own avatar from the scene...
+        if let Some(ClientIdMessage(client_id)) = io.inbox_first() {
+            for entity in query.iter("Avatars") {
+                let AvatarComponent(other_client_id) = query.read(entity);
+                if other_client_id == client_id {
+                    io.remove_entity(entity);
+                }
+            }
+        }
     }
 }
 
@@ -120,10 +142,14 @@ impl ServerState {
                 other_client_id == client
             });
 
+            // Update properties of the client
             if let Some(entity) = entity {
                 // TODO: Avatar colors!!
                 io.add_component(entity, update.head);
             }
+
+            // Inform the client which one it is
+            io.send_to_client(&ClientIdMessage(client), client);
         }
     }
 }
