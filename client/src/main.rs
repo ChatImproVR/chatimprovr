@@ -26,7 +26,6 @@ use std::io::Write;
 use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
 use std::sync::Arc;
-use ui::OverlayUi;
 
 #[cfg(feature = "vr")]
 mod vr;
@@ -36,7 +35,6 @@ mod desktop_input;
 mod gamepad;
 mod plugin_cache;
 mod render;
-mod ui;
 
 use structopt::StructOpt;
 
@@ -65,7 +63,6 @@ struct Client {
     recv_buf: AsyncBufferedReceiver,
     conn: TcpStream,
     gamepad: GamepadPlugin,
-    ui: OverlayUi,
 }
 
 fn main() -> Result<()> {
@@ -151,8 +148,6 @@ impl Client {
         // Set up rendering
         let render = RenderPlugin::new(gl, &mut engine).context("Setting up render engine")?;
 
-        let ui = OverlayUi::new(&mut engine);
-
         let gamepad = GamepadPlugin::new()?;
 
         // Set up interdimensional travel
@@ -165,7 +160,6 @@ impl Client {
             recv_buf,
             gamepad,
             conn,
-            ui,
             engine,
             render,
         })
@@ -205,11 +199,6 @@ impl Client {
                 }
             }
         }
-    }
-
-    pub fn update_ui(&mut self, ctx: &egui::Context) {
-        self.ui.update(&mut self.engine);
-        self.ui.run(ctx, &mut self.engine);
     }
 
     pub fn render_frame(&mut self, vr_view: Mat4, view_idx: usize) -> Result<()> {

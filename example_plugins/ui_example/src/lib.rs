@@ -1,30 +1,28 @@
-use cimvr_common::{
-    glam::{Mat3, Quat, Vec3},
-    render::{
-        Mesh, MeshHandle, Primitive, Render, ShaderHandle, ShaderSource, UploadMesh, Vertex,
-        DEFAULT_VERTEX_SHADER,
-    },
-    Transform,
-};
+use cimvr_common::{ui::GuiTab, Transform};
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, println, FrameTime};
-use serde::{Deserialize, Serialize};
-use std::f32::consts::TAU;
 
-struct ServerState;
-struct ClientState;
+struct ClientState {
+    tab: GuiTab,
+}
 
 make_app_state!(ClientState, DummyUserState);
 
 impl UserState for ClientState {
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
-        sched.add_system(Self::update).build();
+        sched.add_system(Self::update_ui).build();
 
-        Self
+        let tab = GuiTab::new(pkg_namespace!("MyTab"));
+
+        Self { tab }
     }
 }
 
 impl ClientState {
-    fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
-        println!("UwU");
+    fn update_ui(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        self.tab.show(io, |ui| {
+            if ui.button("Ohh yeahhh").clicked() {
+                println!("I've been clicked!");
+            }
+        });
     }
 }

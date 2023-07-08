@@ -14,6 +14,7 @@ pub mod gamepad;
 mod generic_handle;
 pub mod render;
 mod transform;
+#[cfg(feature = "egui")]
 pub mod ui;
 pub mod utils;
 pub mod vr;
