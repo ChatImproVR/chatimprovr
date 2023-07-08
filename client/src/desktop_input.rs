@@ -1,7 +1,7 @@
 use cimvr_common::desktop::*;
 use cimvr_engine::Engine;
+use eframe::{egui, epaint::Rect};
 use glutin::{dpi::PhysicalPosition, window::CursorGrabMode};
-use eframe::egui;
 
 /// Input handler for Desktop platform
 pub struct DesktopInputHandler {
@@ -57,7 +57,42 @@ impl DesktopInputHandler {
     }
 
     /// Handle a Winit event
-    pub fn handle_egui_input(&mut self, event: &egui::InputState) {
+    pub fn handle_egui_input(&mut self, input: &egui::InputState, rect: Rect) {
+        for event in &input.raw.events {
+            match event {
+                egui::Event::PointerButton {
+                    pos,
+                    button,
+                    pressed,
+                    modifiers,
+                } => self.events.push(InputEvent::Mouse(MouseEvent::Clicked(
+                    match button {
+                        // Oof
+                        egui::PointerButton::Primary => MouseButton::Left,
+                        egui::PointerButton::Secondary => MouseButton::Right,
+                        egui::PointerButton::Middle => MouseButton::Middle,
+                        _ => continue,
+                    },
+                    if *pressed {
+                        ElementState::Pressed
+                    } else {
+                        ElementState::Released
+                    },
+                    ModifiersState {
+                        shift: modifiers.shift,
+                        ctrl: modifiers.ctrl,
+                        alt: modifiers.alt,
+                        // TODO
+                        logo: false,
+                    },
+                ))),
+                egui::Event::PointerMoved(pos) => self.events.push(InputEvent::Mouse(
+                    MouseEvent::Moved(pos.x - rect.left(), pos.y - rect.top()),
+                )),
+                _ => (),
+            }
+        }
+
         /*
         match event {
             #[allow(deprecated)] // lol

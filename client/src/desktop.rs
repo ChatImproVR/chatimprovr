@@ -80,7 +80,7 @@ impl ChatimprovrEframeApp {
 
         // We want to collect input...
         if response.hovered() {
-            ui.input(|inp| widge.input.handle_egui_input(&inp))
+            ui.input(|inp| widge.input.handle_egui_input(&inp, rect))
         }
 
         // Set window size to pixel size of the widget
