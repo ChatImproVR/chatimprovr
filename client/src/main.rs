@@ -26,6 +26,7 @@ use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
 use std::sync::Arc;
 use ui::OverlayUi;
+use eframe::egui;
 
 #[cfg(feature = "vr")]
 mod vr;
