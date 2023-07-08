@@ -74,7 +74,7 @@ impl eframe::App for ChatimprovrEframeApp {
 impl ChatimprovrEframeApp {
     fn custom_painting(&mut self, ui: &mut egui::Ui) {
         let (rect, response) =
-            ui.allocate_exact_size(egui::Vec2::splat(300.0), egui::Sense::click_and_drag());
+            ui.allocate_exact_size(ui.available_size(), egui::Sense::click_and_drag());
 
         let mut widge = self.cimvr_widget.lock();
 
