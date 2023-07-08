@@ -1,3 +1,4 @@
+/*
 use cimvr_common::{
     ui::{Schema, State, UiHandle, UiStateHelper, UiUpdate},
     InterdimensionalTravelRequest,
@@ -54,3 +55,4 @@ impl ClientState {
 }
 
 make_app_state!(ClientState, DummyUserState);
+*/

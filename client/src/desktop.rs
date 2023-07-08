@@ -61,7 +61,7 @@ impl eframe::App for ChatimprovrEframeApp {
             });
 
             egui::Frame::canvas(ui.style()).show(ui, |ui| {
-                self.custom_painting(ui);
+                show_game_widget(ui, self.cimvr_widget.clone());
             });
             ui.label("Drag to rotate!");
         });
@@ -74,44 +74,42 @@ impl eframe::App for ChatimprovrEframeApp {
     }
 }
 
-impl ChatimprovrEframeApp {
-    fn custom_painting(&mut self, ui: &mut egui::Ui) {
-        let (rect, response) =
-            ui.allocate_exact_size(ui.available_size(), egui::Sense::click_and_drag());
+fn show_game_widget(ui: &mut egui::Ui, cimvr_widget: Arc<Mutex<ChatimprovrWidget>>) {
+    let (rect, response) =
+        ui.allocate_exact_size(ui.available_size(), egui::Sense::click_and_drag());
 
-        let mut widge = self.cimvr_widget.lock();
+    let mut widge = cimvr_widget.lock();
 
-        // We want to collect input...
-        if response.hovered() {
-            ui.input(|inp| widge.input.handle_egui_input(&inp, rect))
-        }
-
-        // Set window size to pixel size of the widget
-        let pixel_size = ui.ctx().screen_rect().size() * ui.ctx().pixels_per_point();
-        widge
-            .input
-            .events
-            .push(cimvr_common::desktop::InputEvent::Window(
-                cimvr_common::desktop::WindowEvent::Resized {
-                    width: pixel_size.x as _,
-                    height: pixel_size.y as _,
-                },
-            ));
-
-        // We're a game, renfer once per frame
-        ui.ctx().request_repaint();
-
-        // Clone locals so we can move them into the paint callback:
-        let widge = self.cimvr_widget.clone();
-
-        let callback = egui::PaintCallback {
-            rect,
-            callback: std::sync::Arc::new(egui_glow::CallbackFn::new(move |_info, _painter| {
-                widge.lock().paint();
-            })),
-        };
-        ui.painter().add(callback);
+    // We want to collect input...
+    if response.hovered() {
+        ui.input(|inp| widge.input.handle_egui_input(&inp, rect))
     }
+
+    // Set window size to pixel size of the widget
+    let pixel_size = ui.ctx().screen_rect().size() * ui.ctx().pixels_per_point();
+    widge
+        .input
+        .events
+        .push(cimvr_common::desktop::InputEvent::Window(
+            cimvr_common::desktop::WindowEvent::Resized {
+                width: pixel_size.x as _,
+                height: pixel_size.y as _,
+            },
+        ));
+
+    // We're a game, renfer once per frame
+    ui.ctx().request_repaint();
+
+    // Clone locals so we can move them into the paint callback:
+    let widge = cimvr_widget.clone();
+
+    let callback = egui::PaintCallback {
+        rect,
+        callback: std::sync::Arc::new(egui_glow::CallbackFn::new(move |_info, _painter| {
+            widge.lock().paint();
+        })),
+    };
+    ui.painter().add(callback);
 }
 
 struct ChatimprovrWidget {
