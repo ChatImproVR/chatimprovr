@@ -18,6 +18,7 @@ pub fn mainloop(mut args: Opt) -> Result<()> {
         initial_window_size: Some(egui::vec2(350.0, 380.0)),
         multisampling: 4,
         renderer: eframe::Renderer::Glow,
+        depth_buffer: 24,
         ..Default::default()
     };
     eframe::run_native(

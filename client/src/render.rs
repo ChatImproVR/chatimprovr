@@ -152,10 +152,6 @@ impl RenderEngine {
             // Enable backface culling
             gl.enable(gl::CULL_FACE);
 
-            // Enable depth buffering
-            gl.enable(gl::DEPTH_TEST);
-            gl.depth_func(gl::LESS);
-
             // Enable point size to be determined in shaders
             gl.enable(gl::VERTEX_PROGRAM_POINT_SIZE);
 
@@ -212,7 +208,7 @@ impl RenderEngine {
             gl.depth_func(glow::LESS);
             gl.depth_mask(true);
             gl.depth_range_f32(0., 1.);
-            //gl.clear_depth_f32(1.0);
+            gl.clear_depth_f32(1.0);
 
             //gl.clear(gl::COLOR_BUFFER_BIT | gl::STENCIL_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
             gl.clear(gl::STENCIL_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
