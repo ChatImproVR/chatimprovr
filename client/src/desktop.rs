@@ -11,7 +11,7 @@ use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::{Instant, Duration};
+use std::time::{Duration, Instant};
 
 pub fn mainloop(mut args: Opt) -> Result<()> {
     let options = eframe::NativeOptions {
@@ -66,7 +66,7 @@ impl eframe::App for ChatimprovrEframeApp {
 
     fn on_exit(&mut self, gl: Option<&glow::Context>) {
         if let Some(gl) = gl {
-            self.cimvr_widget.lock().destroy(gl);
+            self.cimvr_widget.lock().destroy();
         }
     }
 }
@@ -76,7 +76,7 @@ impl ChatimprovrEframeApp {
         let (rect, response) =
             ui.allocate_exact_size(egui::Vec2::splat(300.0), egui::Sense::drag());
 
-        // We're a game, renfer once per frame 
+        // We're a game, renfer once per frame
         ui.ctx().request_repaint();
 
         // Clone locals so we can move them into the paint callback:
@@ -85,7 +85,7 @@ impl ChatimprovrEframeApp {
         let callback = egui::PaintCallback {
             rect,
             callback: std::sync::Arc::new(egui_glow::CallbackFn::new(move |_info, painter| {
-                widge.lock().paint(painter.gl());
+                widge.lock().paint();
             })),
         };
         ui.painter().add(callback);
@@ -108,11 +108,11 @@ impl ChatimprovrWidget {
         })
     }
 
-    fn destroy(&self, gl: &glow::Context) {
-        todo!()
+    fn destroy(&self) {
+        //todo!()
     }
 
-    fn paint(&mut self, gl: &glow::Context) {
+    fn paint(&mut self) {
         /*
         // Login page
         if client.is_none() {
@@ -173,7 +173,7 @@ impl ChatimprovrWidget {
             client
                 .render_frame(Mat4::IDENTITY, 0)
                 .expect("Frame render");
-            }
+        }
 
         /*
         TODO: Travel requests
@@ -238,7 +238,7 @@ event_loop.run(move |event, _, control_flow| {
  Event::MainEventsCleared => {
  glutin_ctx.window().request_redraw();
  }
- Event::RedrawRequested(_) => 
+ Event::RedrawRequested(_) =>
  Event::WindowEvent { ref event, .. } => {
  if !egui_glow.on_event(&event) {
  input.handle_winit_event(event);

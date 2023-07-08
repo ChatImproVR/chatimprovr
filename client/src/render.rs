@@ -55,12 +55,14 @@ impl RenderPlugin {
         Ok(Self { gl, rdr })
     }
 
+    /*
     pub fn set_screen_size(&mut self, width: u32, height: u32) {
         unsafe {
             self.gl.scissor(0, 0, width as i32, height as i32);
             self.gl.viewport(0, 0, width as i32, height as i32);
         }
     }
+    */
 
     /// Draw a frame, prepending camera transform to the given view
     pub fn frame(&mut self, engine: &mut Engine, vr_view: Mat4, camera_idx: usize) -> Result<()> {
@@ -205,6 +207,7 @@ impl RenderEngine {
             gl.enable(gl::CULL_FACE);
             gl.enable(glow::DEPTH_TEST);
 
+            /*
             let [r, g, b] = clear_color;
             gl.clear_color(r, g, b, 1.0);
             gl.depth_func(glow::LESS);
@@ -213,6 +216,7 @@ impl RenderEngine {
             gl.clear_depth_f32(1.0);
 
             gl.clear(gl::COLOR_BUFFER_BIT | gl::STENCIL_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+            */
         }
 
         Ok(())
