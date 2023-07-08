@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use eframe::egui;
 
 use cimvr_common::ui::*;
 use cimvr_engine::Engine;
