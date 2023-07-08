@@ -207,16 +207,15 @@ impl RenderEngine {
             gl.enable(gl::CULL_FACE);
             gl.enable(glow::DEPTH_TEST);
 
-            /*
-            let [r, g, b] = clear_color;
-            gl.clear_color(r, g, b, 1.0);
+            //let [r, g, b] = clear_color;
+            //gl.clear_color(r, g, b, 1.0);
             gl.depth_func(glow::LESS);
             gl.depth_mask(true);
             gl.depth_range_f32(0., 1.);
-            gl.clear_depth_f32(1.0);
+            //gl.clear_depth_f32(1.0);
 
-            gl.clear(gl::COLOR_BUFFER_BIT | gl::STENCIL_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-            */
+            //gl.clear(gl::COLOR_BUFFER_BIT | gl::STENCIL_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+            gl.clear(gl::STENCIL_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
 
         Ok(())

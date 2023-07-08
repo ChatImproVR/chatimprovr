@@ -171,12 +171,6 @@ impl Client {
         })
     }
 
-    /*
-    pub fn set_resolution(&mut self, width: u32, height: u32) {
-        self.render.set_screen_size(width, height)
-    }
-    */
-
     /// Synchronize with remote and with plugin hotloading
     pub fn download(&mut self) -> Result<()> {
         loop {
