@@ -7,6 +7,7 @@ use directories::ProjectDirs;
 use eframe::egui;
 use egui::mutex::Mutex;
 use egui::{Color32, DragValue, Label, RichText, Ui};
+use egui_dock::{NodeIndex, Style, Tree};
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
 use std::path::PathBuf;
@@ -32,7 +33,8 @@ pub fn mainloop(mut args: Opt) -> Result<()> {
 struct ChatimprovrEframeApp {
     /// Behind an `Arc<Mutex<…>>` so we can pass it to [`egui::PaintCallback`] and paint later.
     cimvr_widget: Arc<Mutex<ChatimprovrWidget>>,
-    login_screen: LoginScreen,
+    //dock_tree: Tree<String>
+    //login_screen: LoginScreen,
 }
 
 impl ChatimprovrEframeApp {
@@ -42,7 +44,7 @@ impl ChatimprovrEframeApp {
             .clone()
             .expect("You need to run eframe with the glow backend");
         Ok(Self {
-            login_screen: LoginScreen::new(args.clone())?,
+            //login_screen: LoginScreen::new(args.clone())?,
             cimvr_widget: Arc::new(Mutex::new(ChatimprovrWidget::new(gl, args)?)),
         })
     }
@@ -86,12 +88,15 @@ impl ChatimprovrEframeApp {
 
         // Set window size to pixel size of the widget
         let pixel_size = ui.ctx().screen_rect().size() * ui.ctx().pixels_per_point();
-        widge.input.events.push(cimvr_common::desktop::InputEvent::Window(
-            cimvr_common::desktop::WindowEvent::Resized {
-                width: pixel_size.x as _,
-                height: pixel_size.y as _,
-            },
-        ));
+        widge
+            .input
+            .events
+            .push(cimvr_common::desktop::InputEvent::Window(
+                cimvr_common::desktop::WindowEvent::Resized {
+                    width: pixel_size.x as _,
+                    height: pixel_size.y as _,
+                },
+            ));
 
         // We're a game, renfer once per frame
         ui.ctx().request_repaint();
@@ -217,176 +222,16 @@ impl ChatimprovrWidget {
     }
 }
 
-/*
-   pub fn old_mainloop(mut args: Opt) -> Result<()> {
-// Set up window
-let event_loop = glutin::event_loop::EventLoop::new();
-let window_builder = glutin::window::WindowBuilder::new().with_title("ChatImproVR");
+struct TabViewer;
 
-// Set up OpenGL
-let glutin_ctx = unsafe {
-glutin::ContextBuilder::new()
-.with_vsync(true)
-.build_windowed(window_builder, &event_loop)?
-.make_current()
-.unwrap()
-};
+impl egui_dock::TabViewer for TabViewer {
+    type Tab = String;
 
-let gl = unsafe {
-gl::Context::from_loader_function(|s| glutin_ctx.get_proc_address(s) as *const _)
-};
-let gl = Arc::new(gl);
-
-// Set up egui
-let mut egui_glow = egui_glow::EguiGlow::new(&event_loop, gl.clone());
-
-// Set up desktop input
-let mut input = DesktopInputHandler::new();
-let mut window_control = None;
-
-// Setup client code
-let mut client: Option<Client> = None;
-let mut login_screen = LoginScreen::new(args.clone())?;
-
-// Run event loop
-event_loop.run(move |event, _, control_flow| {
- *control_flow = ControlFlow::Poll;
- match event {
- Event::MainEventsCleared => {
- glutin_ctx.window().request_redraw();
- }
- Event::RedrawRequested(_) =>
- Event::WindowEvent { ref event, .. } => {
- if !egui_glow.on_event(&event) {
- input.handle_winit_event(event);
- }
-
- match event {
- WindowEvent::Resized(ph) => {
- if let Some(client) = &mut client {
- client.set_resolution(ph.width, ph.height);
- }
- glutin_ctx.resize(*ph);
- }
- WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
- _ => (),
- }
- }
- Event::LoopDestroyed => {
- egui_glow.destroy();
- }
- _ => (),
- }
- })
- }
- */
-
-#[derive(Default)]
-struct LoginScreen {
-    login_file: LoginFile,
-    err_text: String,
-}
-
-impl LoginScreen {
-    pub fn new(args: Opt) -> Result<Self> {
-        let mut login_file = LoginFile::load()?;
-        if let Some(addr) = args.connect {
-            login_file.last_login_address = addr;
-        }
-        if let Some(user) = args.username {
-            login_file.username = user;
-        }
-
-        Ok(Self {
-            login_file,
-            err_text: "".into(),
-        })
+    fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
+        ui.label(format!("Content of {tab}"));
     }
 
-    /// Takes gl as an argument in order to create client instance (nothing else!)
-    pub fn login(&mut self, gl: &Arc<gl::Context>) -> Option<Client> {
-        let login_info = LoginInfo {
-            username: self.login_file.username.clone(),
-            address: self.login_file.last_login_address.clone(),
-        };
-
-        // Add to saved logins if not present
-        if !self.login_file.addresses.contains(&login_info.address) {
-            self.login_file.addresses.push(login_info.address.clone());
-        }
-
-        // Save login file
-        self.login_file.addresses.sort();
-        self.login_file.save().unwrap();
-
-        log::info!(
-            "Logging into {} as {}",
-            login_info.address,
-            login_info.username
-        );
-        let c = Client::new(gl.clone(), login_info);
-        match c {
-            Ok(c) => Some(c),
-            Err(e) => {
-                self.err_text = format!("Error: {:#}", e);
-                None
-            }
-        }
-    }
-
-    /// Returns true if a login with the given login_info has been requested
-    pub fn show(&mut self, ui: &mut Ui) -> bool {
-        ui.label("ChatImproVR login:");
-
-        ui.horizontal(|ui| {
-            ui.label("Username: ");
-            ui.text_edit_singleline(&mut self.login_file.username);
-        });
-
-        let mut ret = false;
-
-        ui.horizontal(|ui| {
-            ui.label("Address: ");
-            ui.text_edit_singleline(&mut self.login_file.last_login_address);
-            ret |= ui.button("Connect").clicked();
-        });
-
-        // Error text
-        ui.label(RichText::new(&self.err_text).color(Color32::RED));
-
-        ui.separator();
-        ui.label("Saved logins:");
-
-        // Login editor
-        let mut dup = None;
-        let mut del = None;
-        for (idx, addr) in self.login_file.addresses.iter_mut().enumerate() {
-            ui.horizontal(|ui| {
-                ui.text_edit_singleline(addr);
-                if ui.button(" + ").clicked() {
-                    dup = Some(idx);
-                }
-                if ui.button(" - ").clicked() {
-                    del = Some(idx);
-                }
-
-                if ui.button("Connect").clicked() {
-                    // Move this into the address bar
-                    self.login_file.last_login_address = addr.clone();
-                    ret = true;
-                }
-            });
-        }
-
-        if let Some(del) = del {
-            self.login_file.addresses.remove(del);
-        }
-
-        if let Some(dup) = dup {
-            let entry = self.login_file.addresses[dup].clone();
-            self.login_file.addresses.insert(dup, entry);
-        }
-
-        ret
+    fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
+        (&*tab).into()
     }
 }

@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use eframe::egui;
+use std::collections::HashMap;
 
 use cimvr_common::ui::*;
 use cimvr_engine::Engine;
@@ -120,9 +120,13 @@ fn show(ui: &mut Ui, schema: &Schema, state: &mut State) -> bool {
         (Schema::TextInput, State::TextInput { text }) => {
             ui.add(TextEdit::singleline(text)).changed()
         }
-        (Schema::TextBox, State::TextBox { text }) => {
-            ui.add(TextEdit::multiline(text).code_editor().desired_width(f32::INFINITY)).changed()
-        }
+        (Schema::TextBox, State::TextBox { text }) => ui
+            .add(
+                TextEdit::multiline(text)
+                    .code_editor()
+                    .desired_width(f32::INFINITY),
+            )
+            .changed(),
         (Schema::Button { text }, State::Button { clicked }) => {
             *clicked = ui.button(text).clicked();
             *clicked

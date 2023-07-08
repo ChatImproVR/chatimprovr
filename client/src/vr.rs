@@ -1,5 +1,5 @@
 use crate::desktop_input::DesktopInputHandler;
-use crate::{Client, Opt, LoginInfo};
+use crate::{Client, LoginInfo, Opt};
 use anyhow::{format_err, Result};
 use cimvr_common::glam::{Quat, Vec3};
 use cimvr_common::vr::{
@@ -68,9 +68,7 @@ struct MainLoop {
 }
 
 impl MainLoop {
-    pub fn new(
-        args: Opt,
-    ) -> Result<(Self, EventLoop<()>)> {
+    pub fn new(args: Opt) -> Result<(Self, EventLoop<()>)> {
         let login_info = args.login_info()?;
 
         // Load OpenXR from platform-specific location

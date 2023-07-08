@@ -3,9 +3,9 @@ extern crate glow as gl;
 #[cfg(feature = "vr")]
 extern crate openxr as xr;
 
-use cimvr_common::InterdimensionalTravelRequest;
 use anyhow::{bail, format_err, Context, Result};
 use cimvr_common::glam::Mat4;
+use cimvr_common::InterdimensionalTravelRequest;
 use cimvr_engine::hotload::Hotloader;
 use cimvr_engine::interface::prelude::{
     Access, ConnectionRequest, ConnectionResponse, PluginData, Query, Synchronized,
@@ -17,6 +17,7 @@ use cimvr_engine::network::{
 use cimvr_engine::Engine;
 use cimvr_engine::{calculate_digest, Config};
 use directories::ProjectDirs;
+use eframe::egui;
 use gamepad::GamepadPlugin;
 use plugin_cache::FileCache;
 use render::RenderPlugin;
@@ -26,7 +27,6 @@ use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
 use std::sync::Arc;
 use ui::OverlayUi;
-use eframe::egui;
 
 #[cfg(feature = "vr")]
 mod vr;
@@ -351,7 +351,10 @@ impl Opt {
 
         Ok(LoginInfo {
             username: self.username.clone().unwrap_or(login_file.username),
-            address: self.connect.clone().unwrap_or(login_file.last_login_address),
+            address: self
+                .connect
+                .clone()
+                .unwrap_or(login_file.last_login_address),
         })
     }
 }

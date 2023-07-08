@@ -1,17 +1,30 @@
-//! UI Example
-//! This example is intended to be run with other plugins such as `cube` or `fluid_sim`
-use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
+use cimvr_common::{
+    glam::{Mat3, Quat, Vec3},
+    render::{
+        Mesh, MeshHandle, Primitive, Render, ShaderHandle, ShaderSource, UploadMesh, Vertex,
+        DEFAULT_VERTEX_SHADER,
+    },
+    Transform,
+};
+use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, println, FrameTime};
 use serde::{Deserialize, Serialize};
+use std::f32::consts::TAU;
 
-mod client;
-mod server;
-use client::ClientState;
-use server::ServerState;
+struct ServerState;
+struct ClientState;
 
-make_app_state!(ClientState, ServerState);
+make_app_state!(ClientState, DummyUserState);
 
-#[derive(Message, Clone, Debug, Serialize, Deserialize)]
-#[locality("Remote")]
-pub struct ChangeColor {
-    rgb: [f32; 3],
+impl UserState for ClientState {
+    fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
+        sched.add_system(Self::update).build();
+
+        Self
+    }
+}
+
+impl ClientState {
+    fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        println!("UwU");
+    }
 }
