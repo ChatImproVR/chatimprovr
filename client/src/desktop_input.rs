@@ -1,6 +1,7 @@
 use cimvr_common::desktop::*;
 use cimvr_engine::Engine;
 use glutin::{dpi::PhysicalPosition, window::CursorGrabMode};
+use eframe::egui;
 
 /// Input handler for Desktop platform
 pub struct DesktopInputHandler {
@@ -56,7 +57,8 @@ impl DesktopInputHandler {
     }
 
     /// Handle a Winit event
-    pub fn handle_winit_event(&mut self, event: &glutin::event::WindowEvent) {
+    pub fn handle_egui_input(&mut self, event: &egui::InputState) {
+        /*
         match event {
             #[allow(deprecated)] // lol
             glutin::event::WindowEvent::KeyboardInput { input, .. } => {
@@ -121,6 +123,7 @@ impl DesktopInputHandler {
             }
             _ => (),
         }
+        */
     }
 }
 
