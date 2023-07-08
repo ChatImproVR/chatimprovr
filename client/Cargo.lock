@@ -523,6 +523,7 @@ dependencies = [
  "cimvr_engine",
  "directories",
  "eframe",
+ "egui_glow",
  "env_logger",
  "gilrs",
  "glow",
@@ -1133,6 +1134,7 @@ checksum = "1f8c2752cdf1b0ef5fcda59a898cacabad974d4f5880e92a420b2c917022da64"
 dependencies = [
  "bytemuck",
  "egui",
+ "egui-winit",
  "glow",
  "log",
  "memoffset 0.6.5",
