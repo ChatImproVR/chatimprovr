@@ -74,7 +74,18 @@ impl eframe::App for ChatimprovrEframeApp {
 impl ChatimprovrEframeApp {
     fn custom_painting(&mut self, ui: &mut egui::Ui) {
         let (rect, response) =
-            ui.allocate_exact_size(egui::Vec2::splat(300.0), egui::Sense::drag());
+            ui.allocate_exact_size(egui::Vec2::splat(300.0), egui::Sense::click_and_drag());
+
+        // We want to collect input...
+        //if response.hovered() {
+            let pixel_size = ui.ctx().screen_rect().size() * ui.ctx().pixels_per_point();
+            self.cimvr_widget.lock().input.events.push(cimvr_common::desktop::InputEvent::Window(
+                cimvr_common::desktop::WindowEvent::Resized {
+                    width: pixel_size.x as _,
+                    height: pixel_size.y as _,
+                },
+            ));
+        ////}
 
         // We're a game, renfer once per frame
         ui.ctx().request_repaint();

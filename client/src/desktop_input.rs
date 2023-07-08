@@ -4,7 +4,7 @@ use glutin::{dpi::PhysicalPosition, window::CursorGrabMode};
 
 /// Input handler for Desktop platform
 pub struct DesktopInputHandler {
-    events: Vec<InputEvent>,
+    pub events: Vec<InputEvent>,
 }
 
 pub struct WindowController {
