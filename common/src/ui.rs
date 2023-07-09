@@ -95,7 +95,7 @@ impl From<ClippedPrimitive> for JankClippedMesh {
         let Primitive::Mesh(mesh) = value.primitive else { panic!() };
         Self {
             clip: value.clip_rect,
-            vertices: bytemuck::allocation::cast_vec(mesh.vertices),
+            vertices: bytemuck::allocation::pod_collect_to_vec(&mesh.vertices),
             indices: mesh.indices,
             texture_id: mesh.texture_id,
         }
@@ -106,7 +106,7 @@ impl Into<Mesh> for JankClippedMesh {
     fn into(self) -> Mesh {
         Mesh {
             indices: self.indices,
-            vertices: bytemuck::allocation::cast_vec(self.vertices),
+            vertices: bytemuck::allocation::pod_collect_to_vec(&self.vertices),
             texture_id: self.texture_id,
         }
     }
