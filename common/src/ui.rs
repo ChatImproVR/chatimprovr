@@ -1,9 +1,12 @@
 //! Basic graphical user interfacing
 use std::time::Duration;
 
-use cimvr_engine_interface::{pkg_namespace, prelude::*};
+use cimvr_engine_interface::{dbg, pkg_namespace, prelude::*};
 pub use egui;
-use egui::{epaint::ClippedShape, ClippedPrimitive, FullOutput, InnerResponse, TexturesDelta, Ui};
+use egui::{
+    epaint::{ClippedShape, Primitive},
+    ClippedPrimitive, FullOutput, InnerResponse, Mesh, Rect, TextureId, TexturesDelta, Ui,
+};
 use serde::{Deserialize, Serialize};
 
 pub type GuiTabId = String;
@@ -25,8 +28,16 @@ pub struct GuiOutputMessage {
 }
 
 #[derive(Serialize, Deserialize)]
+pub struct JankClippedMesh {
+    pub clip: Rect,
+    pub vertices: Vec<u8>,
+    pub indices: Vec<u32>,
+    pub texture_id: TextureId,
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct PartialOutput {
-    pub shapes: Vec<ClippedPrimitive>,
+    pub shapes: Vec<JankClippedMesh>,
 }
 
 pub struct GuiTab {
@@ -69,10 +80,34 @@ impl GuiTab {
         // Tesselate before serializing; faster
         let shapes = self.ctx.tessellate(full_output.shapes);
 
+        let shapes: Vec<JankClippedMesh> = shapes.into_iter().map(|s| s.into()).collect();
+
         // Send geometry to host
         io.send(&GuiOutputMessage {
             target: self.id.clone(),
             output: Some(PartialOutput { shapes }),
         })
+    }
+}
+
+impl From<ClippedPrimitive> for JankClippedMesh {
+    fn from(value: ClippedPrimitive) -> Self {
+        let Primitive::Mesh(mesh) = value.primitive else { panic!() };
+        Self {
+            clip: value.clip_rect,
+            vertices: bytemuck::allocation::cast_vec(mesh.vertices),
+            indices: mesh.indices,
+            texture_id: mesh.texture_id,
+        }
+    }
+}
+
+impl Into<Mesh> for JankClippedMesh {
+    fn into(self) -> Mesh {
+        Mesh {
+            indices: self.indices,
+            vertices: bytemuck::allocation::cast_vec(self.vertices),
+            texture_id: self.texture_id,
+        }
     }
 }

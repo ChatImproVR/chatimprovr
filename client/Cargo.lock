@@ -545,6 +545,7 @@ dependencies = [
  "bytemuck",
  "cimvr_engine_interface",
  "egui",
+ "epaint",
  "glam",
  "serde",
 ]

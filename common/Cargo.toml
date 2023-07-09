@@ -7,6 +7,7 @@ edition = "2021"
 glam = { version = "0.23.0", features = ["serde", "bytemuck"] }
 cimvr_engine_interface = { path = "../engine_interface" }
 serde = { version = "1", features = ["derive"] }
-bytemuck = "1.12.3"
+bytemuck = { version = "1.13.1", features = ["extern_crate_alloc"] }
 #egui = { version = "0.22.0", features = ["serde"], optional = true }
 egui = { git = "https://github.com/Masterchef365/egui.git", branch = "more-serde", features = ["serde"] }
+epaint = { git = "https://github.com/Masterchef365/egui.git", branch = "more-serde", features = ["serde", "bytemuck"] }
