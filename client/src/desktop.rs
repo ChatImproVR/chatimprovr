@@ -126,7 +126,7 @@ fn show_game_widget(ui: &mut egui::Ui, cimvr_widget: Arc<Mutex<ChatimprovrWidget
     }
 
     // Set window size to pixel size of the widget
-    let pixel_size = ui.ctx().screen_rect().size() * ui.ctx().pixels_per_point();
+    let pixel_size = rect.size() * ui.ctx().pixels_per_point();
     widge
         .input
         .events
