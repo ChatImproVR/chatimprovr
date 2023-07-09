@@ -87,6 +87,7 @@ impl Plugin {
 
         // Serialize directly into the module's memory. Saves time!
         let mem = self.mem.data_mut(&mut self.store);
+
         let cursor = Cursor::new(&mut mem[ptr as usize..][..size]);
         serialize_into(cursor, &recv).expect("Serializing plugin input. This is a bug!");
 

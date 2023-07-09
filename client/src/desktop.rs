@@ -303,9 +303,7 @@ impl egui_dock::TabViewer for TabViewer<'_> {
                     for mesh in &full_output.shapes
                     {
                         let clip = mesh.clip;
-                        let mesh: Mesh = mesh.clone().into();
-
-                        let mut mesh = mesh.clone();
+                        let mut mesh: Mesh = mesh.clone().into();
 
                         let offset = rect.left_top().to_vec2();
                         mesh.translate(offset);
