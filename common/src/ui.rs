@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use cimvr_engine_interface::{pkg_namespace, prelude::*};
 pub use egui;
-use egui::{epaint::ClippedShape, FullOutput, InnerResponse, TexturesDelta, Ui};
+use egui::{epaint::ClippedShape, ClippedPrimitive, FullOutput, InnerResponse, TexturesDelta, Ui};
 use serde::{Deserialize, Serialize};
 
 pub type GuiTabId = String;
@@ -26,41 +26,7 @@ pub struct GuiOutputMessage {
 
 #[derive(Serialize, Deserialize)]
 pub struct PartialOutput {
-    pub repaint_after: Duration,
-    pub textures_delta: TexturesDelta,
-    pub shapes: Vec<ClippedShape>,
-}
-
-impl Into<FullOutput> for PartialOutput {
-    fn into(self) -> FullOutput {
-        let PartialOutput {
-            repaint_after,
-            textures_delta,
-            shapes,
-        } = self;
-        FullOutput {
-            platform_output: Default::default(),
-            repaint_after,
-            textures_delta,
-            shapes,
-        }
-    }
-}
-
-impl From<FullOutput> for PartialOutput {
-    fn from(value: FullOutput) -> Self {
-        let FullOutput {
-            repaint_after,
-            textures_delta,
-            shapes,
-            ..
-        } = value;
-        PartialOutput {
-            repaint_after,
-            textures_delta,
-            shapes,
-        }
-    }
+    pub shapes: Vec<ClippedPrimitive>,
 }
 
 pub struct GuiTab {
@@ -85,6 +51,7 @@ impl GuiTab {
     }
 
     pub fn show<R>(&mut self, io: &mut EngineIo, f: impl FnOnce(&mut Ui) -> R) {
+        // Send dummy message (starts GUI)
         io.send(&GuiOutputMessage {
             target: self.id.clone(),
             output: Default::default(),
@@ -93,14 +60,19 @@ impl GuiTab {
         // Handle input messages
         let Some(msg) = io.inbox::<GuiInputMessage>().find(|msg| msg.target == self.id) else { return };
 
+        // Process user's GUI
         let full_output = self.ctx.run(msg.raw_input, |ctx| {
             ctx.request_repaint();
             egui::CentralPanel::default().show(&self.ctx, f);
         });
 
+        // Tesselate before serializing; faster
+        let shapes = self.ctx.tessellate(full_output.shapes);
+
+        // Send geometry to host
         io.send(&GuiOutputMessage {
             target: self.id.clone(),
-            output: Some(full_output.into()),
+            output: Some(PartialOutput { shapes }),
         })
     }
 }

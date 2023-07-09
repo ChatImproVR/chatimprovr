@@ -5,7 +5,7 @@ use cimvr_common::glam::Mat4;
 use cimvr_common::ui::{GuiInputMessage, GuiOutputMessage, GuiTabId, PartialOutput};
 use cimvr_engine::interface::system::Stage;
 use directories::ProjectDirs;
-use eframe::egui::{self, FullOutput, Vec2, Pos2};
+use eframe::egui::{self, FullOutput, Pos2, Shape, Vec2};
 use egui::mutex::Mutex;
 use egui::{Color32, DragValue, Label, RichText, Ui};
 use egui_dock::{NodeIndex, Style, Tree};
@@ -279,7 +279,7 @@ impl egui_dock::TabViewer for TabViewer<'_> {
                     .show(ui, |ui| show_game_widget(ui, self.cimvr_widget.clone()));
             }
             TabType::Plugin(id) => {
-                let (rect, response) =
+                let (rect, _response) =
                     ui.allocate_exact_size(ui.available_size(), egui::Sense::click_and_drag());
 
                 let raw_input = ui
@@ -300,12 +300,20 @@ impl egui_dock::TabViewer for TabViewer<'_> {
 
                 // Draw existing state
                 if let Some(Some(full_output)) = self.last_frame.get(id) {
-                    for egui::epaint::ClippedShape(clip, shape) in &full_output.shapes {
+                    for egui::epaint::ClippedPrimitive {
+                        clip_rect,
+                        primitive,
+                    } in &full_output.shapes
+                    {
+                        let egui::epaint::Primitive::Mesh(mesh) = primitive else { panic!() };
+
+                        let mut mesh = mesh.clone();
+
                         let offset = rect.left_top().to_vec2();
-                        let mut shape = shape.clone();
-                        shape.translate(offset);
-                        ui.set_clip_rect(clip.translate(offset));
-                        ui.painter().add(shape.clone());
+                        mesh.translate(offset);
+
+                        ui.set_clip_rect(clip_rect.translate(offset));
+                        ui.painter().add(Shape::Mesh(mesh));
                     }
                 }
             }
