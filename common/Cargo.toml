@@ -3,12 +3,10 @@ name = "cimvr_common"
 version = "0.1.0"
 edition = "2021"
 
-[features]
-default = ["egui"]
-
 [dependencies]
 glam = { version = "0.23.0", features = ["serde", "bytemuck"] }
 cimvr_engine_interface = { path = "../engine_interface" }
 serde = { version = "1", features = ["derive"] }
 bytemuck = "1.12.3"
-egui = { git = "https://github.com/Masterchef365/egui.git", branch = "more-serde", features = ["serde"], optional = true }
+#egui = { version = "0.22.0", features = ["serde"], optional = true }
+egui = { git = "https://github.com/Masterchef365/egui.git", branch = "more-serde", features = ["serde"] }
