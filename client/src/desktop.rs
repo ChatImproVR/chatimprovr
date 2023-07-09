@@ -2,15 +2,16 @@ use crate::desktop_input::{DesktopInputHandler, WindowController};
 use crate::{project_dirs, Client, LoginFile, LoginInfo, Opt};
 use anyhow::{format_err, Result};
 use cimvr_common::glam::Mat4;
-use cimvr_common::ui::GuiTabId;
+use cimvr_common::ui::{GuiTabId, GuiInputMessage, GuiOutputMessage};
 use cimvr_engine::interface::system::Stage;
 use directories::ProjectDirs;
-use eframe::egui;
+use eframe::egui::{self, FullOutput};
 use egui::mutex::Mutex;
 use egui::{Color32, DragValue, Label, RichText, Ui};
 use egui_dock::{NodeIndex, Style, Tree};
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -40,7 +41,7 @@ struct ChatimprovrEframeApp {
     /// Behind an `Arc<Mutex<…>>` so we can pass it to [`egui::PaintCallback`] and paint later.
     cimvr_widget: Arc<Mutex<ChatimprovrWidget>>,
     dock_tree: Tree<TabType>,
-    tab_viewer: TabViewer,
+    tabs: HashMap<GuiTabId, FullOutput>,
     //login_screen: LoginScreen,
 }
 
@@ -55,13 +56,14 @@ impl ChatimprovrEframeApp {
 
         let cimvr_widget = Arc::new(Mutex::new(ChatimprovrWidget::new(gl, args)?));
 
-        let tab_viewer = TabViewer::new(cimvr_widget.clone());
+        // Subscribe to input messages
+        cimvr_widget.lock().client.as_mut().unwrap().engine().subscribe::<GuiOutputMessage>();
 
         Ok(Self {
             //login_screen: LoginScreen::new(args.clone())?,
             cimvr_widget,
             dock_tree,
-            tab_viewer,
+            tabs: Default::default(),
         })
     }
 }
@@ -69,20 +71,24 @@ impl ChatimprovrEframeApp {
 impl eframe::App for ChatimprovrEframeApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Update game state
-        self.cimvr_widget.lock().update();
+        let mut widge = self.cimvr_widget.lock();
+        widge.update();
+
+        // Process GUI input messages 
+        let client = widge.client.as_mut().unwrap();
+        for msg in client.engine().inbox::<GuiOutputMessage>() {
+            self.tabs.insert(msg.target, msg.output);
+        }
 
         // Draw game
         egui::CentralPanel::default().show(ctx, |ui| {
+            let mut tab_viewer = TabViewer {
+                cimvr_widget: self.cimvr_widget.clone(),
+                last_frame: &self.tabs,
+            };
             egui_dock::DockArea::new(&mut self.dock_tree)
                 .style(Style::from_egui(ui.style().as_ref()))
-                .show_inside(ui, &mut self.tab_viewer);
-
-            /*
-            egui::Frame::canvas(ui.style()).show(ui, |ui| {
-                show_game_widget(ui, self.cimvr_widget.clone());
-            });
-            ui.label("Drag to rotate!");
-            */
+                .show_inside(ui, &mut tab_viewer);
         });
     }
 
@@ -211,7 +217,6 @@ impl ChatimprovrWidget {
         }
         */
 
-
         if let Some(client) = &mut self.client {
             // Render frame
             client
@@ -244,23 +249,41 @@ impl ChatimprovrWidget {
     }
 }
 
-struct TabViewer {
+struct TabViewer<'a> {
     cimvr_widget: Arc<Mutex<ChatimprovrWidget>>,
+    last_frame: &'a HashMap<GuiTabId, FullOutput>,
 }
 
-impl TabViewer {
-    pub fn new(cimvr_widget: Arc<Mutex<ChatimprovrWidget>>) -> Self {
-        Self { cimvr_widget }
-    }
-}
-
-impl egui_dock::TabViewer for TabViewer {
+impl egui_dock::TabViewer for TabViewer<'_> {
     type Tab = TabType;
 
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
         match tab {
-            TabType::Game => show_game_widget(ui, self.cimvr_widget.clone()),
-            _ => (),
+            TabType::Game => {
+                egui::Frame::canvas(ui.style())
+                    .show(ui, |ui| show_game_widget(ui, self.cimvr_widget.clone()));
+            }
+            TabType::Plugin(id) => {
+                let (rect, response) = ui.allocate_exact_size(ui.available_size(), egui::Sense::click_and_drag());
+
+                let raw_input = ui.ctx().input(|input_state| convert_subwindow_input(input_state, rect));
+                // Send input events to host
+                self.cimvr_widget.lock().client.as_mut().unwrap().engine().send(GuiInputMessage {
+                    target: id.clone(),
+                    raw_input,
+                });
+
+                // Draw existing state
+                if let Some(full_output) = self.last_frame.get(id) {
+                    for egui::epaint::ClippedShape(clip, shape) in &full_output.shapes {
+                        let offset = rect.left_top().to_vec2();
+                        let mut shape = shape.clone();
+                        shape.translate(offset);
+                        ui.set_clip_rect(clip.translate(offset));
+                        ui.painter().add(shape.clone());
+                    }
+                }
+            }
         }
     }
 
@@ -270,4 +293,21 @@ impl egui_dock::TabViewer for TabViewer {
             TabType::Plugin(id) => id.clone().into(),
         }
     }
+}
+
+fn convert_subwindow_input(input_state: &egui::InputState, rect: egui::Rect) -> egui::RawInput {
+    let mut raw = input_state.raw.clone();
+    for ev in &mut raw.events {
+        match ev {
+            egui::Event::PointerMoved(new_pos) => {
+                *new_pos -= rect.left_top().to_vec2();
+            },
+            egui::Event::PointerButton { pos, .. } => {
+                *pos -= rect.left_top().to_vec2();
+            }
+            _ => (),
+        }
+    }
+
+    raw
 }

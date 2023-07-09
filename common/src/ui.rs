@@ -6,19 +6,19 @@ use serde::{Deserialize, Serialize};
 pub type GuiTabId = String;
 
 /// Message sent from host GUI to plugin
-#[derive(Message, Serialize, Deserialize)]
+#[derive(Message, Serialize, Deserialize, Debug)]
 #[locality("Local")]
 pub struct GuiInputMessage {
-    target: GuiTabId,
-    raw_input: egui::RawInput,
+    pub target: GuiTabId,
+    pub raw_input: egui::RawInput,
 }
 
 /// Message sent from plugin to host GUI
 #[derive(Message, Serialize, Deserialize)]
 #[locality("Local")]
-pub struct GuioutputMessage {
-    target: GuiTabId,
-    output: egui::FullOutput,
+pub struct GuiOutputMessage {
+    pub target: GuiTabId,
+    pub output: egui::FullOutput,
 }
 
 pub struct GuiTab {
@@ -41,7 +41,7 @@ impl GuiTab {
             ctx.request_repaint();
             egui::CentralPanel::default().show(&self.ctx, f);
         });
-        io.send(&GuioutputMessage {
+        io.send(&GuiOutputMessage {
             target: self.id.clone(),
             output: full_output,
         })
