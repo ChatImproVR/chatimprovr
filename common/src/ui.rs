@@ -2,6 +2,7 @@
 use std::time::Duration;
 
 use cimvr_engine_interface::{pkg_namespace, prelude::*};
+pub use egui;
 use egui::{epaint::ClippedShape, FullOutput, InnerResponse, TexturesDelta, Ui};
 use serde::{Deserialize, Serialize};
 

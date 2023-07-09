@@ -1,5 +1,5 @@
 use cimvr_common::{
-    ui::{GuiInputMessage, GuiTab},
+    ui::{egui, GuiInputMessage, GuiTab},
     Transform,
 };
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, println, FrameTime};
@@ -29,6 +29,18 @@ impl ClientState {
             if ui.button("Ohh yeahhh").clicked() {
                 println!("I've been clicked!");
             }
+
+            use egui::plot::{Line, Plot, PlotPoints};
+            let sin: PlotPoints = (0..1000)
+                .map(|i| {
+                    let x = i as f64 * 0.01;
+                    [x, x.sin()]
+                })
+                .collect();
+            let line = Line::new(sin);
+            Plot::new("my_plot")
+                .view_aspect(2.0)
+                .show(ui, |plot_ui| plot_ui.line(line));
         });
     }
 }

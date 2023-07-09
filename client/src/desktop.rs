@@ -5,7 +5,7 @@ use cimvr_common::glam::Mat4;
 use cimvr_common::ui::{GuiInputMessage, GuiOutputMessage, GuiTabId, PartialOutput};
 use cimvr_engine::interface::system::Stage;
 use directories::ProjectDirs;
-use eframe::egui::{self, FullOutput};
+use eframe::egui::{self, FullOutput, Vec2, Pos2};
 use egui::mutex::Mutex;
 use egui::{Color32, DragValue, Label, RichText, Ui};
 use egui_dock::{NodeIndex, Style, Tree};
@@ -322,6 +322,9 @@ impl egui_dock::TabViewer for TabViewer<'_> {
 
 fn convert_subwindow_input(input_state: &egui::InputState, rect: egui::Rect) -> egui::RawInput {
     let mut raw = input_state.raw.clone();
+
+    raw.screen_rect = Some(egui::Rect::from_min_size(Pos2::ZERO, rect.size()));
+
     for ev in &mut raw.events {
         match ev {
             egui::Event::PointerMoved(new_pos) => {
