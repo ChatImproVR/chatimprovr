@@ -18,7 +18,7 @@ pub struct GuiInputMessage {
 #[locality("Local")]
 pub struct GuiOutputMessage {
     pub target: GuiTabId,
-    pub output: egui::FullOutput,
+    pub output: Option<egui::FullOutput>,
 }
 
 pub struct GuiTab {
@@ -33,7 +33,7 @@ impl GuiTab {
 
         io.send(&GuiOutputMessage {
             target: id.clone(),
-            output: Default::default(),
+            output: None,
         });
 
         Self {
@@ -43,10 +43,10 @@ impl GuiTab {
     }
 
     pub fn show<R>(&mut self, io: &mut EngineIo, f: impl FnOnce(&mut Ui) -> R) {
-        /*io.send(&GuiOutputMessage {
+        io.send(&GuiOutputMessage {
             target: self.id.clone(),
             output: Default::default(),
-        });*/
+        });
 
         // Handle input messages
         let Some(msg) = io.inbox::<GuiInputMessage>().find(|msg| msg.target == self.id) else { return };
@@ -55,11 +55,9 @@ impl GuiTab {
             egui::CentralPanel::default().show(&self.ctx, f);
         });
 
-        cimvr_engine_interface::dbg!(&self.id);
-
         io.send(&GuiOutputMessage {
             target: self.id.clone(),
-            output: full_output,
+            output: Some(full_output),
         })
     }
 }

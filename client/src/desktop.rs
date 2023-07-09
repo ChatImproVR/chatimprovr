@@ -83,8 +83,6 @@ impl eframe::App for ChatimprovrEframeApp {
         // Process GUI input messages
         let client = widge.client.as_mut().unwrap();
         for msg in client.engine().inbox::<GuiOutputMessage>() {
-            dbg!(&msg.target);
-
             // Open new tab for it!
             if !self.tabs.contains_key(&msg.target) {
                 self.dock_tree.split_left(
@@ -94,7 +92,9 @@ impl eframe::App for ChatimprovrEframeApp {
                 );
             }
 
-            self.tabs.insert(msg.target, msg.output);
+            if let Some(output) = msg.output { 
+                self.tabs.insert(msg.target, output);
+            }
         }
 
         // Unlock, avoiding deadlock
