@@ -2,7 +2,7 @@ use crate::desktop_input::{DesktopInputHandler, WindowController};
 use crate::{project_dirs, Client, LoginFile, LoginInfo, Opt};
 use anyhow::{format_err, Result};
 use cimvr_common::glam::Mat4;
-use cimvr_common::ui::{GuiInputMessage, GuiOutputMessage, GuiTabId};
+use cimvr_common::ui::{GuiInputMessage, GuiOutputMessage, GuiTabId, PartialOutput};
 use cimvr_engine::interface::system::Stage;
 use directories::ProjectDirs;
 use eframe::egui::{self, FullOutput};
@@ -41,7 +41,7 @@ struct ChatimprovrEframeApp {
     /// Behind an `Arc<Mutex<…>>` so we can pass it to [`egui::PaintCallback`] and paint later.
     cimvr_widget: Arc<Mutex<ChatimprovrWidget>>,
     dock_tree: Tree<TabType>,
-    tabs: HashMap<GuiTabId, Option<FullOutput>>,
+    tabs: HashMap<GuiTabId, Option<PartialOutput>>,
     //login_screen: LoginScreen,
 }
 
@@ -266,7 +266,7 @@ impl ChatimprovrWidget {
 
 struct TabViewer<'a> {
     cimvr_widget: Arc<Mutex<ChatimprovrWidget>>,
-    last_frame: &'a HashMap<GuiTabId, Option<FullOutput>>,
+    last_frame: &'a HashMap<GuiTabId, Option<PartialOutput>>,
 }
 
 impl egui_dock::TabViewer for TabViewer<'_> {

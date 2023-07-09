@@ -1,6 +1,8 @@
 //! Basic graphical user interfacing
+use std::time::Duration;
+
 use cimvr_engine_interface::{pkg_namespace, prelude::*};
-use egui::{InnerResponse, Ui};
+use egui::{epaint::ClippedShape, FullOutput, InnerResponse, TexturesDelta, Ui};
 use serde::{Deserialize, Serialize};
 
 pub type GuiTabId = String;
@@ -18,7 +20,46 @@ pub struct GuiInputMessage {
 #[locality("Local")]
 pub struct GuiOutputMessage {
     pub target: GuiTabId,
-    pub output: Option<egui::FullOutput>,
+    pub output: Option<PartialOutput>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct PartialOutput {
+    pub repaint_after: Duration,
+    pub textures_delta: TexturesDelta,
+    pub shapes: Vec<ClippedShape>,
+}
+
+impl Into<FullOutput> for PartialOutput {
+    fn into(self) -> FullOutput {
+        let PartialOutput {
+            repaint_after,
+            textures_delta,
+            shapes,
+        } = self;
+        FullOutput {
+            platform_output: Default::default(),
+            repaint_after,
+            textures_delta,
+            shapes,
+        }
+    }
+}
+
+impl From<FullOutput> for PartialOutput {
+    fn from(value: FullOutput) -> Self {
+        let FullOutput {
+            repaint_after,
+            textures_delta,
+            shapes,
+            ..
+        } = value;
+        PartialOutput {
+            repaint_after,
+            textures_delta,
+            shapes,
+        }
+    }
 }
 
 pub struct GuiTab {
@@ -58,7 +99,7 @@ impl GuiTab {
 
         io.send(&GuiOutputMessage {
             target: self.id.clone(),
-            output: Some(full_output),
+            output: Some(full_output.into()),
         })
     }
 }
