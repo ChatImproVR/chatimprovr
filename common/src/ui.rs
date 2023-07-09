@@ -3,7 +3,7 @@ use cimvr_engine_interface::{pkg_namespace, prelude::*};
 use egui::{InnerResponse, Ui};
 use serde::{Deserialize, Serialize};
 
-type GuiTabId = String;
+pub type GuiTabId = String;
 
 /// Message sent from host GUI to plugin
 #[derive(Message, Serialize, Deserialize)]

@@ -2,6 +2,7 @@ use crate::desktop_input::{DesktopInputHandler, WindowController};
 use crate::{project_dirs, Client, LoginFile, LoginInfo, Opt};
 use anyhow::{format_err, Result};
 use cimvr_common::glam::Mat4;
+use cimvr_common::ui::GuiTabId;
 use cimvr_engine::interface::system::Stage;
 use directories::ProjectDirs;
 use eframe::egui;
@@ -30,10 +31,16 @@ pub fn mainloop(mut args: Opt) -> Result<()> {
     .map_err(|e| format_err!("{:#}", e))
 }
 
+enum TabType {
+    Game,
+    Plugin(GuiTabId),
+}
+
 struct ChatimprovrEframeApp {
     /// Behind an `Arc<Mutex<…>>` so we can pass it to [`egui::PaintCallback`] and paint later.
     cimvr_widget: Arc<Mutex<ChatimprovrWidget>>,
-    //dock_tree: Tree<String>
+    dock_tree: Tree<TabType>,
+    tab_viewer: TabViewer,
     //login_screen: LoginScreen,
 }
 
@@ -43,9 +50,18 @@ impl ChatimprovrEframeApp {
             .gl
             .clone()
             .expect("You need to run eframe with the glow backend");
+
+        let dock_tree = Tree::new(vec![TabType::Game]);
+
+        let cimvr_widget = Arc::new(Mutex::new(ChatimprovrWidget::new(gl, args)?));
+
+        let tab_viewer = TabViewer::new(cimvr_widget.clone());
+
         Ok(Self {
             //login_screen: LoginScreen::new(args.clone())?,
-            cimvr_widget: Arc::new(Mutex::new(ChatimprovrWidget::new(gl, args)?)),
+            cimvr_widget,
+            dock_tree,
+            tab_viewer,
         })
     }
 }
@@ -57,17 +73,16 @@ impl eframe::App for ChatimprovrEframeApp {
 
         // Draw game
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.spacing_mut().item_spacing.x = 0.0;
-                ui.label("The triangle is being painted using ");
-                ui.hyperlink_to("glow", "https://github.com/grovesNL/glow");
-                ui.label(" (OpenGL).");
-            });
+            egui_dock::DockArea::new(&mut self.dock_tree)
+                .style(Style::from_egui(ui.style().as_ref()))
+                .show_inside(ui, &mut self.tab_viewer);
 
+            /*
             egui::Frame::canvas(ui.style()).show(ui, |ui| {
                 show_game_widget(ui, self.cimvr_widget.clone());
             });
             ui.label("Drag to rotate!");
+            */
         });
     }
 
@@ -229,16 +244,30 @@ impl ChatimprovrWidget {
     }
 }
 
-struct TabViewer;
+struct TabViewer {
+    cimvr_widget: Arc<Mutex<ChatimprovrWidget>>,
+}
+
+impl TabViewer {
+    pub fn new(cimvr_widget: Arc<Mutex<ChatimprovrWidget>>) -> Self {
+        Self { cimvr_widget }
+    }
+}
 
 impl egui_dock::TabViewer for TabViewer {
-    type Tab = String;
+    type Tab = TabType;
 
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
-        ui.label(format!("Content of {tab}"));
+        match tab {
+            TabType::Game => show_game_widget(ui, self.cimvr_widget.clone()),
+            _ => (),
+        }
     }
 
     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
-        (&*tab).into()
+        match tab {
+            TabType::Game => "Game".into(),
+            TabType::Plugin(id) => id.clone().into(),
+        }
     }
 }
