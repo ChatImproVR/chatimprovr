@@ -27,7 +27,7 @@ pub struct GuiOutputMessage {
     pub output: Option<PartialOutput>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct JankClippedMesh {
     pub clip: Rect,
     pub vertices: Vec<u8>,

@@ -13,7 +13,7 @@ default = []
 cimvr_engine = { path = "../engine" }
 cimvr_common = { path = "../common" }
 anyhow = "1"
-bytemuck = "1.12.3"
+bytemuck = { version = "1.13.1", features = ["extern_crate_alloc"] }
 glutin = "0.29.0"
 glow = "0.12"
 env_logger = "0.10.0"

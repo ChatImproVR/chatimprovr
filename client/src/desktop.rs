@@ -5,7 +5,7 @@ use cimvr_common::glam::Mat4;
 use cimvr_common::ui::{GuiInputMessage, GuiOutputMessage, GuiTabId, PartialOutput};
 use cimvr_engine::interface::system::Stage;
 use directories::ProjectDirs;
-use eframe::egui::{self, FullOutput, Pos2, Shape, Vec2};
+use eframe::egui::{self, FullOutput, Pos2, Shape, Vec2, Mesh};
 use egui::mutex::Mutex;
 use egui::{Color32, DragValue, Label, RichText, Ui};
 use egui_dock::{NodeIndex, Style, Tree};
@@ -300,19 +300,17 @@ impl egui_dock::TabViewer for TabViewer<'_> {
 
                 // Draw existing state
                 if let Some(Some(full_output)) = self.last_frame.get(id) {
-                    for egui::epaint::ClippedPrimitive {
-                        clip_rect,
-                        primitive,
-                    } in &full_output.shapes
+                    for mesh in &full_output.shapes
                     {
-                        let egui::epaint::Primitive::Mesh(mesh) = primitive else { panic!() };
+                        let clip = mesh.clip;
+                        let mesh: Mesh = mesh.clone().into();
 
                         let mut mesh = mesh.clone();
 
                         let offset = rect.left_top().to_vec2();
                         mesh.translate(offset);
 
-                        ui.set_clip_rect(clip_rect.translate(offset));
+                        ui.set_clip_rect(clip.translate(offset));
                         ui.painter().add(Shape::Mesh(mesh));
                     }
                 }
