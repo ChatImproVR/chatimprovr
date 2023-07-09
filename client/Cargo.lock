@@ -544,7 +544,7 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "cimvr_engine_interface",
- "egui 0.22.0 (git+https://github.com/Masterchef365/egui.git?branch=more-serde)",
+ "egui",
  "glam",
  "serde",
 ]
@@ -1079,29 +1079,20 @@ dependencies = [
 [[package]]
 name = "ecolor"
 version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e479a7fa3f23d4e794f8b2f8b3568dd4e47886ad1b12c9c095e141cb591eb63"
-dependencies = [
- "bytemuck",
-]
-
-[[package]]
-name = "ecolor"
-version = "0.22.0"
 source = "git+https://github.com/Masterchef365/egui.git?branch=more-serde#f71bed63cf9509a9caaf6c0af4bd7524c695b7fd"
 dependencies = [
+ "bytemuck",
  "serde",
 ]
 
 [[package]]
 name = "eframe"
 version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf4596583a2c680c55b6feaa748f74890c4f9cb9c7cb69d6117110444cb65b2f"
+source = "git+https://github.com/Masterchef365/egui.git?branch=more-serde#f71bed63cf9509a9caaf6c0af4bd7524c695b7fd"
 dependencies = [
  "bytemuck",
  "cocoa",
- "egui 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "egui",
  "egui-winit",
  "egui_glow",
  "glow",
@@ -1124,24 +1115,12 @@ dependencies = [
 [[package]]
 name = "egui"
 version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3aef8ec3ae1b772f340170c65bf27d5b8c28f543a0116c844d2ac08d01123e7"
-dependencies = [
- "accesskit",
- "ahash",
- "epaint 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "log",
- "nohash-hasher",
-]
-
-[[package]]
-name = "egui"
-version = "0.22.0"
 source = "git+https://github.com/Masterchef365/egui.git?branch=more-serde#f71bed63cf9509a9caaf6c0af4bd7524c695b7fd"
 dependencies = [
  "accesskit",
  "ahash",
- "epaint 0.22.0 (git+https://github.com/Masterchef365/egui.git?branch=more-serde)",
+ "epaint",
+ "log",
  "nohash-hasher",
  "serde",
 ]
@@ -1149,12 +1128,11 @@ dependencies = [
 [[package]]
 name = "egui-winit"
 version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a49155fd4a0a4fb21224407a91de0030847972ef90fc64edb63621caea61cb2"
+source = "git+https://github.com/Masterchef365/egui.git?branch=more-serde#f71bed63cf9509a9caaf6c0af4bd7524c695b7fd"
 dependencies = [
  "accesskit_winit",
  "arboard",
- "egui 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "egui",
  "instant",
  "log",
  "raw-window-handle 0.5.2",
@@ -1170,18 +1148,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ec07302c1a474f37fe6ef2c6672427880025edc37ac33955e6ea4a11bc6972a"
 dependencies = [
  "duplicate",
- "egui 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "egui",
  "paste",
 ]
 
 [[package]]
 name = "egui_glow"
 version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f8c2752cdf1b0ef5fcda59a898cacabad974d4f5880e92a420b2c917022da64"
+source = "git+https://github.com/Masterchef365/egui.git?branch=more-serde#f71bed63cf9509a9caaf6c0af4bd7524c695b7fd"
 dependencies = [
  "bytemuck",
- "egui 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "egui",
  "egui-winit",
  "glow",
  "log",
@@ -1199,17 +1176,9 @@ checksum = "7fcaabb2fef8c910e7f4c7ce9f67a1283a1715879a7c230ca9d6d1ae31f16d91"
 [[package]]
 name = "emath"
 version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3857d743a6e0741cdd60b622a74c7a36ea75f5f8f11b793b41d905d2c9721a4b"
-dependencies = [
- "bytemuck",
-]
-
-[[package]]
-name = "emath"
-version = "0.22.0"
 source = "git+https://github.com/Masterchef365/egui.git?branch=more-serde#f71bed63cf9509a9caaf6c0af4bd7524c695b7fd"
 dependencies = [
+ "bytemuck",
  "serde",
 ]
 
@@ -1261,30 +1230,15 @@ dependencies = [
 [[package]]
 name = "epaint"
 version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09333964d4d57f40a85338ba3ca5ed4716070ab184dcfed966b35491c5c64f3b"
-dependencies = [
- "ab_glyph",
- "ahash",
- "atomic_refcell",
- "bytemuck",
- "ecolor 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "emath 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "log",
- "nohash-hasher",
- "parking_lot",
-]
-
-[[package]]
-name = "epaint"
-version = "0.22.0"
 source = "git+https://github.com/Masterchef365/egui.git?branch=more-serde#f71bed63cf9509a9caaf6c0af4bd7524c695b7fd"
 dependencies = [
  "ab_glyph",
  "ahash",
  "atomic_refcell",
- "ecolor 0.22.0 (git+https://github.com/Masterchef365/egui.git?branch=more-serde)",
- "emath 0.22.0 (git+https://github.com/Masterchef365/egui.git?branch=more-serde)",
+ "bytemuck",
+ "ecolor",
+ "emath",
+ "log",
  "nohash-hasher",
  "parking_lot",
  "serde",
