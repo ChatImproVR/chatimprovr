@@ -82,6 +82,7 @@ impl eframe::App for ChatimprovrEframeApp {
 
         // Process GUI input messages
         let client = widge.client.as_mut().unwrap();
+
         for msg in client.engine().inbox::<GuiOutputMessage>() {
             // Open new tab for it!
             if !self.tabs.contains_key(&msg.target) {
@@ -243,8 +244,9 @@ impl ChatimprovrWidget {
         TODO: Travel requests
         // Check for travel requests
         let travel_request = client.as_mut().and_then(|c| c.travel_request());
+        */
 
-        if let Some(client) = &mut client {
+        if let Some(client) = &mut self.client {
             // Post update stage
             client
                 .engine()
@@ -255,6 +257,7 @@ impl ChatimprovrWidget {
             client.upload().expect("Message upload");
         }
 
+        /*
         // Check for travel requests
         if let Some(travel_request) = travel_request {
             login_screen.login_file.last_login_address = travel_request.address;
