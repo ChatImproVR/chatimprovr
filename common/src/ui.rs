@@ -27,20 +27,36 @@ pub struct GuiTab {
 }
 
 impl GuiTab {
-    pub fn new(id: impl Into<GuiTabId>) -> Self {
+    pub fn new(io: &mut EngineIo, id: impl Into<GuiTabId>) -> Self {
+        // Notify the system of the new element
+        let id: GuiTabId = id.into();
+
+        io.send(&GuiOutputMessage {
+            target: id.clone(),
+            output: Default::default(),
+        });
+
         Self {
             ctx: egui::Context::default(),
-            id: id.into(),
+            id,
         }
     }
 
     pub fn show<R>(&mut self, io: &mut EngineIo, f: impl FnOnce(&mut Ui) -> R) {
+        /*io.send(&GuiOutputMessage {
+            target: self.id.clone(),
+            output: Default::default(),
+        });*/
+
         // Handle input messages
         let Some(msg) = io.inbox::<GuiInputMessage>().find(|msg| msg.target == self.id) else { return };
         let full_output = self.ctx.run(msg.raw_input, |ctx| {
             ctx.request_repaint();
             egui::CentralPanel::default().show(&self.ctx, f);
         });
+
+        cimvr_engine_interface::dbg!(&self.id);
+
         io.send(&GuiOutputMessage {
             target: self.id.clone(),
             output: full_output,

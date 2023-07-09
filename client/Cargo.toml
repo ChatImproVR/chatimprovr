@@ -19,9 +19,10 @@ glow = "0.12"
 env_logger = "0.10.0"
 log = "0.4.17"
 structopt = { version = "0.3", default-features = false }
-eframe = "0.22.0"
-egui_glow = { version = "0.22.0", features = ["winit"] }
-egui_dock = "0.6.3"
+#eframe = "0.22.0"
+#egui_glow = { version = "0.22.0", features = ["winit"] }
+#egui_dock = "0.6.3"
+egui_dock = { git = "https://github.com/Masterchef365/egui_dock.git", branch = "more-serde" }
 #egui = { version = "0.19.0", default-features = false, features = [
 #egui = { version = "0.19.0", default-features = false, features = [
     #"bytemuck",
@@ -41,7 +42,6 @@ directories = "5.0.1"
 #openxr = { version = "0.17.1", optional = true, features = ["static"] }
 #glutin-openxr-opengl-helper = { git = "https://github.com/ChatImproVR/rust-opengl-openxr-example.git", rev = "c56b2dc" }
 
-[patch.crates-io]
 eframe = { git = "https://github.com/Masterchef365/egui.git", branch = "more-serde" }
-egui = { git = "https://github.com/Masterchef365/egui.git", branch = "more-serde" }
+#egui = { git = "https://github.com/Masterchef365/egui.git", branch = "more-serde" }
 egui_glow = { git = "https://github.com/Masterchef365/egui.git", branch = "more-serde" }

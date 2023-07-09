@@ -11,7 +11,7 @@ impl UserState for ClientState {
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         sched.add_system(Self::update_ui).build();
 
-        let tab = GuiTab::new(pkg_namespace!("MyTab"));
+        let tab = GuiTab::new(io, pkg_namespace!("MyTab"));
 
         Self { tab }
     }
