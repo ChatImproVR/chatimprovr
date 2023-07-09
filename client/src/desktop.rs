@@ -41,7 +41,7 @@ struct ChatimprovrEframeApp {
     /// Behind an `Arc<Mutex<…>>` so we can pass it to [`egui::PaintCallback`] and paint later.
     cimvr_widget: Arc<Mutex<ChatimprovrWidget>>,
     dock_tree: Tree<TabType>,
-    tabs: HashMap<GuiTabId, FullOutput>,
+    tabs: HashMap<GuiTabId, Option<FullOutput>>,
     //login_screen: LoginScreen,
 }
 
@@ -85,16 +85,11 @@ impl eframe::App for ChatimprovrEframeApp {
         for msg in client.engine().inbox::<GuiOutputMessage>() {
             // Open new tab for it!
             if !self.tabs.contains_key(&msg.target) {
-                self.dock_tree.split_left(
-                    NodeIndex::root(),
-                    0.5,
-                    vec![TabType::Plugin(msg.target.clone())],
-                );
+                self.dock_tree
+                    .push_to_first_leaf(TabType::Plugin(msg.target.clone()));
             }
 
-            if let Some(output) = msg.output { 
-                self.tabs.insert(msg.target, output);
-            }
+            self.tabs.insert(msg.target, msg.output);
         }
 
         // Unlock, avoiding deadlock
@@ -271,7 +266,7 @@ impl ChatimprovrWidget {
 
 struct TabViewer<'a> {
     cimvr_widget: Arc<Mutex<ChatimprovrWidget>>,
-    last_frame: &'a HashMap<GuiTabId, FullOutput>,
+    last_frame: &'a HashMap<GuiTabId, Option<FullOutput>>,
 }
 
 impl egui_dock::TabViewer for TabViewer<'_> {
@@ -290,6 +285,7 @@ impl egui_dock::TabViewer for TabViewer<'_> {
                 let raw_input = ui
                     .ctx()
                     .input(|input_state| convert_subwindow_input(input_state, rect));
+
                 // Send input events to host
                 self.cimvr_widget
                     .lock()
@@ -303,7 +299,7 @@ impl egui_dock::TabViewer for TabViewer<'_> {
                     });
 
                 // Draw existing state
-                if let Some(full_output) = self.last_frame.get(id) {
+                if let Some(Some(full_output)) = self.last_frame.get(id) {
                     for egui::epaint::ClippedShape(clip, shape) in &full_output.shapes {
                         let offset = rect.left_top().to_vec2();
                         let mut shape = shape.clone();

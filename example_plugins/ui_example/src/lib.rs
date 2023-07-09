@@ -1,4 +1,7 @@
-use cimvr_common::{ui::GuiTab, Transform};
+use cimvr_common::{
+    ui::{GuiInputMessage, GuiTab},
+    Transform,
+};
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, println, FrameTime};
 
 struct ClientState {
@@ -9,7 +12,10 @@ make_app_state!(ClientState, DummyUserState);
 
 impl UserState for ClientState {
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
-        sched.add_system(Self::update_ui).build();
+        sched
+            .add_system(Self::update_ui)
+            .subscribe::<GuiInputMessage>()
+            .build();
 
         let tab = GuiTab::new(io, pkg_namespace!("MyTab"));
 

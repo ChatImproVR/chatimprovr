@@ -50,6 +50,7 @@ impl GuiTab {
 
         // Handle input messages
         let Some(msg) = io.inbox::<GuiInputMessage>().find(|msg| msg.target == self.id) else { return };
+
         let full_output = self.ctx.run(msg.raw_input, |ctx| {
             ctx.request_repaint();
             egui::CentralPanel::default().show(&self.ctx, f);
