@@ -52,6 +52,10 @@ impl ChatimprovrEframeApp {
 
 impl eframe::App for ChatimprovrEframeApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // Update game state
+        self.cimvr_widget.lock().update();
+
+        // Draw game
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 0.0;
@@ -68,7 +72,7 @@ impl eframe::App for ChatimprovrEframeApp {
     }
 
     fn on_exit(&mut self, gl: Option<&glow::Context>) {
-        if let Some(gl) = gl {
+        if gl.is_some() {
             self.cimvr_widget.lock().destroy();
         }
     }
@@ -128,32 +132,7 @@ impl ChatimprovrWidget {
         })
     }
 
-    fn destroy(&self) {
-        //todo!()
-    }
-
-    fn paint(&mut self) {
-        /*
-        // Login page
-        if client.is_none() {
-            // Attempt to login via command line arg
-            if args.connect.is_some() {
-                client = login_screen.login(&gl);
-                // Don't loop
-                args.connect = None;
-            }
-
-            // Otherwise, use the GUI to login
-            egui_glow.run(glutin_ctx.window(), |ctx| {
-                egui::CentralPanel::default().show(ctx, |ui| {
-                    if login_screen.show(ui) {
-                        client = login_screen.login(&gl);
-                    }
-                });
-            });
-        }
-        */
-
+    fn update(&mut self) {
         if let Some(client) = &mut self.client {
             if self.window_control.is_none() {
                 self.window_control = Some(WindowController::new(client.engine()));
@@ -188,7 +167,37 @@ impl ChatimprovrWidget {
             // Collect UI input
             egui_glow.run(glutin_ctx.window(), |ctx| client.update_ui(ctx));
             */
+        }
+    }
 
+    fn destroy(&self) {
+        //todo!()
+    }
+
+    fn paint(&mut self) {
+        /*
+        // Login page
+        if client.is_none() {
+            // Attempt to login via command line arg
+            if args.connect.is_some() {
+                client = login_screen.login(&gl);
+                // Don't loop
+                args.connect = None;
+            }
+
+            // Otherwise, use the GUI to login
+            egui_glow.run(glutin_ctx.window(), |ctx| {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    if login_screen.show(ui) {
+                        client = login_screen.login(&gl);
+                    }
+                });
+            });
+        }
+        */
+
+
+        if let Some(client) = &mut self.client {
             // Render frame
             client
                 .render_frame(Mat4::IDENTITY, 0)
