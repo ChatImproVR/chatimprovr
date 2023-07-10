@@ -93,6 +93,8 @@ impl eframe::App for ChatimprovrEframeApp {
             self.tabs.insert(msg.target, msg.output);
         }
 
+        widge.post_update();
+
         // Unlock, avoiding deadlock
         drop(widge);
 
@@ -195,6 +197,20 @@ impl ChatimprovrWidget {
                 .dispatch(Stage::Update)
                 .expect("Frame udpate");
 
+            client.prep_render().expect("Render prep");
+        }
+    }
+
+    fn post_update(&mut self) {
+        if let Some(client) = &mut self.client {
+            // Post update stage
+            client
+                .engine()
+                .dispatch(Stage::PostUpdate)
+                .expect("Frame post-update");
+
+            // Upload messages to server
+            client.upload().expect("Message upload");
             /*
             TODO: Re-implement window control
             self.window_control
@@ -246,16 +262,6 @@ impl ChatimprovrWidget {
         let travel_request = client.as_mut().and_then(|c| c.travel_request());
         */
 
-        if let Some(client) = &mut self.client {
-            // Post update stage
-            client
-                .engine()
-                .dispatch(Stage::PostUpdate)
-                .expect("Frame post-update");
-
-            // Upload messages to server
-            client.upload().expect("Message upload");
-        }
 
         /*
         // Check for travel requests

@@ -65,7 +65,7 @@ impl RenderPlugin {
     */
 
     /// Draw a frame, prepending camera transform to the given view
-    pub fn frame(&mut self, engine: &mut Engine, vr_view: Mat4, camera_idx: usize) -> Result<()> {
+    pub fn handle_messages(&mut self, engine: &mut Engine) -> Result<()> {
         // Upload render data
         for msg in engine.inbox::<UploadMesh>() {
             if let Err(e) = self.rdr.upload_render_data(&self.gl, &msg) {
@@ -80,6 +80,10 @@ impl RenderPlugin {
             }
         }
 
+        Ok(())
+    }
+
+    pub fn frame(&mut self, engine: &mut Engine, vr_view: Mat4, camera_idx: usize) -> Result<()> {
         // Find camera, if any
         let camera_entity = match engine
             .ecs()

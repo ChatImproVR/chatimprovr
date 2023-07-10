@@ -201,6 +201,10 @@ impl Client {
         }
     }
 
+    pub fn prep_render(&mut self) -> Result<()> {
+        self.render.handle_messages(&mut self.engine)
+    }
+
     pub fn render_frame(&mut self, vr_view: Mat4, view_idx: usize) -> Result<()> {
         self.render.frame(&mut self.engine, vr_view, view_idx)
     }
