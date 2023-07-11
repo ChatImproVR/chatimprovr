@@ -1,7 +1,7 @@
 use std::f32::consts::FRAC_PI_2;
 
 use cimvr_common::{
-    desktop::{InputEvent, MouseButton},
+    desktop::{InputEvent, KeyCode, MouseButton},
     glam::{Mat3, Quat, Vec3, Vec4},
     render::CameraComponent,
     ui::GuiConfigMessage,
@@ -9,7 +9,7 @@ use cimvr_common::{
     vr::VrUpdate,
     Transform,
 };
-use cimvr_engine_interface::{make_app_state, prelude::*};
+use cimvr_engine_interface::{dbg, make_app_state, prelude::*};
 
 struct Camera {
     arcball: ArcBall,
@@ -84,10 +84,11 @@ impl Camera {
             for input in io.inbox::<InputEvent>().collect::<Vec<_>>() {
                 // Handle window resizing
                 self.proj.handle_event(&input);
-                self.handle_fullscreen_event(io, &input);
             }
 
             self.input.handle_input_events(io);
+
+            self.handle_fullscreen_event(io);
 
             // Handle pivot/pan
             self.arcball_control.update(&self.input, &mut self.arcball);
@@ -113,13 +114,8 @@ impl Camera {
         }
     }
 
-    pub fn handle_fullscreen_event(&mut self, io: &mut EngineIo, input: &InputEvent) {
-        if input
-            == &InputEvent::Keyboard(cimvr_common::desktop::KeyboardEvent::Key {
-                key: cimvr_common::desktop::KeyCode::F,
-                state: cimvr_common::desktop::ElementState::Released,
-            })
-        {
+    pub fn handle_fullscreen_event(&mut self, io: &mut EngineIo) {
+        if self.input.key_released(KeyCode::P) {
             self.is_tab_fullscreen = !self.is_tab_fullscreen;
             io.send(&GuiConfigMessage::TabFullscreen(self.is_tab_fullscreen));
         }

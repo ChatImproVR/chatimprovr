@@ -97,7 +97,7 @@ impl eframe::App for ChatimprovrEframeApp {
             // Open new tab for it!
             if !self.tabs.contains_key(&msg.target) {
                 self.dock_tree
-                    .push_to_first_leaf(TabType::Plugin(msg.target.clone()));
+                    .split_left(NodeIndex::root(), 0.3, vec![TabType::Plugin(msg.target.clone())]);
             }
 
             self.tabs.insert(msg.target, msg.output);
