@@ -213,7 +213,7 @@ impl Default for ArcBallController {
         Self {
             pan_sensitivity: 0.0015,
             swivel_sensitivity: 0.005,
-            zoom_sensitivity: 0.3,
+            zoom_sensitivity: 0.03,
             closest_zoom: 0.01,
         }
     }

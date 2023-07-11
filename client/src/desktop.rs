@@ -149,12 +149,11 @@ fn show_game_widget(ui: &mut egui::Ui, cimvr_widget: Arc<Mutex<ChatimprovrWidget
     let mut widge = cimvr_widget.lock();
 
     // We want to collect input...
-    if response.hovered() {
-        ui.input(|inp| widge.input.handle_egui_input(&inp, rect))
-    }
+    let ppp = ui.ctx().pixels_per_point();
+    ui.input(|inp| widge.input.handle_egui_input(&inp, rect, response.hovered()));
 
-    let widget_size_pixels = rect.size() * ui.ctx().pixels_per_point();
-    let screen_size = ui.ctx().screen_rect().size() * ui.ctx().pixels_per_point();
+    let widget_size_pixels = rect.size() * ppp;
+    let screen_size = ui.ctx().screen_rect().size() * ppp;
 
     // Set window size to pixel size of the widget
     let pixel_size = if is_tab_fullscreen { screen_size } else { widget_size_pixels };

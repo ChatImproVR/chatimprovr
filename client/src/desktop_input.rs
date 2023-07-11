@@ -6,6 +6,7 @@ use glutin::{dpi::PhysicalPosition, window::CursorGrabMode};
 /// Input handler for Desktop platform
 pub struct DesktopInputHandler {
     pub events: Vec<InputEvent>,
+    was_hovered: bool,
 }
 
 pub struct WindowController {
@@ -44,7 +45,7 @@ impl WindowController {
 
 impl DesktopInputHandler {
     pub fn new() -> Self {
-        Self { events: vec![] }
+        Self { events: vec![], was_hovered: false }
     }
 
     /// Returns the InputState which chronicles the events since the last call
@@ -57,14 +58,28 @@ impl DesktopInputHandler {
     }
 
     /// Handle a Winit event
-    pub fn handle_egui_input(&mut self, input: &egui::InputState, rect: Rect) {
+    pub fn handle_egui_input(&mut self, input: &egui::InputState, rect: Rect, is_hovered: bool) {
+        if is_hovered != self.was_hovered {
+            self.events.push(InputEvent::Mouse(if is_hovered {
+                MouseEvent::Entered
+            } else {
+                MouseEvent::Exited
+            }));
+
+            self.was_hovered = is_hovered;
+        }
+
+        if !is_hovered {
+            return;
+        }
+
         for event in &input.raw.events {
             match event {
                 egui::Event::PointerButton {
-                    pos,
                     button,
                     pressed,
                     modifiers,
+                    ..
                 } => self.events.push(InputEvent::Mouse(MouseEvent::Clicked(
                     match button {
                         // Oof
@@ -89,12 +104,7 @@ impl DesktopInputHandler {
                 egui::Event::PointerMoved(pos) => self.events.push(InputEvent::Mouse(
                     MouseEvent::Moved(pos.x - rect.left(), pos.y - rect.top()),
                 )),
-                egui::Event::Key {
-                    key,
-                    pressed,
-                    repeat,
-                    modifiers,
-                } => {
+                egui::Event::Key { key, pressed, .. } => {
                     if let Some(key) = translate_key(*key) {
                         self.events.push(InputEvent::Keyboard(KeyboardEvent::Key {
                             key,
@@ -104,6 +114,10 @@ impl DesktopInputHandler {
                             },
                         }));
                     }
+                }
+                egui::Event::Scroll(delta) => {
+                    self.events
+                        .push(InputEvent::Mouse(MouseEvent::Scrolled(delta.x, delta.y)));
                 }
                 _ => (),
             }
