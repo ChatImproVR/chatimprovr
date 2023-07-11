@@ -531,6 +531,7 @@ dependencies = [
  "egui_dock",
  "egui_glow",
  "env_logger",
+ "epaint",
  "gilrs",
  "glow",
  "glutin 0.29.1",

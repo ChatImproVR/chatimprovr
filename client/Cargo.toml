@@ -45,3 +45,4 @@ directories = "5.0.1"
 eframe = { git = "https://github.com/Masterchef365/egui.git", branch = "more-serde" }
 #egui = { git = "https://github.com/Masterchef365/egui.git", branch = "more-serde" }
 egui_glow = { git = "https://github.com/Masterchef365/egui.git", branch = "more-serde" }
+epaint = { git = "https://github.com/Masterchef365/egui.git", branch = "more-serde", features = ["extra_asserts"] }
