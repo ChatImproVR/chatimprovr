@@ -83,6 +83,14 @@ impl RenderPlugin {
         Ok(())
     }
 
+    pub fn force_fullscreen(&mut self, width: i32, height: i32) {
+        unsafe {
+            self.gl.scissor(0, 0, width, height);
+            self.gl.viewport(0, 0, width, height);
+            self.gl.clear(gl::COLOR_BUFFER_BIT);
+        }
+    }
+
     pub fn frame(&mut self, engine: &mut Engine, vr_view: Mat4, camera_idx: usize) -> Result<()> {
         // Find camera, if any
         let camera_entity = match engine

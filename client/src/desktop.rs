@@ -33,7 +33,7 @@ pub fn mainloop(mut args: Opt) -> Result<()> {
 }
 
 enum TabType {
-    Game,
+    Game(bool),
     Plugin(GuiTabId),
 }
 
@@ -42,6 +42,7 @@ struct ChatimprovrEframeApp {
     cimvr_widget: Arc<Mutex<ChatimprovrWidget>>,
     dock_tree: Tree<TabType>,
     tabs: HashMap<GuiTabId, Option<PartialOutput>>,
+    game_is_fullscreen: bool,
     //login_screen: LoginScreen,
 }
 
@@ -52,7 +53,7 @@ impl ChatimprovrEframeApp {
             .clone()
             .expect("You need to run eframe with the glow backend");
 
-        let dock_tree = Tree::new(vec![TabType::Game]);
+        let dock_tree = Tree::new(vec![TabType::Game(false)]);
 
         let cimvr_widget = Arc::new(Mutex::new(ChatimprovrWidget::new(gl, args)?));
 
@@ -67,6 +68,7 @@ impl ChatimprovrEframeApp {
 
         Ok(Self {
             //login_screen: LoginScreen::new(args.clone())?,
+            game_is_fullscreen: false,
             cimvr_widget,
             dock_tree,
             tabs: Default::default(),
@@ -104,9 +106,17 @@ impl eframe::App for ChatimprovrEframeApp {
                 cimvr_widget: self.cimvr_widget.clone(),
                 last_frame: &self.tabs,
             };
-            egui_dock::DockArea::new(&mut self.dock_tree)
-                .style(Style::from_egui(ui.style().as_ref()))
-                .show_inside(ui, &mut tab_viewer);
+
+            if self.game_is_fullscreen {
+                // Draw game only
+                use egui_dock::TabViewer;
+                tab_viewer.ui(ui, &mut TabType::Game(true));
+            } else {
+                // Draw docking
+                egui_dock::DockArea::new(&mut self.dock_tree)
+                    .style(Style::from_egui(ui.style().as_ref()))
+                    .show_inside(ui, &mut tab_viewer);
+            }
         });
     }
 
@@ -117,7 +127,7 @@ impl eframe::App for ChatimprovrEframeApp {
     }
 }
 
-fn show_game_widget(ui: &mut egui::Ui, cimvr_widget: Arc<Mutex<ChatimprovrWidget>>) {
+fn show_game_widget(ui: &mut egui::Ui, cimvr_widget: Arc<Mutex<ChatimprovrWidget>>, is_fullscreen: bool) {
     let (rect, response) =
         ui.allocate_exact_size(ui.available_size(), egui::Sense::click_and_drag());
 
@@ -128,16 +138,19 @@ fn show_game_widget(ui: &mut egui::Ui, cimvr_widget: Arc<Mutex<ChatimprovrWidget
         ui.input(|inp| widge.input.handle_egui_input(&inp, rect))
     }
 
+    let widget_size_pixels = rect.size() * ui.ctx().pixels_per_point();
+    let screen_size = ui.ctx().screen_rect().size() * ui.ctx().pixels_per_point();
+
     // Set window size to pixel size of the widget
-    let pixel_size = rect.size() * ui.ctx().pixels_per_point();
+    let pixel_size = if is_fullscreen { screen_size } else { widget_size_pixels };
     widge
         .input
         .events
         .push(cimvr_common::desktop::InputEvent::Window(
-            cimvr_common::desktop::WindowEvent::Resized {
-                width: pixel_size.x as _,
-                height: pixel_size.y as _,
-            },
+                cimvr_common::desktop::WindowEvent::Resized {
+                    width: pixel_size.x as _,
+                    height: pixel_size.y as _,
+                },
         ));
 
     // We're a game, renfer once per frame
@@ -146,10 +159,11 @@ fn show_game_widget(ui: &mut egui::Ui, cimvr_widget: Arc<Mutex<ChatimprovrWidget
     // Clone locals so we can move them into the paint callback:
     let widge = cimvr_widget.clone();
 
+    let fullscreen = is_fullscreen.then(|| (screen_size.x as _, screen_size.y as _));
     let callback = egui::PaintCallback {
         rect,
         callback: std::sync::Arc::new(egui_glow::CallbackFn::new(move |_info, _painter| {
-            widge.lock().paint();
+            widge.lock().paint(fullscreen);
         })),
     };
     ui.painter().add(callback);
@@ -212,10 +226,10 @@ impl ChatimprovrWidget {
             // Upload messages to server
             client.upload().expect("Message upload");
             /*
-            TODO: Re-implement window control
-            self.window_control
-                .get_or_insert_with(|| WindowController::new(client.engine()))
-                .update(client.engine(), glutin_ctx.window());
+               TODO: Re-implement window control
+               self.window_control
+               .get_or_insert_with(|| WindowController::new(client.engine()))
+               .update(client.engine(), glutin_ctx.window());
 
             // Collect UI input
             egui_glow.run(glutin_ctx.window(), |ctx| client.update_ui(ctx));
@@ -227,37 +241,40 @@ impl ChatimprovrWidget {
         //todo!()
     }
 
-    fn paint(&mut self) {
+    fn paint(&mut self, fullscreen: Option<(i32, i32)>) {
         /*
         // Login page
         if client.is_none() {
-            // Attempt to login via command line arg
-            if args.connect.is_some() {
-                client = login_screen.login(&gl);
-                // Don't loop
-                args.connect = None;
-            }
+        // Attempt to login via command line arg
+        if args.connect.is_some() {
+        client = login_screen.login(&gl);
+        // Don't loop
+        args.connect = None;
+        }
 
-            // Otherwise, use the GUI to login
-            egui_glow.run(glutin_ctx.window(), |ctx| {
-                egui::CentralPanel::default().show(ctx, |ui| {
-                    if login_screen.show(ui) {
-                        client = login_screen.login(&gl);
-                    }
-                });
-            });
+        // Otherwise, use the GUI to login
+        egui_glow.run(glutin_ctx.window(), |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| {
+        if login_screen.show(ui) {
+        client = login_screen.login(&gl);
+        }
+        });
+        });
         }
         */
 
         if let Some(client) = &mut self.client {
             // Render frame
+            if let Some((width, height)) = fullscreen {
+                client.render.force_fullscreen(width, height);
+            }
             client
                 .render_frame(Mat4::IDENTITY, 0)
                 .expect("Frame render");
-        }
+            }
 
         /*
-        TODO: Travel requests
+           TODO: Travel requests
         // Check for travel requests
         let travel_request = client.as_mut().and_then(|c| c.travel_request());
         */
@@ -266,8 +283,8 @@ impl ChatimprovrWidget {
         /*
         // Check for travel requests
         if let Some(travel_request) = travel_request {
-            login_screen.login_file.last_login_address = travel_request.address;
-            client = login_screen.login(&gl);
+        login_screen.login_file.last_login_address = travel_request.address;
+        client = login_screen.login(&gl);
         }
         */
     }
@@ -283,10 +300,10 @@ impl egui_dock::TabViewer for TabViewer<'_> {
 
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
         match tab {
-            TabType::Game => {
+            TabType::Game(is_fullscreen) => {
                 egui::Frame::canvas(ui.style())
-                    .show(ui, |ui| show_game_widget(ui, self.cimvr_widget.clone()));
-            }
+                    .show(ui, |ui| show_game_widget(ui, self.cimvr_widget.clone(), *is_fullscreen));
+                }
             TabType::Plugin(id) => {
                 let (rect, _response) =
                     ui.allocate_exact_size(ui.available_size(), egui::Sense::click_and_drag());
@@ -327,7 +344,7 @@ impl egui_dock::TabViewer for TabViewer<'_> {
 
     fn title(&mut self, tab: &mut Self::Tab) -> egui::WidgetText {
         match tab {
-            TabType::Game => "Game".into(),
+            TabType::Game(_) => "Game".into(),
             TabType::Plugin(id) => id.clone().into(),
         }
     }
