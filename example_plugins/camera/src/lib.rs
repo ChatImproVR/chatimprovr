@@ -4,6 +4,7 @@ use cimvr_common::{
     desktop::{InputEvent, MouseButton},
     glam::{Mat3, Quat, Vec3, Vec4},
     render::CameraComponent,
+    ui::GuiConfigMessage,
     utils::{camera::Perspective, input_helper::InputHelper},
     vr::VrUpdate,
     Transform,
@@ -17,6 +18,7 @@ struct Camera {
     input: InputHelper,
     /// Keep track of whether we've ever received a VR update, since we'll always receive desktop events!
     is_vr: bool,
+    is_tab_fullscreen: bool,
 }
 
 make_app_state!(Camera, DummyUserState);
@@ -49,6 +51,7 @@ impl UserState for Camera {
             .build();
 
         Self {
+            is_tab_fullscreen: false,
             input: InputHelper::new(),
             arcball: ArcBall::default(),
             arcball_control: ArcBallController::default(),
@@ -78,9 +81,10 @@ impl Camera {
 
         // Handle input events for desktop mode
         if !self.is_vr {
-            for input in io.inbox::<InputEvent>() {
+            for input in io.inbox::<InputEvent>().collect::<Vec<_>>() {
                 // Handle window resizing
                 self.proj.handle_event(&input);
+                self.handle_fullscreen_event(io, &input);
             }
 
             self.input.handle_input_events(io);
@@ -106,6 +110,18 @@ impl Camera {
                     projection,
                 },
             );
+        }
+    }
+
+    pub fn handle_fullscreen_event(&mut self, io: &mut EngineIo, input: &InputEvent) {
+        if input
+            == &InputEvent::Keyboard(cimvr_common::desktop::KeyboardEvent::Key {
+                key: cimvr_common::desktop::KeyCode::F,
+                state: cimvr_common::desktop::ElementState::Released,
+            })
+        {
+            self.is_tab_fullscreen = !self.is_tab_fullscreen;
+            io.send(&GuiConfigMessage::TabFullscreen(self.is_tab_fullscreen));
         }
     }
 }

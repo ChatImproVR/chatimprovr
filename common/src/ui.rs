@@ -14,6 +14,13 @@ pub type GuiTabId = String;
 /// Message sent from host GUI to plugin
 #[derive(Message, Serialize, Deserialize, Debug)]
 #[locality("Local")]
+pub enum GuiConfigMessage {
+    TabFullscreen(bool),
+}
+
+/// Message sent from host GUI to plugin
+#[derive(Message, Serialize, Deserialize, Debug)]
+#[locality("Local")]
 pub struct GuiInputMessage {
     pub target: GuiTabId,
     pub raw_input: egui::RawInput,
