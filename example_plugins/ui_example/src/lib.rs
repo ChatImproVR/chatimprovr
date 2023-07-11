@@ -6,6 +6,7 @@ use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*, println,
 
 struct ClientState {
     tab: GuiTab,
+    tab2: GuiTab,
 }
 
 make_app_state!(ClientState, DummyUserState);
@@ -18,8 +19,9 @@ impl UserState for ClientState {
             .build();
 
         let tab = GuiTab::new(io, pkg_namespace!("MyTab"));
+        let tab2 = GuiTab::new(io, pkg_namespace!("MyOtherTab"));
 
-        Self { tab }
+        Self { tab, tab2 }
     }
 }
 
@@ -41,6 +43,12 @@ impl ClientState {
             Plot::new("my_plot")
                 .view_aspect(2.0)
                 .show(ui, |plot_ui| plot_ui.line(line));
+        });
+
+        self.tab2.show(io, |ui| {
+            if ui.button("fsaljdk;fjaskldfjla;jkdsfk;").clicked() {
+                println!("Your momma");
+            }
         });
     }
 }

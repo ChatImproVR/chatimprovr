@@ -2,10 +2,12 @@ use crate::desktop_input::{DesktopInputHandler, WindowController};
 use crate::{project_dirs, Client, LoginFile, LoginInfo, Opt};
 use anyhow::{format_err, Result};
 use cimvr_common::glam::Mat4;
-use cimvr_common::ui::{GuiInputMessage, GuiOutputMessage, GuiTabId, PartialOutput, GuiConfigMessage};
+use cimvr_common::ui::{
+    GuiConfigMessage, GuiInputMessage, GuiOutputMessage, GuiTabId, PartialOutput,
+};
 use cimvr_engine::interface::system::Stage;
 use directories::ProjectDirs;
-use eframe::egui::{self, FullOutput, Pos2, Shape, Vec2, Mesh};
+use eframe::egui::{self, FullOutput, Mesh, Pos2, Shape, Vec2};
 use egui::mutex::Mutex;
 use egui::{Color32, DragValue, Label, RichText, Ui};
 use egui_dock::{NodeIndex, Style, Tree};
@@ -96,8 +98,12 @@ impl eframe::App for ChatimprovrEframeApp {
         for msg in client.engine().inbox::<GuiOutputMessage>() {
             // Open new tab for it!
             if !self.tabs.contains_key(&msg.target) {
-                self.dock_tree
-                    .split_left(NodeIndex::root(), 0.3, vec![TabType::Plugin(msg.target.clone())]);
+                let tab = TabType::Plugin(msg.target.clone());
+                if self.dock_tree.len() > 1 {
+                    self.dock_tree.push_to_first_leaf(tab);
+                } else {
+                    self.dock_tree.split_left(NodeIndex::root(), 0.3, vec![tab]);
+                }
             }
 
             self.tabs.insert(msg.target, msg.output);
@@ -106,7 +112,9 @@ impl eframe::App for ChatimprovrEframeApp {
         // Process GUI config messages
         for msg in client.engine().inbox::<GuiConfigMessage>() {
             match msg {
-                GuiConfigMessage::TabFullscreen(is_tab_fullscreen) => self.game_is_tab_fullscreen = is_tab_fullscreen,
+                GuiConfigMessage::TabFullscreen(is_tab_fullscreen) => {
+                    self.game_is_tab_fullscreen = is_tab_fullscreen
+                }
             }
         }
 
@@ -142,7 +150,11 @@ impl eframe::App for ChatimprovrEframeApp {
     }
 }
 
-fn show_game_widget(ui: &mut egui::Ui, cimvr_widget: Arc<Mutex<ChatimprovrWidget>>, is_tab_fullscreen: bool) {
+fn show_game_widget(
+    ui: &mut egui::Ui,
+    cimvr_widget: Arc<Mutex<ChatimprovrWidget>>,
+    is_tab_fullscreen: bool,
+) {
     let (rect, response) =
         ui.allocate_exact_size(ui.available_size(), egui::Sense::click_and_drag());
 
@@ -150,21 +162,29 @@ fn show_game_widget(ui: &mut egui::Ui, cimvr_widget: Arc<Mutex<ChatimprovrWidget
 
     // We want to collect input...
     let ppp = ui.ctx().pixels_per_point();
-    ui.input(|inp| widge.input.handle_egui_input(&inp, rect, response.hovered()));
+    ui.input(|inp| {
+        widge
+            .input
+            .handle_egui_input(&inp, rect, response.hovered())
+    });
 
     let widget_size_pixels = rect.size() * ppp;
     let screen_size = ui.ctx().screen_rect().size() * ppp;
 
     // Set window size to pixel size of the widget
-    let pixel_size = if is_tab_fullscreen { screen_size } else { widget_size_pixels };
+    let pixel_size = if is_tab_fullscreen {
+        screen_size
+    } else {
+        widget_size_pixels
+    };
     widge
         .input
         .events
         .push(cimvr_common::desktop::InputEvent::Window(
-                cimvr_common::desktop::WindowEvent::Resized {
-                    width: pixel_size.x as _,
-                    height: pixel_size.y as _,
-                },
+            cimvr_common::desktop::WindowEvent::Resized {
+                width: pixel_size.x as _,
+                height: pixel_size.y as _,
+            },
         ));
 
     // We're a game, renfer once per frame
@@ -285,14 +305,13 @@ impl ChatimprovrWidget {
             client
                 .render_frame(Mat4::IDENTITY, 0)
                 .expect("Frame render");
-            }
+        }
 
         /*
            TODO: Travel requests
         // Check for travel requests
         let travel_request = client.as_mut().and_then(|c| c.travel_request());
         */
-
 
         /*
         // Check for travel requests
@@ -315,9 +334,10 @@ impl egui_dock::TabViewer for TabViewer<'_> {
     fn ui(&mut self, ui: &mut egui::Ui, tab: &mut Self::Tab) {
         match tab {
             TabType::Game(is_tab_fullscreen) => {
-                egui::Frame::canvas(ui.style())
-                    .show(ui, |ui| show_game_widget(ui, self.cimvr_widget.clone(), *is_tab_fullscreen));
-                }
+                egui::Frame::canvas(ui.style()).show(ui, |ui| {
+                    show_game_widget(ui, self.cimvr_widget.clone(), *is_tab_fullscreen)
+                });
+            }
             TabType::Plugin(id) => {
                 let (rect, _response) =
                     ui.allocate_exact_size(ui.available_size(), egui::Sense::click_and_drag());
@@ -340,8 +360,7 @@ impl egui_dock::TabViewer for TabViewer<'_> {
 
                 // Draw existing state
                 if let Some(Some(full_output)) = self.last_frame.get(id) {
-                    for mesh in &full_output.shapes
-                    {
+                    for mesh in &full_output.shapes {
                         let clip = mesh.clip;
                         let mut mesh: Mesh = mesh.clone().into();
 
@@ -361,6 +380,11 @@ impl egui_dock::TabViewer for TabViewer<'_> {
             TabType::Game(_) => "Game".into(),
             TabType::Plugin(id) => id.clone().into(),
         }
+    }
+
+    fn on_close(&mut self, _tab: &mut Self::Tab) -> bool {
+        // TODO: Notify of closed tab? Uncloseable tabs?
+        false
     }
 }
 
