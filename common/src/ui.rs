@@ -67,8 +67,9 @@ impl GuiTab {
         });
 
         // Dumb hack
-        let texture_id_offset =
-            (const_hash(pkg_namespace!("TextureId")) % u128::from(u64::MAX)) as u64;
+        //let texture_id_offset =
+        //(const_hash(pkg_namespace!("TextureId")) % u128::from(u64::MAX)) as u64;
+        let texture_id_offset = (io.random() % u128::from(u64::MAX)) as u64;
 
         Self {
             ctx: egui::Context::default(),

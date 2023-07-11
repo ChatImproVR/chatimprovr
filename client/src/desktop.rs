@@ -97,9 +97,10 @@ impl eframe::App for ChatimprovrEframeApp {
         for partial in self.tabs.values_mut() {
             if let Some(partial) = partial {
                 for (id, delta) in partial.textures_delta.set.drain(..) {
+                    dbg!(id);
                     let ImageDelta { image, options, .. } = delta.clone();
                     ctx.tex_manager().write().insert(id, image, options);
-                    ctx.tex_manager().write().set(id, delta);
+                    // ctx.tex_manager().write().set(id, delta);
                 }
             }
         }
