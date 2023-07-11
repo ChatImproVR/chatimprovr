@@ -23,7 +23,7 @@ impl GenericHandle {
 /// use cimvr_common::render::RenderHandle;
 /// const CUBE_HANDLE: RenderHandle = RenderHandle::new(pkg_namespace!("Cube"));
 /// ```
-const fn const_hash(s: &str) -> u128 {
+pub const fn const_hash(s: &str) -> u128 {
     const C: u128 = 31;
     let mut hash: u128 = 0;
     let mut i = 0;

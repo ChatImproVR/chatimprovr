@@ -9,6 +9,8 @@ use egui::{
 };
 use serde::{Deserialize, Serialize};
 
+use crate::generic_handle::const_hash;
+
 pub type GuiTabId = String;
 
 /// Message sent from host GUI to plugin
@@ -45,11 +47,13 @@ pub struct JankClippedMesh {
 #[derive(Serialize, Deserialize)]
 pub struct PartialOutput {
     pub shapes: Vec<JankClippedMesh>,
+    pub textures_delta: TexturesDelta,
 }
 
 pub struct GuiTab {
     ctx: egui::Context,
     id: GuiTabId,
+    texture_id_offset: u64,
 }
 
 impl GuiTab {
@@ -62,9 +66,14 @@ impl GuiTab {
             output: None,
         });
 
+        // Dumb hack
+        let texture_id_offset =
+            (const_hash(pkg_namespace!("TextureId")) % u128::from(u64::MAX)) as u64;
+
         Self {
             ctx: egui::Context::default(),
             id,
+            texture_id_offset,
         }
     }
 
@@ -86,13 +95,35 @@ impl GuiTab {
 
         // Tesselate before serializing; faster
         let shapes = self.ctx.tessellate(full_output.shapes);
+        let mut shapes: Vec<JankClippedMesh> = shapes.into_iter().map(|s| s.into()).collect();
 
-        let shapes: Vec<JankClippedMesh> = shapes.into_iter().map(|s| s.into()).collect();
+        // Translate texture IDs
+        // Delta messages
+        let mut textures_delta = full_output.textures_delta;
+        for (set, _) in &mut textures_delta.set {
+            if let TextureId::Managed(id) = set {
+                *id = id.wrapping_add(self.texture_id_offset);
+            }
+        }
+        for free in &mut textures_delta.free {
+            if let TextureId::Managed(id) = free {
+                *id = id.wrapping_add(self.texture_id_offset);
+            }
+        }
+        // Shapes
+        for shape in &mut shapes {
+            if let TextureId::Managed(id) = &mut shape.texture_id {
+                *id = id.wrapping_add(self.texture_id_offset);
+            }
+        }
 
         // Send geometry to host
         io.send(&GuiOutputMessage {
             target: self.id.clone(),
-            output: Some(PartialOutput { shapes }),
+            output: Some(PartialOutput {
+                shapes,
+                textures_delta,
+            }),
         })
     }
 }

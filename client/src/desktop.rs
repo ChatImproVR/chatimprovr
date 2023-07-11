@@ -87,10 +87,19 @@ impl ChatimprovrEframeApp {
 }
 
 impl eframe::App for ChatimprovrEframeApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         // Update game state
         let mut widge = self.cimvr_widget.lock();
         widge.update();
+
+        // Process texture updates
+        for partial in self.tabs.values_mut() {
+            if let Some(partial) = partial {
+                for (id, delta) in partial.textures_delta.set.drain(..) {
+                   ctx.tex_manager().write().set(id, delta);
+                }
+            }
+        }
 
         // Process GUI input messages
         let client = widge.client.as_mut().unwrap();
@@ -127,7 +136,7 @@ impl eframe::App for ChatimprovrEframeApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             let mut tab_viewer = TabViewer {
                 cimvr_widget: self.cimvr_widget.clone(),
-                last_frame: &self.tabs,
+                last_frame: &mut self.tabs,
             };
 
             if self.game_is_tab_fullscreen {
@@ -224,6 +233,7 @@ impl ChatimprovrWidget {
             if self.window_control.is_none() {
                 self.window_control = Some(WindowController::new(client.engine()));
             }
+
 
             // Download messages from server
             client.download().expect("Message download");
@@ -325,7 +335,7 @@ impl ChatimprovrWidget {
 
 struct TabViewer<'a> {
     cimvr_widget: Arc<Mutex<ChatimprovrWidget>>,
-    last_frame: &'a HashMap<GuiTabId, Option<PartialOutput>>,
+    last_frame: &'a mut HashMap<GuiTabId, Option<PartialOutput>>,
 }
 
 impl egui_dock::TabViewer for TabViewer<'_> {
@@ -359,7 +369,9 @@ impl egui_dock::TabViewer for TabViewer<'_> {
                     });
 
                 // Draw existing state
-                if let Some(Some(full_output)) = self.last_frame.get(id) {
+                if let Some(Some(full_output)) = self.last_frame.get_mut(id) {
+                    
+                    // Draw meshes
                     for mesh in &full_output.shapes {
                         let clip = mesh.clip;
                         let mut mesh: Mesh = mesh.clone().into();
