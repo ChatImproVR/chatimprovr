@@ -11,6 +11,7 @@ use eframe::egui::{self, FullOutput, Mesh, Pos2, Shape, Vec2};
 use egui::mutex::Mutex;
 use egui::{Color32, DragValue, Label, RichText, Ui};
 use egui_dock::{NodeIndex, Style, Tree};
+use epaint::ImageDelta;
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
 use std::collections::HashMap;
@@ -87,7 +88,7 @@ impl ChatimprovrEframeApp {
 }
 
 impl eframe::App for ChatimprovrEframeApp {
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Update game state
         let mut widge = self.cimvr_widget.lock();
         widge.update();
@@ -96,7 +97,9 @@ impl eframe::App for ChatimprovrEframeApp {
         for partial in self.tabs.values_mut() {
             if let Some(partial) = partial {
                 for (id, delta) in partial.textures_delta.set.drain(..) {
-                   ctx.tex_manager().write().set(id, delta);
+                    let ImageDelta { image, options, .. } = delta.clone();
+                    ctx.tex_manager().write().insert(id, image, options);
+                    ctx.tex_manager().write().set(id, delta);
                 }
             }
         }

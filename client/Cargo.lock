@@ -1081,7 +1081,7 @@ dependencies = [
 [[package]]
 name = "ecolor"
 version = "0.22.0"
-source = "git+https://github.com/Masterchef365/egui.git?branch=more-serde#aa113d18ebafd374c4e40d590ea6331575c3b44d"
+source = "git+https://github.com/Masterchef365/egui.git?branch=insert-texture#3b3308c3ba0dd37d343287f8cf9a749ce97c82ab"
 dependencies = [
  "bytemuck",
  "serde",
@@ -1090,7 +1090,7 @@ dependencies = [
 [[package]]
 name = "eframe"
 version = "0.22.0"
-source = "git+https://github.com/Masterchef365/egui.git?branch=more-serde#aa113d18ebafd374c4e40d590ea6331575c3b44d"
+source = "git+https://github.com/Masterchef365/egui.git?branch=insert-texture#3b3308c3ba0dd37d343287f8cf9a749ce97c82ab"
 dependencies = [
  "bytemuck",
  "cocoa",
@@ -1117,7 +1117,7 @@ dependencies = [
 [[package]]
 name = "egui"
 version = "0.22.0"
-source = "git+https://github.com/Masterchef365/egui.git?branch=more-serde#aa113d18ebafd374c4e40d590ea6331575c3b44d"
+source = "git+https://github.com/Masterchef365/egui.git?branch=insert-texture#3b3308c3ba0dd37d343287f8cf9a749ce97c82ab"
 dependencies = [
  "accesskit",
  "ahash",
@@ -1130,7 +1130,7 @@ dependencies = [
 [[package]]
 name = "egui-winit"
 version = "0.22.0"
-source = "git+https://github.com/Masterchef365/egui.git?branch=more-serde#aa113d18ebafd374c4e40d590ea6331575c3b44d"
+source = "git+https://github.com/Masterchef365/egui.git?branch=insert-texture#3b3308c3ba0dd37d343287f8cf9a749ce97c82ab"
 dependencies = [
  "accesskit_winit",
  "arboard",
@@ -1146,7 +1146,7 @@ dependencies = [
 [[package]]
 name = "egui_dock"
 version = "0.6.3"
-source = "git+https://github.com/Masterchef365/egui_dock.git?branch=more-serde#35c3c2b833feb995832207120fd0ccdb53287cf0"
+source = "git+https://github.com/Masterchef365/egui_dock.git?branch=insert-texture#d0c8421268ebdc2fd7d1d0b11a14efef1a89d3a6"
 dependencies = [
  "duplicate",
  "egui",
@@ -1156,7 +1156,7 @@ dependencies = [
 [[package]]
 name = "egui_glow"
 version = "0.22.0"
-source = "git+https://github.com/Masterchef365/egui.git?branch=more-serde#aa113d18ebafd374c4e40d590ea6331575c3b44d"
+source = "git+https://github.com/Masterchef365/egui.git?branch=insert-texture#3b3308c3ba0dd37d343287f8cf9a749ce97c82ab"
 dependencies = [
  "bytemuck",
  "egui",
@@ -1176,7 +1176,7 @@ checksum = "7fcaabb2fef8c910e7f4c7ce9f67a1283a1715879a7c230ca9d6d1ae31f16d91"
 [[package]]
 name = "emath"
 version = "0.22.0"
-source = "git+https://github.com/Masterchef365/egui.git?branch=more-serde#aa113d18ebafd374c4e40d590ea6331575c3b44d"
+source = "git+https://github.com/Masterchef365/egui.git?branch=insert-texture#3b3308c3ba0dd37d343287f8cf9a749ce97c82ab"
 dependencies = [
  "bytemuck",
  "serde",
@@ -1230,7 +1230,7 @@ dependencies = [
 [[package]]
 name = "epaint"
 version = "0.22.0"
-source = "git+https://github.com/Masterchef365/egui.git?branch=more-serde#aa113d18ebafd374c4e40d590ea6331575c3b44d"
+source = "git+https://github.com/Masterchef365/egui.git?branch=insert-texture#3b3308c3ba0dd37d343287f8cf9a749ce97c82ab"
 dependencies = [
  "ab_glyph",
  "ahash",
