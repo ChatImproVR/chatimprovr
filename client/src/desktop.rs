@@ -360,6 +360,7 @@ impl egui_dock::TabViewer for TabViewer<'_> {
                     .ctx()
                     .input(|input_state| convert_subwindow_input(input_state, rect));
 
+
                 // Send input events to host
                 self.cimvr_widget
                     .lock()
@@ -407,6 +408,7 @@ impl egui_dock::TabViewer for TabViewer<'_> {
 fn convert_subwindow_input(input_state: &egui::InputState, rect: egui::Rect) -> egui::RawInput {
     let mut raw = input_state.raw.clone();
 
+    raw.pixels_per_point = Some(input_state.pixels_per_point());
     raw.screen_rect = Some(egui::Rect::from_min_size(Pos2::ZERO, rect.size()));
 
     for ev in &mut raw.events {
