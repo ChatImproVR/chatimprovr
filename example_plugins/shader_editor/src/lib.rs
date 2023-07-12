@@ -29,31 +29,10 @@ make_app_state!(ClientState, DummyUserState);
 /// Note how we've used pkg_namespace!() to ensure that the name is closer to universally unique
 const CUBE_HANDLE: MeshHandle = MeshHandle::new(pkg_namespace!("Cube"));
 
-const VERTEX_SRC: &str = r#"
-#version 450
-out vec4 f_color;
+const DEFAULT_VERTEX: &str = include_str!("shaders/default.vert");
+const DEFAULT_FRAGMENT: &str = include_str!("shaders/default.frag");
 
-// https://www.saschawillems.de/blog/2016/08/13/vulkan-tutorial-on-rendering-a-fullscreen-quad-without-buffers/
-void main() {
-    vec2 uv = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2);
-    f_color = vec4(uv, 0, 0);
-    gl_Position = vec4(uv.xy * 2.0f + -1.0f, 0.0f, 1.0f);
-}
-"#;
-
-const FRAGMENT_SRC: &str = r#"
-#version 450
-precision mediump float;
-
-in vec4 f_color;
-
-out vec4 out_color;
-uniform mat4 extra;
-
-void main() {
-    out_color = f_color + extra[0];
-}
-"#;
+const SHADER_ID: ShaderHandle = ShaderHandle::new(pkg_namespace!("ShaderEditor"));
 
 #[derive(Component, Default, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub struct FullScreenTri;
@@ -67,8 +46,6 @@ impl UserState for ClientState {
             id: CUBE_HANDLE,
         });
 
-        let shader_id = ShaderHandle::new(pkg_namespace!("ShaderEditor"));
-
         // Crate entity
         io.create_entity()
             // Attach a Transform component (which defaults to the origin)
@@ -78,14 +55,14 @@ impl UserState for ClientState {
             .add_component(
                 Render::new(CUBE_HANDLE)
                     .primitive(Primitive::Triangles)
-                    .shader(shader_id),
+                    .shader(SHADER_ID),
             )
             // Add shader metadata
             .add_component(RenderExtra([
-                0., 0., 0., 1., // .
-                0., 0., 0., 1., // .
-                0., 0., 0., 1., // .
-                0., 0., 0., 1., // .
+                1., 0., 0., 1., // .
+                1., 1., 0., 1., // .
+                0., 0., 1., 1., // .
+                0., 1., 1., 1., // .
             ]))
             // Flag
             .add_component(FullScreenTri)
@@ -93,9 +70,9 @@ impl UserState for ClientState {
 
         // Declare shaders
         let shader_sources = ShaderSource {
-            vertex_src: VERTEX_SRC.into(),
-            fragment_src: FRAGMENT_SRC.into(),
-            id: shader_id,
+            vertex_src: DEFAULT_VERTEX.into(),
+            fragment_src: DEFAULT_FRAGMENT.into(),
+            id: SHADER_ID,
         };
 
         io.send(&shader_sources);
@@ -133,9 +110,19 @@ impl ClientState {
             code_changed |= code_edit(ui, &mut self.shader_sources.vertex_src);
         });
 
-        if code_changed {
-            io.send(&self.shader_sources);
-        }
+        let presets = [
+            ("Defaults", DEFAULT_VERTEX, DEFAULT_FRAGMENT),
+            (
+                "Fractal",
+                DEFAULT_VERTEX,
+                include_str!("shaders/mandelbrot.frag"),
+            ),
+            (
+                "Raycast",
+                include_str!("shaders/raycast.vert"),
+                include_str!("shaders/raycast.frag"),
+            ),
+        ];
 
         // Config editor
         let Some(entity) = query.iter("ShaderPlane").next() else { return };
@@ -160,8 +147,27 @@ impl ClientState {
                         ui.end_row();
                     }
                 });
+
+                // Presets
+                ui.label("Presets:");
+                ui.horizontal(|ui| {
+                    for (name, vert_src, frag_src) in presets {
+                        if ui.button(name).clicked() {
+                            self.shader_sources = ShaderSource {
+                                vertex_src: vert_src.into(),
+                                fragment_src: frag_src.into(),
+                                id: SHADER_ID,
+                            };
+                            code_changed = true;
+                        }
+                    }
+                });
             });
         });
+
+        if code_changed {
+            io.send(&self.shader_sources);
+        }
     }
 }
 
