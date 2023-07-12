@@ -32,6 +32,7 @@ members = [
     "example_plugins/vr-teleport",
     "example_plugins/avatars",
     "example_plugins/grid",
+    "example_plugins/shader_editor",
 ]
 
 # Causes a build issue with OpenXR if included in workspace
