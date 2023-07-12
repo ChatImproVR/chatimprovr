@@ -4,7 +4,10 @@ use cimvr_common::{
         Vertex,
     },
     ui::{
-        egui::{DragValue, Grid, ScrollArea, TextEdit, Ui},
+        egui::{
+            color_picker::{color_edit_button_rgba, color_edit_button_srgba, Alpha},
+            Color32, DragValue, Grid, Rgba, ScrollArea, TextEdit, Ui,
+        },
         GuiInputMessage, GuiTab,
     },
     Transform,
@@ -78,7 +81,12 @@ impl UserState for ClientState {
                     .shader(shader_id),
             )
             // Add shader metadata
-            .add_component(RenderExtra::default())
+            .add_component(RenderExtra([
+                0., 0., 0., 1., // .
+                0., 0., 0., 1., // .
+                0., 0., 0., 1., // .
+                0., 0., 0., 1., // .
+            ]))
             // Flag
             .add_component(FullScreenTri)
             .build();
@@ -136,9 +144,19 @@ impl ClientState {
                 ui.label("RenderExtra:");
                 Grid::new("RenderExtra").show(ui, |ui| {
                     for row in array.chunks_exact_mut(4) {
-                        for field in row {
+                        // Edit grid
+                        for field in &mut *row {
                             ui.add(DragValue::new(field).speed(3e-2));
                         }
+
+                        // Color editor
+                        if row.iter().all(|&x| x >= 0.) {
+                            let mut rgba =
+                                Rgba::from_rgba_unmultiplied(row[0], row[1], row[2], row[3]);
+                            color_edit_button_rgba(ui, &mut rgba, Alpha::Opaque);
+                            row.copy_from_slice(&rgba.to_array());
+                        }
+
                         ui.end_row();
                     }
                 });
