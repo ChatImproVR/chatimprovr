@@ -12,9 +12,9 @@ const float tau = 2. * pi;
 vec3 pixel(vec2 coord) {
     vec2 st = coord * 2. - 1.;
 
-    //st *= 0.002;
+    st *= pow(2., extra[3].z);
     //st -= vec2(0.330,-0.100) * 3.;
-    //st -= vec2(0.900,-0.490) / 50.;
+    st -= extra[3].xy / 50.;
 
     const float scale = pow(0.080, 2.);
     st *= scale;

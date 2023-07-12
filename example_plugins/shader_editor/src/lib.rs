@@ -62,7 +62,7 @@ impl UserState for ClientState {
                 1., 0., 0., 1., // .
                 1., 1., 0., 1., // .
                 0., 0., 1., 1., // .
-                0., 1., 1., 1., // .
+                -0.413, -0.216, 1., 1., // .
             ]))
             // Flag
             .add_component(FullScreenTri)
@@ -137,7 +137,7 @@ impl ClientState {
                         }
 
                         // Color editor
-                        if row.iter().all(|&x| x >= 0.) {
+                        if row.iter().all(|x| (0.0..=1.0).contains(x)) {
                             let mut rgba =
                                 Rgba::from_rgba_unmultiplied(row[0], row[1], row[2], row[3]);
                             color_edit_button_rgba(ui, &mut rgba, Alpha::Opaque);
