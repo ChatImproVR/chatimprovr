@@ -3,15 +3,18 @@ use cimvr_common::{
         Mesh, MeshHandle, Primitive, Render, RenderExtra, ShaderHandle, ShaderSource, UploadMesh,
         Vertex,
     },
-    ui::GuiTab,
+    ui::{
+        egui::{ScrollArea, TextEdit, Ui},
+        GuiInputMessage, GuiTab,
+    },
     Transform,
 };
 use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
 
 struct ClientState {
     shader_sources: ShaderSource,
-    //fragment_edit_tab: GuiTab,
-    //vertex_edit_tab: GuiTab,
+    fragment_edit_tab: GuiTab,
+    vertex_edit_tab: GuiTab,
 }
 
 make_app_state!(ClientState, DummyUserState);
@@ -48,7 +51,7 @@ void main() {
 "#;
 
 impl UserState for ClientState {
-    fn new(io: &mut EngineIo, _sched: &mut EngineSchedule<Self>) -> Self {
+    fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
         // Make the cube mesh available to the rendering engine
         // This defines the CUBE_HANDLE id to refer to the mesh we get from cube()
         io.send(&UploadMesh {
@@ -56,8 +59,9 @@ impl UserState for ClientState {
             id: CUBE_HANDLE,
         });
 
-        let id = ShaderHandle::new(pkg_namespace!("ShaderEditor"));
+        let shader_id = ShaderHandle::new(pkg_namespace!("ShaderEditor"));
 
+        // Crate entity
         io.create_entity()
             // Attach a Transform component (which defaults to the origin)
             .add_component(Transform::default())
@@ -66,22 +70,59 @@ impl UserState for ClientState {
             .add_component(
                 Render::new(CUBE_HANDLE)
                     .primitive(Primitive::Triangles)
-                    .shader(id),
+                    .shader(shader_id),
             )
             // Add shader metadata
             .add_component(RenderExtra::default())
             .build();
 
+        // Declare shaders
         let shader_sources = ShaderSource {
             vertex_src: VERTEX_SRC.into(),
             fragment_src: FRAGMENT_SRC.into(),
-            id,
+            id: shader_id,
         };
 
         io.send(&shader_sources);
 
-        Self { shader_sources }
+        sched
+            .add_system(Self::update_ui)
+            .subscribe::<GuiInputMessage>()
+            .build();
+
+        Self {
+            shader_sources,
+            fragment_edit_tab: GuiTab::new(io, pkg_namespace!("Fragment")),
+            vertex_edit_tab: GuiTab::new(io, pkg_namespace!("Vertex")),
+        }
     }
+}
+
+impl ClientState {
+    fn update_ui(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        let mut code_changed = false;
+
+        self.fragment_edit_tab.show(io, |ui| {
+            code_changed |= code_edit(ui, &mut self.shader_sources.fragment_src);
+        });
+
+        self.vertex_edit_tab.show(io, |ui| {
+            code_changed |= code_edit(ui, &mut self.shader_sources.vertex_src);
+        });
+
+        if code_changed {
+            io.send(&self.shader_sources);
+        }
+    }
+}
+
+fn code_edit(ui: &mut Ui, code: &mut String) -> bool {
+    ScrollArea::vertical()
+        .show(ui, |ui| {
+            ui.add_sized(ui.available_size(), TextEdit::multiline(code).code_editor())
+                .changed()
+        })
+        .inner
 }
 
 /// Defines the mesh data fro a cube
