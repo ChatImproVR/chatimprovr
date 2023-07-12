@@ -4,7 +4,7 @@ use cimvr_common::{
         Vertex,
     },
     ui::{
-        egui::{ScrollArea, TextEdit, Ui},
+        egui::{DragValue, Grid, ScrollArea, TextEdit, Ui},
         GuiInputMessage, GuiTab,
     },
     Transform,
@@ -13,8 +13,9 @@ use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
 
 struct ClientState {
     shader_sources: ShaderSource,
-    fragment_edit_tab: GuiTab,
-    vertex_edit_tab: GuiTab,
+    fragment_tab: GuiTab,
+    vertex_tab: GuiTab,
+    config_tab: GuiTab,
 }
 
 make_app_state!(ClientState, DummyUserState);
@@ -44,11 +45,15 @@ precision mediump float;
 in vec4 f_color;
 
 out vec4 out_color;
+uniform mat4 extra;
 
 void main() {
-    out_color = f_color;
+    out_color = f_color + extra[0];
 }
 "#;
+
+#[derive(Component, Default, Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub struct FullScreenTri;
 
 impl UserState for ClientState {
     fn new(io: &mut EngineIo, sched: &mut EngineSchedule<Self>) -> Self {
@@ -74,6 +79,8 @@ impl UserState for ClientState {
             )
             // Add shader metadata
             .add_component(RenderExtra::default())
+            // Flag
+            .add_component(FullScreenTri)
             .build();
 
         // Declare shaders
@@ -87,32 +94,56 @@ impl UserState for ClientState {
 
         sched
             .add_system(Self::update_ui)
+            .query(
+                "ShaderPlane",
+                Query::new()
+                    .intersect::<RenderExtra>(Access::Write)
+                    .intersect::<FullScreenTri>(Access::Read),
+            )
             .subscribe::<GuiInputMessage>()
             .build();
 
         Self {
             shader_sources,
-            fragment_edit_tab: GuiTab::new(io, pkg_namespace!("Fragment")),
-            vertex_edit_tab: GuiTab::new(io, pkg_namespace!("Vertex")),
+            fragment_tab: GuiTab::new(io, pkg_namespace!("Fragment")),
+            vertex_tab: GuiTab::new(io, pkg_namespace!("Vertex")),
+            config_tab: GuiTab::new(io, pkg_namespace!("Config")),
         }
     }
 }
 
 impl ClientState {
     fn update_ui(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
+        // Shader code editors
         let mut code_changed = false;
 
-        self.fragment_edit_tab.show(io, |ui| {
+        self.fragment_tab.show(io, |ui| {
             code_changed |= code_edit(ui, &mut self.shader_sources.fragment_src);
         });
 
-        self.vertex_edit_tab.show(io, |ui| {
+        self.vertex_tab.show(io, |ui| {
             code_changed |= code_edit(ui, &mut self.shader_sources.vertex_src);
         });
 
         if code_changed {
             io.send(&self.shader_sources);
         }
+
+        // Config editor
+        let Some(entity) = query.iter("ShaderPlane").next() else { return };
+        query.modify(entity, |RenderExtra(array)| {
+            self.config_tab.show(io, |ui| {
+                ui.label("RenderExtra:");
+                Grid::new("RenderExtra").show(ui, |ui| {
+                    for row in array.chunks_exact_mut(4) {
+                        for field in row {
+                            ui.add(DragValue::new(field).speed(3e-2));
+                        }
+                        ui.end_row();
+                    }
+                });
+            });
+        });
     }
 }
 
