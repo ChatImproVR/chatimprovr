@@ -34,6 +34,7 @@ impl UserState for ClientState {
 impl ClientState {
     fn update_pcld(&mut self, io: &mut EngineIo, _: &mut QueryResult) {
         if let Some(packet) = io.inbox::<PointcloudPacket>().last() {
+            dbg!(&packet.points);
             io.send(&UploadMesh {
                 id: POINTCLOUD_RDR,
                 mesh: packet.mesh(),
