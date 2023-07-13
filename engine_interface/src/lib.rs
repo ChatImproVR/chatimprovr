@@ -7,7 +7,7 @@
 /// Code specific to WASM plugins
 pub mod plugin;
 
-use std::{cell::RefCell, collections::HashMap};
+use std::{any::Any, cell::RefCell, collections::HashMap, marker::PhantomData};
 mod component_validate_error;
 pub mod component_validation;
 use cimvr_derive_macros::Component;
@@ -65,11 +65,15 @@ macro_rules! pkg_namespace {
 #[derive(Component, Copy, Clone, Debug, Hash, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Saved;
 
+/// Indicates saved data from this plugin
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct SaveState<T>(Vec<u8>, PhantomData<T>);
+
 use ecs::Component;
 use once_cell::sync::Lazy;
 use prelude::{ChannelIdStatic, ComponentId, Locality, Message};
-use serde::{Deserialize, Serialize};
-use serial::serialized_size;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serial::{deserialize, serialize, serialized_size};
 
 // TODO: Use an integer of nanoseconds instead?
 /// Frame timing information, denotes time since last frame
@@ -141,4 +145,22 @@ pub fn component_id<C: Component>() -> ComponentId {
         id: C::ID.into(),
         size,
     }
+}
+
+impl<T: Serialize + DeserializeOwned> SaveState<T> {
+    pub fn new(value: T) -> Self {
+        Self(serialize(&value).unwrap(), PhantomData)
+    }
+
+    pub fn load(self) -> T {
+        let SaveState(data, _) = self;
+        deserialize(std::io::Cursor::new(&data)).unwrap()
+    }
+}
+
+impl<T> Message for SaveState<T> {
+    const CHANNEL: ChannelIdStatic = ChannelIdStatic {
+        id: pkg_namespace!("SaveState"),
+        locality: Locality::Local,
+    };
 }

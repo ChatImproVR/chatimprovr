@@ -33,6 +33,8 @@ pub enum Stage {
     Update,
     /// Graphics and Sound are processsed before this stage
     PostUpdate,
+    /// Run when the plugin is about to be shutdown or reloaded and must save any state to memory
+    Shutdown,
 }
 
 impl Default for SystemDescriptor {

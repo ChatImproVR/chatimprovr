@@ -318,6 +318,9 @@ impl Engine {
             .position(|p| p.name() == name)
             .expect("Requested plugin is not loaded");
 
+        // Run shutdown stage
+        self.dispatch_plugin(Stage::Shutdown, i);
+
         // Replace old plugin
         let new_plugin = PluginState::new(name.clone(), code, &self.wasm)?;
 
@@ -341,6 +344,9 @@ impl Engine {
         for channel in self.indices.values_mut() {
             channel.retain(|(PluginIndex(j), _)| *j != i);
         }
+
+        // Commit any savestate messages to memory
+        todo!();
 
         // Initialize new plugin
         self.init_plugin(i)
