@@ -5,6 +5,7 @@ extern crate openxr as xr;
 
 use anyhow::{bail, format_err, Context, Result};
 use cimvr_common::glam::Mat4;
+use cimvr_common::pointcloud::PointcloudPacket;
 use cimvr_common::InterdimensionalTravelRequest;
 use cimvr_engine::hotload::Hotloader;
 use cimvr_engine::interface::prelude::{
@@ -20,11 +21,13 @@ use directories::ProjectDirs;
 use eframe::egui;
 use gamepad::GamepadPlugin;
 use plugin_cache::FileCache;
+use realsense::init_realsense;
 use render::RenderPlugin;
 use std::collections::HashSet;
 use std::io::Write;
 use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
+use std::sync::mpsc::Receiver;
 use std::sync::Arc;
 
 #[cfg(feature = "vr")]
@@ -34,6 +37,7 @@ mod desktop;
 mod desktop_input;
 mod gamepad;
 mod plugin_cache;
+mod realsense;
 mod render;
 
 use structopt::StructOpt;
@@ -63,6 +67,8 @@ struct Client {
     recv_buf: AsyncBufferedReceiver,
     conn: TcpStream,
     gamepad: GamepadPlugin,
+    /// Frames from the intel realsense
+    realsense_recv: Option<Receiver<PointcloudPacket>>,
 }
 
 fn main() -> Result<()> {
@@ -156,7 +162,16 @@ impl Client {
         // Initialize plugins AFTER we set up our plugins
         engine.init_plugins()?;
 
+        let realsense_recv = match init_realsense() {
+            Ok(recv) => Some(recv),
+            Err(e) => {
+                log::error!("Starting realsense, {:#}", e);
+                None
+            }
+        };
+
         Ok(Self {
+            realsense_recv,
             recv_buf,
             gamepad,
             conn,
@@ -189,6 +204,13 @@ impl Client {
                     // Receive remote messages
                     for msg in recv.messages {
                         self.engine.broadcast_local(msg);
+                    }
+
+                    // Receive camera input
+                    if let Some(recv) = &self.realsense_recv {
+                        for packet in recv.try_iter() {
+                            self.engine.send(packet);
+                        }
                     }
 
                     // Synchronize ECS state

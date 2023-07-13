@@ -6,8 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = []
+default = ["realsense"]
 #vr = ["openxr"]
+realsense = ["realsense-rust", "realsense-sys"]
 
 [dependencies]
 cimvr_engine = { path = "../engine" }
@@ -46,3 +47,6 @@ eframe = { git = "https://github.com/Masterchef365/egui.git", branch = "insert-t
 #egui = { git = "https://github.com/Masterchef365/egui.git", branch = "insert-texture" }
 egui_glow = { git = "https://github.com/Masterchef365/egui.git", branch = "insert-texture" }
 epaint = { git = "https://github.com/Masterchef365/egui.git", branch = "insert-texture", features = ["extra_asserts"] }
+
+realsense-rust = { version = "1.1.0", optional = true }
+realsense-sys = { version = "2.47.0", optional = true }

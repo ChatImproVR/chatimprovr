@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 pub mod desktop;
 pub mod gamepad;
 mod generic_handle;
+pub mod pointcloud;
 pub mod render;
 mod transform;
 pub mod ui;

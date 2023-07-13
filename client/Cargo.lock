@@ -536,6 +536,8 @@ dependencies = [
  "glow",
  "glutin 0.29.1",
  "log",
+ "realsense-rust",
+ "realsense-sys",
  "structopt",
 ]
 
@@ -2325,6 +2327,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "num-derive"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "876a53fff98e03a936a674b29568b0e605f06b29372c2489ff4de23f1949743d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "num-integer"
 version = "0.1.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2753,6 +2766,28 @@ dependencies = [
  "crossbeam-deque",
  "crossbeam-utils",
  "num_cpus",
+]
+
+[[package]]
+name = "realsense-rust"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0ba24f13a11a78689a072079ca1710a147b85dfdb41df301ba969691aac40016"
+dependencies = [
+ "anyhow",
+ "num-derive",
+ "num-traits",
+ "realsense-sys",
+ "thiserror",
+]
+
+[[package]]
+name = "realsense-sys"
+version = "2.47.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb5ee6a2847d05ac12b86a61451154ec3464a16d92d81ff2de99ed138dedcb17"
+dependencies = [
+ "pkg-config",
 ]
 
 [[package]]
