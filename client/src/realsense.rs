@@ -22,6 +22,7 @@ pub fn init_realsense() -> Result<Receiver<PointcloudPacket>> {
     std::thread::spawn(|| {
         if let Err(e) = camera_thread(tx) {
             log::error!("Realsense; {:#}", e);
+            std::process::exit(-1);
         }
     });
 
@@ -79,15 +80,15 @@ fn camera_thread(tx: Sender<PointcloudPacket>) -> Result<()> {
         in_color_buf.clear();
         out_color_buf.clear();
 
-        in_depth_buf.extend(depth_frame.iter().map(|p| match p {
-            PixelKind::Z16 { depth } => depth,
+        in_depth_buf = depth_frame.iter().map(|p| match p {
+            PixelKind::Z16 { depth } => *depth,
             _ => panic!("{:?}", p),
-        }));
+        }).collect();
 
-        in_color_buf.extend(color_frame.iter().map(|p| match p {
+        in_color_buf = color_frame.iter().map(|p| match p {
             PixelKind::Bgr8 { b, g, r } => [*r, *g, *b],
             _ => panic!("{:?}", p),
-        }));
+        }).collect();
 
         out_color_buf.resize(in_depth_buf.len(), [0; 3]);
 
@@ -100,12 +101,12 @@ fn camera_thread(tx: Sender<PointcloudPacket>) -> Result<()> {
             &mut out_color_buf,
         );
 
-        tx.send(pointcloud_from_buffers(
+        let pointcloud = pointcloud_from_buffers(
             &out_color_buf,
             &in_depth_buf,
             &depth_intrinsics,
-        ))
-        .unwrap();
+        );
+        tx.send(pointcloud).unwrap();
     }
 }
 
@@ -114,7 +115,7 @@ fn pointcloud_from_buffers(
     depth: &[u16],
     intrin: &Rs2Intrinsics,
 ) -> PointcloudPacket {
-    let points = color
+    let points: Vec<Vertex> = color
         .iter()
         .zip(depth)
         .enumerate()
@@ -130,9 +131,11 @@ fn pointcloud_from_buffers(
         })
         .collect();
 
+
     let mask = depth.iter().map(|&idx| idx == 0).collect();
 
-    PointcloudPacket { points, mask }
+    let points = bytemuck::cast_slice(&points).to_vec();
+    PointcloudPacket::new(points, mask)
 }
 
 /// Ported from https://github.com/IntelRealSense/librealsense/blob/master/src/rs.cpp

@@ -10,6 +10,9 @@ default = ["realsense"]
 #vr = ["openxr"]
 realsense = ["realsense-rust", "realsense-sys"]
 
+[profile.release]
+debug = true
+
 [dependencies]
 cimvr_engine = { path = "../engine" }
 cimvr_common = { path = "../common" }

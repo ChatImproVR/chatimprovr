@@ -3,7 +3,7 @@ use cimvr_common::{
     render::{Mesh, MeshHandle, Primitive, Render, UploadMesh, Vertex},
     Transform,
 };
-use cimvr_engine_interface::{make_app_state, pkg_namespace, prelude::*};
+use cimvr_engine_interface::{dbg, make_app_state, pkg_namespace, prelude::*};
 
 struct ClientState;
 
@@ -22,10 +22,12 @@ impl UserState for ClientState {
             .subscribe::<PointcloudPacket>()
             .build();
 
+        /*
         io.create_entity()
             .add_component(Transform::default())
             .add_component(Render::new(POINTCLOUD_RDR).primitive(Primitive::Points))
             .build();
+        */
 
         Self
     }
@@ -34,7 +36,7 @@ impl UserState for ClientState {
 impl ClientState {
     fn update_pcld(&mut self, io: &mut EngineIo, _: &mut QueryResult) {
         if let Some(packet) = io.inbox::<PointcloudPacket>().last() {
-            dbg!(&packet.points);
+            dbg!(&packet.points().len());
             io.send(&UploadMesh {
                 id: POINTCLOUD_RDR,
                 mesh: packet.mesh(),

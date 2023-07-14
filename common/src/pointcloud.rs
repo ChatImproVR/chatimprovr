@@ -7,15 +7,27 @@ use crate::render::{Mesh, Vertex};
 #[locality("Local")]
 pub struct PointcloudPacket {
     /// A list of points which retains it's order with respect to the location within the sensor's FOV
-    pub points: Vec<Vertex>,
+    // This is a u8 array as an optimization
+    points: Vec<u8>,
     /// Whether or not each point can be trusted
-    pub mask: Vec<bool>,
+    mask: Vec<bool>,
 }
 
 impl PointcloudPacket {
+    pub fn new(points: Vec<Vertex>, mask: Vec<bool>) -> Self {
+        Self {
+            points: bytemuck::cast_slice(points.as_slice()).to_vec(),
+            mask,
+        }
+    }
+
+    pub fn points(&self) -> &[Vertex] {
+        bytemuck::cast_slice(self.points.as_slice())
+    }
+
     /// All valid points within the mesh
     pub fn valid_points(&self) -> impl Iterator<Item = Vertex> + '_ {
-        self.points
+        self.points()
             .iter()
             .zip(&self.mask)
             .filter_map(|(pt, mask)| mask.then(|| *pt))
