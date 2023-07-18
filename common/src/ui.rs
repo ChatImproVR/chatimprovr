@@ -1,15 +1,13 @@
 //! Basic graphical user interfacing
-use std::time::Duration;
-
 use cimvr_engine_interface::{dbg, pkg_namespace, prelude::*};
 pub use egui;
+use egui::{epaint, Shape};
 use egui::{
     epaint::{ClippedShape, Primitive},
     ClippedPrimitive, FullOutput, InnerResponse, Mesh, Rect, TextureId, TexturesDelta, Ui,
 };
 use serde::{Deserialize, Serialize};
-
-use crate::generic_handle::const_hash;
+use std::time::Duration;
 
 pub type GuiTabId = String;
 
@@ -148,5 +146,51 @@ impl Into<Mesh> for JankClippedMesh {
             vertices: bytemuck::allocation::pod_collect_to_vec(&self.vertices),
             texture_id: self.texture_id,
         }
+    }
+}
+
+impl From<egui::epaint::Vertex> for crate::render::Vertex {
+    fn from(value: egui::epaint::Vertex) -> Self {
+        Self {
+            pos: [value.pos.x, 0., value.pos.y],
+            uvw: {
+                let [r, g, b, _] = value.color.to_normalized_gamma_f32();
+                [r, g, b]
+            },
+        }
+    }
+}
+
+pub fn epaint_shape_to_cimvr_mesh(
+    meters_per_point: f32,
+    shape: Shape,
+) -> Option<crate::render::Mesh> {
+    let shapes = vec![ClippedShape(Rect::EVERYTHING, shape)];
+    let mut tess = epaint::tessellate_shapes(240., Default::default(), [0, 0], vec![], shapes);
+
+    match tess.pop().unwrap().primitive {
+        Primitive::Mesh(mut mesh) => {
+            // Rescale normals
+            for v in &mut mesh.vertices {
+                v.pos = (v.pos.to_vec2() * meters_per_point).to_pos2();
+            }
+
+            // Fix indexing direction
+            for tri in mesh.indices.chunks_exact_mut(3) {
+                let vert = |idx| mesh.vertices[tri[idx] as usize].pos;
+                let base = vert(0);
+                let a = vert(1) - base;
+                let b = vert(2) - base;
+                if a.x * b.y > a.y * b.x {
+                    tri.swap(0, 2);
+                }
+            }
+
+            Some(crate::render::Mesh {
+                vertices: mesh.vertices.into_iter().map(|v| v.into()).collect(),
+                indices: mesh.indices,
+            })
+        }
+        _ => None,
     }
 }

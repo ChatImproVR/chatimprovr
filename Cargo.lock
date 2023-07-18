@@ -228,7 +228,7 @@ dependencies = [
  "bytemuck",
  "cimvr_engine_interface",
  "egui",
- "epaint",
+ "epaint 0.22.0",
  "glam",
  "serde",
 ]
@@ -545,7 +545,7 @@ source = "git+https://github.com/Masterchef365/egui.git?branch=insert-texture#3b
 dependencies = [
  "accesskit",
  "ahash",
- "epaint",
+ "epaint 0.22.0",
  "nohash-hasher",
  "serde",
 ]
@@ -600,6 +600,15 @@ dependencies = [
  "log",
  "regex",
  "termcolor",
+]
+
+[[package]]
+name = "epaint"
+version = "0.1.0"
+dependencies = [
+ "cimvr_common",
+ "cimvr_engine_interface",
+ "serde",
 ]
 
 [[package]]
