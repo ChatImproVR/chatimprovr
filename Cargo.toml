@@ -33,6 +33,7 @@ members = [
     "example_plugins/avatars",
     "example_plugins/grid",
     "example_plugins/shader_editor",
+    "example_plugins/lua_editor",
 ]
 
 # Causes a build issue with OpenXR if included in workspace

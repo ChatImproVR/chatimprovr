@@ -1,0 +1,34 @@
+[build]
+target = "wasm32-unknown-unknown"   
+
+[alias]
+test_pc = "test --target=x86_64-unknown-linux-gnu"
+
+[target.wasm32-unknown-unknown]
+rustflags = [
+    "-C",
+    "link-arg=-s",
+    "-C",
+    "link-arg=FULL_ES2",
+    "-C",
+    "link-arg=-s",
+    "-C",
+    "link-arg=FULL_ES3",
+    "-C",
+    "link-arg=-s",
+    "-C",
+    "link-arg=USE_SDL=2",
+    "-C",
+    "link-arg=-s",
+    "-C",
+    "link-arg=MAX_WEBGL_VERSION=2 ",
+    "-C",
+    "link-arg=-s",
+    "-C",
+    "link-arg=MIN_WEBGL_VERSION=2",
+    "-C",
+    "link-arg=-s",
+    "-C",
+    "link-arg=ERROR_ON_UNDEFINED_SYMBOLS=0", # for ignoring some egl symbols. needed for wgpu 
+
+]
