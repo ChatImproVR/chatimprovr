@@ -7,6 +7,7 @@ edition = "2021"
 
 [features]
 default = []
+embed-server = ["cimvr_server"]
 #vr = ["openxr"]
 
 [dependencies]
@@ -33,6 +34,8 @@ egui_dock = { git = "https://github.com/Masterchef365/egui_dock.git", branch = "
 #raw-window-handle = "0.5.0"
 gilrs = { version = "0.10.2", default-features = false, features = ["xinput"] }
 directories = "5.0.1"
+
+cimvr_server = { path = "../server", optional = true }
 
 #[target.'cfg(target_os = "linux")'.dependencies]
 #openxr = { version = "0.17.1", optional = true, features = ["loaded"] }

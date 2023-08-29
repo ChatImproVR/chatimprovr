@@ -23,7 +23,7 @@ use plugin_cache::FileCache;
 use render::RenderPlugin;
 use std::collections::HashSet;
 use std::io::Write;
-use std::net::{SocketAddr, TcpStream};
+use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -60,9 +60,16 @@ pub struct Opt {
 struct Client {
     engine: Engine,
     render: RenderPlugin,
-    recv_buf: AsyncBufferedReceiver,
-    conn: TcpStream,
+    conn: ServerOrTcp,
     gamepad: GamepadPlugin,
+}
+
+enum ServerOrTcp {
+    BuiltinServer(Engine),
+    Tcp {
+        conn: TcpStream,
+        recv_buf: AsyncBufferedReceiver,
+    },
 }
 
 fn main() -> Result<()> {
@@ -95,30 +102,10 @@ impl Client {
 
         // Request connection to remote host, uploading manifest of plugins
         // TODO: Replace the manifest with a plain ol HTTP cache
-        let mut conn = TcpStream::connect(login.addr_with_port())?;
-        conn.set_nonblocking(true)?;
+        let mut conn = ServerOrTcp::connect_tcp(login.addr_with_port())?;
         let manifest = plugin_cache.manifest().keys().copied().collect();
-        let req = ConnectionRequest::new(login.username, manifest);
-        let req = serialize(&req).unwrap();
-        conn.write_all(&req)?;
-
-        // Receive response from server
-        let mut recv_buf = AsyncBufferedReceiver::new();
-        let response: ConnectionResponse;
-        loop {
-            match recv_buf.read(&mut conn)? {
-                ReadState::Complete(data) => {
-                    response = deserialize(std::io::Cursor::new(data))?;
-                    break;
-                }
-                ReadState::Incomplete => {
-                    // Don't busy the CPU too much while waiting for a response
-                    std::thread::yield_now();
-                }
-                ReadState::Disconnected => bail!("Remote host hung up"),
-                ReadState::Invalid => bail!("Invalid message from remote"),
-            }
-        }
+        let conn_reqeust = ConnectionRequest::new(login.username, manifest);
+        let response = conn.login(conn_reqeust)?;
 
         // Load needed plugins into memory
         let mut plugins = vec![];
@@ -157,7 +144,6 @@ impl Client {
         engine.init_plugins()?;
 
         Ok(Self {
-            recv_buf,
             gamepad,
             conn,
             engine,
@@ -167,38 +153,26 @@ impl Client {
 
     /// Synchronize with remote and with plugin hotloading
     pub fn download(&mut self) -> Result<()> {
-        loop {
-            match self.recv_buf.read(&mut self.conn)? {
-                ReadState::Invalid => {
-                    log::error!("Failed to parse invalid message");
-                }
-                ReadState::Incomplete => break Ok(()),
-                ReadState::Disconnected => {
-                    bail!("Disconnected");
-                }
-                ReadState::Complete(buf) => {
-                    // Update state!
-                    let recv: ServerToClient = deserialize(std::io::Cursor::new(buf))?;
-
-                    // Load hotloaded plugins
-                    for (name, bytecode) in recv.hotload {
-                        log::info!("Reloading {}", name);
-                        self.engine.reload(name, &bytecode)?;
-                    }
-
-                    // Receive remote messages
-                    for msg in recv.messages {
-                        self.engine.broadcast_local(msg);
-                    }
-
-                    // Synchronize ECS state
-                    self.engine.ecs().import(
-                        &Query::new().intersect::<Synchronized>(Access::Write),
-                        recv.ecs,
-                    );
-                }
+        for recv in self.conn.download()? {
+            // Load hotloaded plugins
+            for (name, bytecode) in recv.hotload {
+                log::info!("Reloading {}", name);
+                self.engine.reload(name, &bytecode)?;
             }
+
+            // Receive remote messages
+            for msg in recv.messages {
+                self.engine.broadcast_local(msg);
+            }
+
+            // Synchronize ECS state
+            self.engine.ecs().import(
+                &Query::new().intersect::<Synchronized>(Access::Write),
+                recv.ecs,
+            );
         }
+
+        Ok(())
     }
 
     pub fn prep_render(&mut self) -> Result<()> {
@@ -215,10 +189,7 @@ impl Client {
             messages: self.engine.network_inbox(),
         };
 
-        self.conn.set_nonblocking(false)?;
-        length_delimit_message(&msg, &mut self.conn)?;
-        self.conn.flush()?;
-        self.conn.set_nonblocking(true)?;
+        self.conn.upload(msg)?;
 
         Ok(())
     }
@@ -349,5 +320,84 @@ impl Opt {
                 .clone()
                 .unwrap_or(login_file.last_login_address),
         })
+    }
+}
+
+impl ServerOrTcp {
+    pub fn connect_tcp<A: ToSocketAddrs>(addr: A) -> Result<Self> {
+        // Receive response from server
+        let recv_buf = AsyncBufferedReceiver::new();
+        let conn = TcpStream::connect(addr)?;
+        Ok(Self::Tcp { conn, recv_buf })
+    }
+
+    pub fn login(&mut self, request: ConnectionRequest) -> Result<ConnectionResponse> {
+        match self {
+            Self::Tcp { conn, recv_buf } => {
+                conn.set_nonblocking(true)?;
+                let req = serialize(&request).unwrap();
+                conn.write_all(&req)?;
+
+                let response: ConnectionResponse;
+                loop {
+                    match recv_buf.read(&mut *conn)? {
+                        ReadState::Complete(data) => {
+                            response = deserialize(std::io::Cursor::new(data))?;
+                            break;
+                        }
+                        ReadState::Incomplete => {
+                            // Don't busy the CPU too much while waiting for a response
+                            std::thread::yield_now();
+                        }
+                        ReadState::Disconnected => bail!("Remote host hung up"),
+                        ReadState::Invalid => bail!("Invalid message from remote"),
+                    }
+                }
+
+                Ok(response)
+            }
+            Self::BuiltinServer(_) => todo!(),
+        }
+    }
+
+    pub fn download(&mut self) -> Result<Vec<ServerToClient>> {
+        match self {
+            Self::Tcp { conn, recv_buf } => {
+                let mut msgs = vec![];
+                const MAX_MESSAGES_PER_FRAME: usize = 1000;
+                for _ in 0..MAX_MESSAGES_PER_FRAME {
+                    match recv_buf.read(&mut *conn)? {
+                        ReadState::Invalid => {
+                            log::error!("Failed to parse invalid message");
+                        }
+                        ReadState::Incomplete => break,
+                        ReadState::Disconnected => {
+                            bail!("Disconnected");
+                        }
+                        ReadState::Complete(buf) => {
+                            // Update state!
+                            let recv: ServerToClient = deserialize(std::io::Cursor::new(buf))?;
+                            msgs.push(recv);
+                        }
+                    }
+                }
+
+                Ok(msgs)
+            }
+            Self::BuiltinServer(_) => todo!(),
+        }
+    }
+
+    pub fn upload(&mut self, msg: ClientToServer) -> Result<()> {
+        match self {
+            Self::Tcp { conn, .. } => {
+                conn.set_nonblocking(false)?;
+                length_delimit_message(&msg, &mut *conn)?;
+                conn.flush()?;
+                conn.set_nonblocking(true)?;
+                Ok(())
+            },
+            Self::BuiltinServer(_) => todo!(),
+        }
     }
 }
