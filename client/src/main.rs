@@ -8,7 +8,7 @@ use cimvr_common::glam::Mat4;
 use cimvr_common::InterdimensionalTravelRequest;
 use cimvr_engine::hotload::Hotloader;
 use cimvr_engine::interface::prelude::{
-    Access, ConnectionRequest, ConnectionResponse, PluginData, Query, Synchronized,
+    Access, ClientId, ConnectionRequest, ConnectionResponse, PluginData, Query, Synchronized,
 };
 use cimvr_engine::interface::serial::{deserialize, serialize};
 use cimvr_engine::network::{
@@ -65,7 +65,10 @@ struct Client {
 }
 
 enum ServerOrTcp {
-    BuiltinServer(Engine),
+    BuiltinServer {
+        engine: Engine,
+        plugins: Vec<(String, Vec<u8>)>,
+    },
     Tcp {
         conn: TcpStream,
         recv_buf: AsyncBufferedReceiver,
@@ -324,11 +327,19 @@ impl Opt {
 }
 
 impl ServerOrTcp {
+    const CLIENT_ID: ClientId = ClientId(0);
+
     pub fn connect_tcp<A: ToSocketAddrs>(addr: A) -> Result<Self> {
         // Receive response from server
         let recv_buf = AsyncBufferedReceiver::new();
         let conn = TcpStream::connect(addr)?;
         Ok(Self::Tcp { conn, recv_buf })
+    }
+
+    pub fn builtin_server(plugins: Vec<(String, Vec<u8>)>) -> Result<Self> {
+        let mut engine = Engine::new(&plugins, Config { is_server: true })?;
+        engine.init_plugins()?;
+        Ok(Self::BuiltinServer { engine, plugins })
     }
 
     pub fn login(&mut self, request: ConnectionRequest) -> Result<ConnectionResponse> {
@@ -356,7 +367,12 @@ impl ServerOrTcp {
 
                 Ok(response)
             }
-            Self::BuiltinServer(_) => todo!(),
+            Self::BuiltinServer { engine, plugins } => Ok(ConnectionResponse {
+                plugins: plugins
+                    .iter()
+                    .map(|(name, data)| (name.clone(), PluginData::Download(data.clone())))
+                    .collect(),
+            }),
         }
     }
 
@@ -384,7 +400,13 @@ impl ServerOrTcp {
 
                 Ok(msgs)
             }
-            Self::BuiltinServer(_) => todo!(),
+            Self::BuiltinServer { engine, plugins } => Ok(vec![ServerToClient {
+                ecs: engine
+                    .ecs()
+                    .export(&Query::new().intersect::<Synchronized>(Access::Read)),
+                messages: engine.network_inbox(),
+                hotload: vec![],
+            }]),
         }
     }
 
@@ -396,8 +418,14 @@ impl ServerOrTcp {
                 conn.flush()?;
                 conn.set_nonblocking(true)?;
                 Ok(())
-            },
-            Self::BuiltinServer(_) => todo!(),
+            }
+            ServerOrTcp::BuiltinServer { engine, .. } => {
+                for mut msg in msg.messages {
+                    msg.client = Some(Self::CLIENT_ID);
+                    engine.broadcast_local(msg);
+                }
+                Ok(())
+            }
         }
     }
 }
