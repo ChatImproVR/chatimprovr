@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 cimvr_engine_interface = { path = "../engine_interface" }
 serde = { version = "1", features = ["derive"] }
-wasmtime = "7.0.1"
+wasm-bridge = "0.2.2"
 anyhow = "1"
 rand = "0.8"
 ahash = "0.8.2"

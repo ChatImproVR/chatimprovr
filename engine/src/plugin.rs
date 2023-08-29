@@ -4,7 +4,7 @@ use cimvr_engine_interface::serial::{
 };
 use rand::prelude::*;
 use std::io::Cursor;
-use wasmtime::{Caller, Extern, Func, Instance, Memory, Module, Store, TypedFunc};
+use wasm_bridge::{Caller, Extern, Func, Instance, Memory, Module, Store, TypedFunc};
 
 #[allow(dead_code)]
 pub struct Plugin {
@@ -20,7 +20,7 @@ pub struct Plugin {
 
 impl Plugin {
     /// Load the plugin in an uninitialized state
-    pub fn new(wt: &wasmtime::Engine, code: &[u8]) -> Result<Self> {
+    pub fn new(wt: &wasm_bridge::Engine, code: &[u8]) -> Result<Self> {
         let module = Module::new(wt, &code)?;
         let mut store = Store::new(wt, ());
 
@@ -45,10 +45,10 @@ impl Plugin {
                     You may only use io functions supplied by the host! Maybe you want include_bytes!()";
         for imp in module.imports() {
             match (imp.name(), imp.ty()) {
-                ("_print", wasmtime::ExternType::Func(_)) => {
+                ("_print", wasm_bridge::ExternType::Func(_)) => {
                     imports.push(print_fn.into());
                 }
-                ("_random", wasmtime::ExternType::Func(_)) => {
+                ("_random", wasm_bridge::ExternType::Func(_)) => {
                     imports.push(random_fn.into());
                 }
                 _ => log::warn!("{}\nUnhandled import {:#?}", warn, imp),

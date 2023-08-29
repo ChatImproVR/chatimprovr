@@ -29,7 +29,7 @@ pub struct Config {
 /// Plugin state, plugin code, ECS state, messaging machinery, and more
 pub struct Engine {
     /// WASM engine
-    wasm: wasmtime::Engine,
+    wasm: wasm_bridge::Engine,
     /// Plugin states
     plugins: Vec<PluginState>,
     /// Entity and Component data
@@ -66,7 +66,7 @@ struct PluginState {
 pub struct PluginIndex(usize);
 
 impl PluginState {
-    pub fn new(name: String, bytecode: &[u8], wasm: &wasmtime::Engine) -> Result<Self> {
+    pub fn new(name: String, bytecode: &[u8], wasm: &wasm_bridge::Engine) -> Result<Self> {
         let code = Plugin::new(wasm, bytecode)?;
         Ok(PluginState {
             name,
@@ -87,7 +87,7 @@ impl Engine {
     pub fn new(plugins: &[(String, Vec<u8>)], cfg: Config) -> Result<Self> {
         let time = Timing::init();
 
-        let wasm = wasmtime::Engine::new(&Default::default())?;
+        let wasm = wasm_bridge::Engine::new(&Default::default())?;
 
         let plugins: Vec<PluginState> = plugins
             .iter()
