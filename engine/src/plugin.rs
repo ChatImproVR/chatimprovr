@@ -89,10 +89,13 @@ impl Plugin {
             .context("Reserve")?;
 
         // Serialize directly into the module's memory. Saves time!
-        let mem = self.mem.data_mut(&mut self.store);
+        //let mem = self.mem.data_mut(&mut self.store);
 
-        let cursor = Cursor::new(&mut mem[ptr as usize..][..size]);
-        serialize_into(cursor, &recv).expect("Serializing plugin input. This is a bug!");
+        //let cursor = Cursor::new(&mut mem[ptr as usize..][..size]);
+        let mut input_buf = vec![];
+        serialize_into(&mut input_buf, &recv).expect("Serializing plugin input. This is a bug!");
+        self.mem.write(&mut self.store, ptr as _, &input_buf)?;
+        drop(input_buf);
 
         // Call the plugin
         let ptr = self
@@ -101,18 +104,17 @@ impl Plugin {
             .context("Dispatch")?;
 
         // Also deserialize directly from the module's memory
-        let mem = self.mem.data_mut(&mut self.store);
         let ptr = ptr as usize;
 
         // Read header for length
         let mut header_bytes = [0; 4];
-        let (header, forever_after) = mem[ptr..].split_at(header_bytes.len());
-        header_bytes.copy_from_slice(&header);
-        let payload_len = u32::from_le_bytes(header_bytes) as usize;
+        self.mem.read(&mut self.store, ptr, &mut header_bytes)?;
 
-        let slice = &forever_after[..payload_len];
+        let payload_len = u32::from_le_bytes(header_bytes) as usize;
+        let mut output_buf = vec![0; payload_len];
+        self.mem.read(&mut self.store, ptr, &mut output_buf)?;
 
         // Deserialize it
-        Ok(deserialize(Cursor::new(slice)).context("Deserializing bincode")?)
+        deserialize(Cursor::new(output_buf)).context("Deserializing bincode")
     }
 }
