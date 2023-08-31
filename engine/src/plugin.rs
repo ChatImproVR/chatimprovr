@@ -112,7 +112,8 @@ impl Plugin {
 
         let payload_len = u32::from_le_bytes(header_bytes) as usize;
         let mut output_buf = vec![0; payload_len];
-        self.mem.read(&mut self.store, ptr, &mut output_buf)?;
+        self.mem
+            .read(&mut self.store, ptr + header_bytes.len(), &mut output_buf)?;
 
         // Deserialize it
         deserialize(Cursor::new(output_buf)).context("Deserializing bincode")
