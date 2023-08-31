@@ -14,6 +14,7 @@ use cimvr_engine::interface::serial::{deserialize, serialize};
 use cimvr_engine::network::{
     length_delimit_message, AsyncBufferedReceiver, ClientToServer, ReadState, ServerToClient,
 };
+use cimvr_engine::interface::system::Stage;
 use cimvr_engine::Engine;
 use cimvr_engine::{calculate_digest, Config};
 use directories::ProjectDirs;
@@ -414,13 +415,30 @@ impl ServerOrTcp {
 
                 Ok(msgs)
             }
-            Self::BuiltinServer { engine, plugins } => Ok(vec![ServerToClient {
-                ecs: engine
-                    .ecs()
-                    .export(&Query::new().intersect::<Synchronized>(Access::Read)),
-                messages: engine.network_inbox(),
-                hotload: vec![],
-            }]),
+            Self::BuiltinServer { engine, plugins } => { 
+                // Send fake connection list
+                engine.send(cimvr_engine::interface::prelude::Connections {
+                    clients: vec![
+                        cimvr_engine::interface::prelude::Connection {
+                            id: Self::CLIENT_ID,
+                            username: "john cena".into(),
+                        }],
+                });
+
+                // Perform server tick
+                engine.dispatch(Stage::PreUpdate)?;
+                engine.dispatch(Stage::Update)?;
+                engine.dispatch(Stage::PostUpdate)?;
+
+                // Export info
+                Ok(vec![ServerToClient {
+                    ecs: engine
+                        .ecs()
+                        .export(&Query::new().intersect::<Synchronized>(Access::Read)),
+                    messages: engine.network_inbox(),
+                    hotload: vec![],
+                }])
+            },
         }
     }
 
