@@ -35,7 +35,9 @@ impl Ecs {
     /// If a component requested does not exist, panic.
     pub fn query(&mut self, query: &Query) -> HashSet<EntityId> {
         //let (init, rest) = q.split_first().expect("Empty query");
-        let Some((init, rest)) = query.intersect.split_first() else { return HashSet::new() };
+        let Some((init, rest)) = query.intersect.split_first() else {
+            return HashSet::new();
+        };
 
         // Initialize to the entities in the first term..
         // TODO: Pick smallest?
@@ -138,7 +140,11 @@ impl Ecs {
     /// Remove the given component from the given entity
     pub fn remove_component(&mut self, entity: EntityId, component: &ComponentId) {
         let Some(component) = self.map.get_mut(&component) else {
-            return log::trace!("Cannot remove from {:X?} {:X?} does not exist", entity, component);
+            return log::trace!(
+                "Cannot remove from {:X?} {:X?} does not exist",
+                entity,
+                component
+            );
         };
 
         let comp = component.remove(&entity);

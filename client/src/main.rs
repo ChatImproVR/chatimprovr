@@ -105,13 +105,18 @@ impl Client {
 
         // Request connection to remote host, uploading manifest of plugins
         // TODO: Replace the manifest with a plain ol HTTP cache
-        #[cfg(not(feature = "embed-server"))]
         let mut conn = ServerOrTcp::connect_tcp(login.addr_with_port())?;
 
         #[cfg(feature = "embed-server")]
         let mut conn = ServerOrTcp::builtin_server(vec![
-            ("camera".into(), include_bytes!("../../target/wasm32-unknown-unknown/release/camera.wasm").to_vec()),
-            ("cube".into(), include_bytes!("../../target/wasm32-unknown-unknown/release/cube.wasm").to_vec()),
+            (
+                "camera".into(),
+                include_bytes!("../../target/wasm32-unknown-unknown/release/camera.wasm").to_vec(),
+            ),
+            (
+                "cube".into(),
+                include_bytes!("../../target/wasm32-unknown-unknown/release/cube.wasm").to_vec(),
+            ),
         ])?;
 
         let manifest = plugin_cache.manifest().keys().copied().collect();

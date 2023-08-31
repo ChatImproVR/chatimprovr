@@ -75,7 +75,9 @@ impl UserState for ServerState {
 
 impl ServerState {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
-        let Some(conns) = io.inbox_first::<Connections>() else { return };
+        let Some(conns) = io.inbox_first::<Connections>() else {
+            return;
+        };
 
         // Find spinning cubes by their client ids
         let mut client_to_entity = HashMap::new();

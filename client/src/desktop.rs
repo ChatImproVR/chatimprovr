@@ -237,7 +237,6 @@ impl ChatimprovrWidget {
                 self.window_control = Some(WindowController::new(client.engine()));
             }
 
-
             // Download messages from server
             client.download().expect("Message download");
 
@@ -359,7 +358,6 @@ impl egui_dock::TabViewer for TabViewer<'_> {
                     .ctx()
                     .input(|input_state| convert_subwindow_input(input_state, rect));
 
-
                 // Send input events to host
                 self.cimvr_widget
                     .lock()
@@ -374,7 +372,6 @@ impl egui_dock::TabViewer for TabViewer<'_> {
 
                 // Draw existing state
                 if let Some(Some(full_output)) = self.last_frame.get_mut(id) {
-                    
                     // Draw meshes
                     for mesh in &full_output.shapes {
                         let clip = mesh.clip;

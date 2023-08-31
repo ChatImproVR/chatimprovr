@@ -86,10 +86,14 @@ impl UserState for ClientState {
 
 impl ClientState {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
-        let Some(FrameTime { delta, .. }) = io.inbox_first() else { return };
+        let Some(FrameTime { delta, .. }) = io.inbox_first() else {
+            return;
+        };
 
         // Get the camera position
-        let Some(camera_entity) = query.iter("Camera").next() else { return };
+        let Some(camera_entity) = query.iter("Camera").next() else {
+            return;
+        };
 
         let mut eyeball = query.read::<Transform>(camera_entity);
 
@@ -169,7 +173,9 @@ impl UserState for ServerState {
 impl ServerState {
     fn update(&mut self, io: &mut EngineIo, query: &mut QueryResult) {
         // Create and destroy avatars on connection/disconnection
-        let Some(conns) = io.inbox_first::<Connections>() else { return };
+        let Some(conns) = io.inbox_first::<Connections>() else {
+            return;
+        };
         self.tracker.update(&conns, |conn, action| {
             match action {
                 Action::Connected => {

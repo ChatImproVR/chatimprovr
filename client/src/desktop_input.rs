@@ -45,7 +45,10 @@ impl WindowController {
 
 impl DesktopInputHandler {
     pub fn new() -> Self {
-        Self { events: vec![], was_hovered: false }
+        Self {
+            events: vec![],
+            was_hovered: false,
+        }
     }
 
     /// Returns the InputState which chronicles the events since the last call

@@ -90,7 +90,9 @@ impl Teleporter {
         }
 
         // Handle events for VR
-        let Some(update) = io.inbox_first::<VrUpdate>() else { return };
+        let Some(update) = io.inbox_first::<VrUpdate>() else {
+            return;
+        };
 
         if self.update_path {
             if let Some(grip) = update.right_controller.grip {

@@ -55,7 +55,9 @@ impl ClientState {
     fn update(&mut self, io: &mut EngineIo, _query: &mut QueryResult) {
         self.input.handle_input_events(io);
         // Read frame time (or bust!)
-        let Some(frame_time) = io.inbox_first::<FrameTime>() else { return };
+        let Some(frame_time) = io.inbox_first::<FrameTime>() else {
+            return;
+        };
 
         // Handle input events
         // Decide which way the cube should move based on keypresses

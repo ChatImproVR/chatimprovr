@@ -51,7 +51,9 @@ fn read_manifest(path: &Path) -> Result<Manifest> {
     for file in std::fs::read_dir(path)? {
         let file = file?;
         let path = file.path();
-        let Some(fname) = path.file_name() else { continue };
+        let Some(fname) = path.file_name() else {
+            continue;
+        };
         let fname = fname.to_str().ok_or(format_err!("Invalid cache name"))?;
 
         if let Ok(CacheName(digest, _)) = fname.parse() {

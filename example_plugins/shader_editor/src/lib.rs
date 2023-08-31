@@ -125,7 +125,9 @@ impl ClientState {
         ];
 
         // Config editor
-        let Some(entity) = query.iter("ShaderPlane").next() else { return };
+        let Some(entity) = query.iter("ShaderPlane").next() else {
+            return;
+        };
         query.modify(entity, |RenderExtra(array)| {
             self.config_tab.show(io, |ui| {
                 ui.label("RenderExtra:");

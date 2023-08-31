@@ -84,7 +84,12 @@ impl GuiTab {
         });
 
         // Handle input messages
-        let Some(msg) = io.inbox::<GuiInputMessage>().find(|msg| msg.target == self.id) else { return };
+        let Some(msg) = io
+            .inbox::<GuiInputMessage>()
+            .find(|msg| msg.target == self.id)
+        else {
+            return;
+        };
 
         // Process user's GUI
         let full_output = self.ctx.run(msg.raw_input, |ctx| {
@@ -129,7 +134,9 @@ impl GuiTab {
 
 impl From<ClippedPrimitive> for JankClippedMesh {
     fn from(value: ClippedPrimitive) -> Self {
-        let Primitive::Mesh(mesh) = value.primitive else { panic!() };
+        let Primitive::Mesh(mesh) = value.primitive else {
+            panic!()
+        };
         Self {
             clip: value.clip_rect,
             vertices: bytemuck::allocation::pod_collect_to_vec(&mesh.vertices),

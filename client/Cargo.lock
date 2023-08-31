@@ -532,7 +532,6 @@ dependencies = [
  "bytemuck",
  "cimvr_common",
  "cimvr_engine",
- "cimvr_server",
  "directories",
  "eframe",
  "egui_dock",
@@ -593,18 +592,6 @@ dependencies = [
  "log",
  "once_cell",
  "serde",
-]
-
-[[package]]
-name = "cimvr_server"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "cimvr_common",
- "cimvr_engine",
- "env_logger",
- "log",
- "structopt",
 ]
 
 [[package]]
