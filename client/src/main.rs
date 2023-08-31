@@ -105,6 +105,7 @@ impl Client {
 
         // Request connection to remote host, uploading manifest of plugins
         // TODO: Replace the manifest with a plain ol HTTP cache
+        #[cfg(not(feature = "embed-server"))]
         let mut conn = ServerOrTcp::connect_tcp(login.addr_with_port())?;
 
         #[cfg(feature = "embed-server")]
