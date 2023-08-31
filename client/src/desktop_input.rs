@@ -1,7 +1,7 @@
 use cimvr_common::desktop::*;
 use cimvr_engine::Engine;
 use eframe::{egui, epaint::Rect};
-use glutin::{dpi::PhysicalPosition, window::CursorGrabMode};
+//use glutin::{dpi::PhysicalPosition, window::CursorGrabMode};
 
 /// Input handler for Desktop platform
 pub struct DesktopInputHandler {
@@ -22,6 +22,7 @@ impl WindowController {
         }
     }
 
+    /*
     pub fn update(&mut self, engine: &mut Engine, window: &glutin::window::Window) {
         for msg in engine.inbox::<WindowControl>() {
             match msg {
@@ -41,6 +42,7 @@ impl WindowController {
             window.set_cursor_visible(true);
         }
     }
+    */
 }
 
 impl DesktopInputHandler {
