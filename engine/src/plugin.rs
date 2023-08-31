@@ -4,7 +4,7 @@ use cimvr_engine_interface::serial::{
 };
 use rand::prelude::*;
 use std::io::Cursor;
-use wasm_bridge::{Caller, Extern, Func, Instance, Memory, Module, Store, TypedFunc};
+use wasm_bridge::{Caller, Func, Instance, Memory, Module, Store, TypedFunc};
 
 #[allow(dead_code)]
 pub struct Plugin {
@@ -12,8 +12,8 @@ pub struct Plugin {
     module: Module,
     instance: Instance,
     mem: Memory,
-    print_fn: Func,
-    random_fn: Func,
+    //print_fn: Func,
+    //random_fn: Func,
     dispatch_fn: TypedFunc<(), u32>,
     reserve_fn: TypedFunc<u32, u32>,
 }
@@ -24,6 +24,7 @@ impl Plugin {
         let module = Module::new(wt, &code)?;
         let mut store = Store::new(wt, ());
 
+        /*
         // Basic printing functionality
         let print_fn = Func::wrap(
             &mut store,
@@ -54,7 +55,9 @@ impl Plugin {
                 _ => log::warn!("{}\nUnhandled import {:#?}", warn, imp),
             }
         }
+        */
 
+        let imports = vec![];
         let instance = Instance::new(&mut store, &module, &imports)?;
 
         let mem = instance.get_memory(&mut store, "memory").unwrap();
@@ -65,10 +68,10 @@ impl Plugin {
         let reserve_fn = instance.get_typed_func::<u32, u32>(&mut store, "_reserve")?;
 
         Ok(Self {
-            random_fn,
+            //random_fn,
             mem,
             module,
-            print_fn,
+            //print_fn,
             store,
             instance,
             dispatch_fn,
