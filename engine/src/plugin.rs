@@ -24,7 +24,6 @@ impl Plugin {
         let module = Module::new(wt, &code)?;
         let mut store = Store::new(wt, ());
 
-        /*
         // Basic printing functionality
         let print_fn = Func::wrap(
             &mut store,
@@ -41,7 +40,7 @@ impl Plugin {
         // Random number "syscall". TODO: Include this in SendBuf instead?
         let random_fn = Func::wrap(&mut store, || rand::thread_rng().gen::<u64>());
 
-        let mut imports: Vec<Extern> = vec![];
+        let mut imports: Vec<wasm_bridge::Extern> = vec![];
         let warn = "Did you try to use an IO function from outside the sandbox like File::open()?\n\
                     You may only use io functions supplied by the host! Maybe you want include_bytes!()";
         for imp in module.imports() {
@@ -55,9 +54,7 @@ impl Plugin {
                 _ => log::warn!("{}\nUnhandled import {:#?}", warn, imp),
             }
         }
-        */
 
-        let imports = vec![];
         let instance = Instance::new(&mut store, &module, &imports)?;
 
         let mem = instance.get_memory(&mut store, "memory").unwrap();
