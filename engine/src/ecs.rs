@@ -16,6 +16,7 @@ pub type ComponentData = Vec<u8>;
 pub type EcsMap = HashMap<ComponentId, HashMap<EntityId, ComponentData>>;
 
 /// Rather poor ECS implementation for prototyping
+#[derive(Debug)]
 pub struct Ecs {
     map: EcsMap,
     entities: HashSet<EntityId>,
@@ -276,6 +277,31 @@ impl Ecs {
                 my_comp.insert(ent, data);
                 self.entities.insert(ent);
             }
+        }
+    }
+
+    pub fn dump_components(&self) {
+        println!("Components:");
+        for component in self.map.keys() {
+            println!("{component:?}");
+        }
+    }
+
+    pub fn dump_entities(&self) {
+        println!("Entities:");
+        let mut sorted_ids: Vec<EntityId> = self.entities.iter().copied().collect();
+        let mut sorted_components: Vec<ComponentId> = self.map.keys().cloned().collect();
+        sorted_ids.sort_by_key(|&EntityId(num)| num);
+        sorted_components.sort_by(|a, b| a.id.cmp(&b.id));
+
+        for id @ EntityId(num) in &sorted_ids {
+            print!("{num}: ");
+            for comp in &sorted_components {
+                if self.map[comp].contains_key(&id) {
+                    print!("{}, ", comp.id)
+                }
+            }
+            println!();
         }
     }
 }

@@ -118,6 +118,11 @@ impl Client {
                 "cube".into(),
                 include_bytes!("../../target/wasm32-unknown-unknown/release/cube.wasm").to_vec(),
             ),
+            /*
+            (
+                "ui_example".into(),
+                include_bytes!("../../target/wasm32-unknown-unknown/release/ui_example.wasm").to_vec(),
+            )*/
         ])?;
 
         let manifest = plugin_cache.manifest().keys().copied().collect();

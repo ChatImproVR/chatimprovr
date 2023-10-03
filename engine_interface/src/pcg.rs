@@ -1,9 +1,7 @@
-/*
 extern "C" {
     #[cfg(target_family = "wasm")]
     fn _random() -> u64;
 }
-*/
 
 /// https://en.wikipedia.org/wiki/Permuted_congruential_generator
 #[derive(Default)]
@@ -15,12 +13,16 @@ pub struct Pcg {
 
 impl Pcg {
     pub fn new() -> Self {
-        // #[cfg(target_family = "wasm")]
-        // let seed = unsafe { _random() };
+        #[cfg(target_family = "wasm")]
+        let seed = unsafe { _random() };
 
         // TODO: Handle this in a better way!
-        // #[cfg(not(target_family = "wasm"))]
-        let seed = 0;
+        #[cfg(not(target_family = "wasm"))]
+        let seed = {
+            use std::collections::hash_map::RandomState;
+            use std::hash::{BuildHasher, Hasher};
+            RandomState::new().build_hasher().finish()
+        };
 
         Self::new_detailed(seed, 6364136223846793005, 1442695040888963407)
     }
