@@ -8,7 +8,8 @@ edition = "2021"
 [dependencies]
 cimvr_engine_interface = { path = "../engine_interface" }
 serde = { version = "1", features = ["derive"] }
-wasm-bridge = "0.2.2"
+#wasm-bridge = "0.2.2" 
+wasm-bridge = { git = "https://github.com/AmbientRun/wasm-bridge.git" }
 anyhow = "1"
 rand = "0.8"
 getrandom = { version = "0.2", features = ["js"] }

@@ -111,6 +111,7 @@ impl Client {
 
         #[cfg(feature = "embed-server")]
         let mut conn = ServerOrTcp::builtin_server(vec![
+            /*
             (
                 "camera".into(),
                 include_bytes!("../../target/wasm32-unknown-unknown/release/camera.wasm").to_vec(),
@@ -119,6 +120,8 @@ impl Client {
                 "cube".into(),
                 include_bytes!("../../target/wasm32-unknown-unknown/release/cube.wasm").to_vec(),
             ),
+            */
+            ("fz".into(), include_bytes!("/home/duncan/Projects/fz/target/wasm32-unknown-unknown/release/fz.wasm").to_vec()),
             /*
             (
                 "ui_example".into(),
