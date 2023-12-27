@@ -358,3 +358,13 @@ impl Engine {
 pub fn calculate_digest(data: &[u8]) -> Digest {
     Digest(xxhash_rust::xxh3::xxh3_128(data))
 }
+
+/// Compress some data
+pub fn compress(data: &[u8]) -> Vec<u8> {
+    miniz_oxide::deflate::compress_to_vec(data, 6)
+}
+
+/// Decompress some data
+pub fn decompress(data: &[u8]) -> Result<Vec<u8>> {
+    miniz_oxide::inflate::decompress_to_vec(data).map_err(|e| format_err!("{:#}", e))
+}

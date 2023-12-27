@@ -171,6 +171,7 @@ impl Server {
 
             // Remember which plugins were hotloaded, so that we can send code to
             // the clients!
+            let bytecode = cimvr_engine::compress(&bytecode);
             hotloaded.push((name, bytecode));
         }
 
@@ -190,7 +191,9 @@ impl Server {
                 if req.plugin_manifest.contains(&digest) {
                     response_plugins.push((name.clone(), PluginData::Cached(*digest)));
                 } else {
-                    response_plugins.push((name.clone(), PluginData::Download(code.clone())));
+                    // TODO: Do this only once!
+                    let bytecode = cimvr_engine::compress(&code);
+                    response_plugins.push((name.clone(), PluginData::Download(bytecode)));
                 }
             }
 
